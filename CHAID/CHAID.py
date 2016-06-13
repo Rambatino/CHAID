@@ -5,8 +5,6 @@ import numpy as np
 import collections as cl
 from treelib import Node, Tree
 
-import ipdb
-
 DEFAULT_CONDITIONS =  {
 	'alpha_merge': .05,
 	'max_depth': 2,
@@ -71,7 +69,6 @@ def generate_best_split(ind, dep, conditions):
 
 		mappings = {}
 
-		
 		while len(unique) > 1:
 			size  = (len(unique) * (len(unique) - 1) )/ 2
 			sub_data = np.ndarray(shape=(size, 3), dtype=object, order='F')
