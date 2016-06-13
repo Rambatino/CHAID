@@ -27,8 +27,7 @@ def df_to_tree(ind_df, dep_series, conditions):
 	ind_df = ind_df.fillna(-1.0)
 	ind_values = ind_df.values
 	dep_values = dep_series.values
-	tree , nodes=  chaid_tree(params, ind_values, dep_values, new_conditions)
-	#pdb.set_trace()
+	tree, nodes =  chaid_tree(params, ind_values, dep_values, new_conditions)
 	return tree
 
 def chaid_tree(params, ind, dep, conditions, depth=0, tree=None, parent=None, nodes=0, parent_decisions=None):
@@ -37,12 +36,14 @@ def chaid_tree(params, ind, dep, conditions, depth=0, tree=None, parent=None, no
 	if tree is None:
 		tree = Tree()
 
+	uni = dict(np.transpose(np.unique(dep, return_counts=True)))
+
 	if conditions['max_depth'] < depth:
-		node = tree.create_node((parent_decisions, (None, None, None)), nodes, parent=parent)
+		node = tree.create_node(((parent_decisions, uni), None), nodes, parent=parent)
 		return tree, nodes + 1
 
 	best_case = generate_best_split(ind, dep, conditions)
-	node = tree.create_node((parent_decisions, (best_case[0], best_case[2], best_case[3])), nodes, parent=parent)
+	node = tree.create_node(((parent_decisions, uni), (best_case[0], best_case[2], best_case[3])), nodes, parent=parent)
 	parent = nodes
 	nodes = nodes + 1
 
@@ -56,10 +57,10 @@ def chaid_tree(params, ind, dep, conditions, depth=0, tree=None, parent=None, no
 		if conditions['min_sample'] < len(dep_slice):
 			tree, nodes = chaid_tree(params, ind_slice, dep_slice, conditions, depth, nodes=nodes, parent=parent, tree=tree, parent_decisions=choices)
 		else:
-			best_sub = (choices, (None, None, None))
-			tree.create_node(str(best_sub), nodes, parent=parent)
+			uni = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
+			best_sub = ((choices, uni), None)
+			tree.create_node(best_sub, nodes, parent=parent)
 			nodes = nodes + 1
-
 
 	return tree, nodes
 
