@@ -10,7 +10,7 @@ import ipdb
 
 DEFAULT_CONDITIONS =  {
 	'alpha_merge': .05,
-	'max_depth': 3,
+	'max_depth': 2,
 	'min_sample': 30
 }	
 
@@ -27,29 +27,41 @@ def df_to_tree(ind_df, dep_series, conditions):
 	ind_df = ind_df.fillna(-1.0)
 	ind_values = ind_df.values
 	dep_values = dep_series.values
-	return chaid_tree(params, ind_values, dep_values, new_conditions)
+	tree , nodes=  chaid_tree(params, ind_values, dep_values, new_conditions)
+	#pdb.set_trace()
+	return tree
 
-def chaid_tree(params, ind, dep, conditions, depth=0):
+def chaid_tree(params, ind, dep, conditions, depth=0, tree=None, parent=None, nodes=0, parent_decisions=None):
 	depth = depth + 1
 
+	if tree is None:
+		tree = Tree()
+
 	if conditions['max_depth'] < depth:
-		return
+		node = tree.create_node((parent_decisions, (None, None, None)), nodes, parent=parent)
+		return tree, nodes + 1
 
 	best_case = generate_best_split(ind, dep, conditions)
+	node = tree.create_node((parent_decisions, (best_case[0], best_case[2], best_case[3])), nodes, parent=parent)
+	parent = nodes
+	nodes = nodes + 1
 
 	if best_case[0] is None:
-		return
-
-	tree = [best_case]
+		return tree, nodes
 
 	for choices in best_case[1]:
 		correct_rows = np.in1d(ind[:,best_case[0]], choices)
-		ind_slice = ind[correct_rows,:]
 		dep_slice = dep[correct_rows]
+		ind_slice = ind[correct_rows,:]
+		if conditions['min_sample'] < len(dep_slice):
+			tree, nodes = chaid_tree(params, ind_slice, dep_slice, conditions, depth, nodes=nodes, parent=parent, tree=tree, parent_decisions=choices)
+		else:
+			best_sub = (choices, (None, None, None))
+			tree.create_node(str(best_sub), nodes, parent=parent)
+			nodes = nodes + 1
 
-		tree.append(chaid_tree(params, ind_slice, dep_slice, conditions, depth))
 
-	return tree
+	return tree, nodes
 
 def generate_best_split(ind, dep, conditions):
 	most_sig_ind = (None, None, None, 1)
@@ -105,4 +117,4 @@ if __name__ == "__main__":
 	df = pd.read_csv(sys.argv[1])
 	ind_df = df[['Umsatz', 'V5001', 'V5002_1', 'V5002_2', 'V5002_3', 'V5002_4', 'V6001', 'V6002']]
 	dep_series = df['titypv']
-	print df_to_tree(ind_df, dep_series, {})
+	df_to_tree(ind_df, dep_series, {}).show()
