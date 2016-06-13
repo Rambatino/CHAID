@@ -100,35 +100,6 @@ def generate_best_split(ind, dep, conditions):
 			unique.remove(split[1])
 
 	return most_sig_ind
-	
-
-# def find_index(arr_maj, arr_min):
-# 	# if is_equal(arr_maj, arr_min): return []
-# 	data = []
-# 	import ipdb; ipdb.set_trace()
-# 	for i, v in enumerate(arr_maj):
-# 		if not isinstance(v, float): 
-# 			data.append(i)
-# 			index = find_index(v, arr_min)
-# 			if index is not None:
-# 				data.append(index)
-# 		elif any(x == v for x in np.ndarray.flatten(np.array(arr_min))): return i ## need to not find both
-# 	import ipdb; ipdb.set_trace()
-# 	return data
-
-def is_equal(arg1, arg2):
-	truthy = True
-	np_set = (np.ndarray)
-	if isinstance(arg1, np_set) and isinstance(arg2, np_set):
-		for i, v in enumerate(arg1):
-			truthy = is_equal(v, arg2[i])
-			if not truthy: return truthy 
-	elif isinstance(arg1, float) and isinstance(arg2, float):
-		if arg1 != arg2:
-			return False
-	else:
-		return False
-	return truthy
 
 if __name__ == "__main__":
 	df = pd.read_csv(sys.argv[1])
