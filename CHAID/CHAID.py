@@ -95,22 +95,20 @@ class CHAID(object):
 			unique = set(index)
 
 			mappings = {}
+			frequincies = dict([ (col, dict(np.transpose(np.unique(dep[np.where(np.in1d(index, col))[0]], return_counts=True)))) for col in unique])
 
 			while len(unique) > 1:
 				size  = (len(unique) * (len(unique) - 1)) / 2
 				sub_data = np.ndarray(shape=(size, 3), dtype=object, order='F')
 				for j, comb in enumerate(it.combinations(unique, 2)):
-					y = np.where(np.in1d(index, comb[0]))[0]
-					g = np.where(np.in1d(index, comb[1]))[0]
+					y = frequincies[comb[0]]
+					g = frequincies[comb[1]]
 
-					uni_y = dict(np.transpose(np.unique(dep[y], return_counts=True)))
-					uni_g = dict(np.transpose(np.unique(dep[g], return_counts=True)))
-
-					keys = set(uni_y.keys() + uni_g.keys())
+					keys = set(y.keys() + g.keys())
 
 					cr_table = [
-						[ uni_y.get(k, 0) for k in keys ],
-						[ uni_g.get(k, 0) for k in keys ]
+						[ y.get(k, 0) for k in keys],
+						[ g.get(k, 0) for k in keys]
 					]
 
 					chi = stats.chi2_contingency(np.array(cr_table))
@@ -134,6 +132,10 @@ class CHAID(object):
 
 				index[ index == choice[1] ] = choice[0]
 				unique.remove(choice[1])
+
+				for val, count in frequincies[choice[1]].items():
+					frequincies[choice[0]][val] = frequincies[choice[0]].get(val, 0) + count
+				del frequincies[choice[1]]
 
 		return split
 
