@@ -46,19 +46,19 @@ def chaid(ind_df, dep_series, conditions):
 	params = {
 		'independent_variable_names': ind_df.columns
 	}
-	ind_df = ind_df.fillna(-1.0)
+	ind_df.apply(lambda x: x.fillna('-1.0', inplace=True) if (x.dtype == object) else x.fillna(-1.0, inplace=True))
 	ind_values = ind_df.values
 	dep_values = dep_series.values
-	tree, node_id =  chaid_node(params, ind_values, dep_values, new_conditions)
+	tree, node_id =  chaid_node(params, np.arange(0, dep_values.shape[0] + 1, dtype=np.int), ind_values, dep_values, new_conditions)
 	return tree
 
-def chaid_node(params, ind, dep, conditions, depth=0, tree_store=[], parent=None, node_id=0, parent_decisions=None):
+def chaid_node(params, rows, ind, dep, conditions, depth=0, tree_store=[], parent=None, node_id=0, parent_decisions=None):
 	depth = depth + 1
 
 	uni = dict(np.transpose(np.unique(dep, return_counts=True)))
 
 	if conditions['max_depth'] < depth:
-		terminal_node = Node(choices=parent_decisions, members=uni, id=node_id, parent=parent, is_terminal=True)
+		terminal_node = Node(choices=parent_decisions, members=uni, id=node_id, parent=parent, is_terminal=True, terminal_indices=rows)
 		tree_store.append(terminal_node)
 		return tree_store, node_id + 1
 
@@ -76,12 +76,12 @@ def chaid_node(params, ind, dep, conditions, depth=0, tree_store=[], parent=None
 		correct_rows = np.in1d(ind[:, best_case[0]], choices)
 		dep_slice = dep[correct_rows]
 		ind_slice = ind[correct_rows, :]
+		row_slice = rows[correct_rows]
 		if conditions['min_sample'] < len(dep_slice):
-			tree_store, node_id = chaid_node(params, ind_slice, dep_slice, conditions, depth, node_id=node_id, parent=parent, tree_store=tree_store, parent_decisions=choices)
+			tree_store, node_id = chaid_node(params, row_slice, ind_slice, dep_slice, conditions, depth, node_id=node_id, parent=parent, tree_store=tree_store, parent_decisions=choices)
 		else:
 			uni = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
-			best_sub = ((choices, uni), None)
-			terminal_node = Node(choices=choices, members=uni, is_terminal=True, id=node_id, parent=parent)
+			terminal_node = Node(choices=choices, members=uni, is_terminal=True, id=node_id, parent=parent, terminal_indices=row_slice)
 			tree_store.append(terminal_node)
 			node_id = node_id + 1
 
@@ -142,6 +142,12 @@ def to_tree(tree_data):
 		tree.create_node(node, node.id, parent=node.parent)
 	return tree
 
+def model_prediction(tree_data, length):
+	pred = np.zeros(length)
+	for node in tree_data:
+		pred[node.terminal_indices] = node.id
+	return pred
+
 if __name__ == "__main__":
 	import argparse
 	parser = argparse.ArgumentParser(description='Run the chaid algorithm on a csv file.')
@@ -165,5 +171,4 @@ if __name__ == "__main__":
 		config['alpha_merge'] = nspace.alpha_merge
 	if nspace.min_samples:
 		config['min_sample'] = nspace.min_samples
-	to_tree(chaid(ind_df, dep_series, config)).show()
-	# print chaid(ind_df, dep_series, config)
+	model_prediction(chaid(ind_df, dep_series, config), ind_df.shape[0])
