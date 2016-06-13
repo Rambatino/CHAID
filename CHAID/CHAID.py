@@ -4,11 +4,7 @@ from scipy import stats
 import numpy as np
 import collections as cl
 from treelib import Node, Tree
-# df = pd.read_csv("/Users/Mark/CHAID.csv")
-# ind_df = df[['Umsatz', 'V5001', 'V5002_1', 'V5002_2', 'V5002_3', 'V5002_4', 'V6001', 'V6002']]
-# dep_series = df['titypv']
-# from CHAID import CHAID
-# CHAID.df_to_tree(ind_df, dep_series, {})
+import sys
 
 DEFAULT_CONDITIONS =  {
 	'alpha_merge': 0.05,
@@ -137,3 +133,9 @@ def is_equal(arg1, arg2):
 	else:
 		return False
 	return truthy
+
+if __name__ == "__main__":
+	df = pd.read_csv(sys.argv[1])
+	ind_df = df[['Umsatz', 'V5001', 'V5002_1', 'V5002_2', 'V5002_3', 'V5002_4', 'V6001', 'V6002']]
+	dep_series = df['titypv']
+	df_to_tree(ind_df, dep_series, {})
