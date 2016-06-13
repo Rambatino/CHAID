@@ -41,7 +41,7 @@ def conditions_merged(conditions):
 	new_conditions.update(conditions)
 	return new_conditions
 
-def df_to_tree(ind_df, dep_series, conditions):
+def chaid(ind_df, dep_series, conditions):
 	new_conditions = conditions_merged(conditions)
 	params = {
 		'independent_variable_names': ind_df.columns
@@ -49,10 +49,10 @@ def df_to_tree(ind_df, dep_series, conditions):
 	ind_df = ind_df.fillna(-1.0)
 	ind_values = ind_df.values
 	dep_values = dep_series.values
-	tree, node_id =  chaid_tree(params, ind_values, dep_values, new_conditions)
+	tree, node_id =  chaid_node(params, ind_values, dep_values, new_conditions)
 	return tree
 
-def chaid_tree(params, ind, dep, conditions, depth=0, tree_store=[], parent=None, node_id=0, parent_decisions=None):
+def chaid_node(params, ind, dep, conditions, depth=0, tree_store=[], parent=None, node_id=0, parent_decisions=None):
 	depth = depth + 1
 
 	uni = dict(np.transpose(np.unique(dep, return_counts=True)))
@@ -63,7 +63,6 @@ def chaid_tree(params, ind, dep, conditions, depth=0, tree_store=[], parent=None
 		return tree_store, node_id + 1
 
 	best_case = generate_best_split(ind, dep, conditions)
-
 
 	node = Node(choices=parent_decisions, members=uni, id=node_id, parent=parent, split_variable=best_case[0], chi=best_case[2], p=best_case[3])
 	tree_store.append(node)
@@ -78,7 +77,7 @@ def chaid_tree(params, ind, dep, conditions, depth=0, tree_store=[], parent=None
 		dep_slice = dep[correct_rows]
 		ind_slice = ind[correct_rows, :]
 		if conditions['min_sample'] < len(dep_slice):
-			tree_store, node_id = chaid_tree(params, ind_slice, dep_slice, conditions, depth, node_id=node_id, parent=parent, tree_store=tree_store, parent_decisions=choices)
+			tree_store, node_id = chaid_node(params, ind_slice, dep_slice, conditions, depth, node_id=node_id, parent=parent, tree_store=tree_store, parent_decisions=choices)
 		else:
 			uni = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
 			best_sub = ((choices, uni), None)
@@ -137,11 +136,11 @@ def generate_best_split(ind, dep, conditions):
 
 	return most_sig_ind
 
-def draw_tree(tree_data):
+def to_tree(tree_data):
 	tree = Tree()
 	for node in tree_data:
 		tree.create_node(node, node.id, parent=node.parent)
-	tree.show()
+	tree
 
 if __name__ == "__main__":
 	import argparse
@@ -166,4 +165,6 @@ if __name__ == "__main__":
 		config['alpha_merge'] = nspace.alpha_merge
 	if nspace.min_samples:
 		config['min_sample'] = nspace.min_samples
-	print df_to_tree(ind_df, dep_series, config)
+	import ipdb; ipdb.set_trace()
+	to_tree(chaid(ind_df, dep_series, config)).show()
+	print chaid(ind_df, dep_series, config)
