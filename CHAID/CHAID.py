@@ -140,7 +140,7 @@ def to_tree(tree_data):
 	tree = Tree()
 	for node in tree_data:
 		tree.create_node(node, node.id, parent=node.parent)
-	tree
+	return tree
 
 if __name__ == "__main__":
 	import argparse
@@ -165,6 +165,5 @@ if __name__ == "__main__":
 		config['alpha_merge'] = nspace.alpha_merge
 	if nspace.min_samples:
 		config['min_sample'] = nspace.min_samples
-	import ipdb; ipdb.set_trace()
 	to_tree(chaid(ind_df, dep_series, config)).show()
-	print chaid(ind_df, dep_series, config)
+	# print chaid(ind_df, dep_series, config)
