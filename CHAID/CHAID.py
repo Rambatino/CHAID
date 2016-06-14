@@ -38,6 +38,12 @@ class Split(object):
         self.p = p
 
 
+class MappingDict(dict):
+    def __missing__(self, key):
+        value = self[key] = [key]
+        return value
+
+
 class CHAID(object):
     DEFAULT_CONDITIONS = {'alpha_merge': .05, 'max_depth': 2, 'min_sample': 30}
 
@@ -95,8 +101,12 @@ class CHAID(object):
             index = np.array(ind[:, i])
             unique = set(index)
 
-            mappings = {}
-            frequincies = dict([(col, dict(np.transpose(np.unique(dep[np.where(np.in1d(index, col))[0]], return_counts=True)))) for col in unique])
+            mappings = MappingDict()
+            frequincies = {}
+            for col in unique:
+                counts = np.unique(dep[index == col][0], return_counts=True)
+                frequincies[col] = cl.defaultdict(int)
+                frequincies[col].update(np.transpose(counts))
 
             while len(unique) > 1:
                 size = (len(unique) * (len(unique) - 1)) / 2
@@ -126,16 +136,16 @@ class CHAID(object):
                 choice = list(sub_data[correct_row, 0])
 
                 if choice[1] in mappings:
-                    mappings[choice[0]] = mappings.get(choice[0], [choice[0]]) + mappings[choice[1]]
+                    mappings[choice[0]] += mappings[choice[1]]
                     del mappings[choice[1]]
                 else:
-                    mappings[choice[0]] = mappings.get(choice[0], [choice[0]]) + [choice[1]]
+                    mappings[choice[0]] += [choice[1]]
 
                 index[index == choice[1]] = choice[0]
                 unique.remove(choice[1])
 
                 for val, count in frequincies[choice[1]].items():
-                    frequincies[choice[0]][val] = frequincies[choice[0]].get(val, 0) + count
+                    frequincies[choice[0]][val] += count
                 del frequincies[choice[1]]
 
         return split
