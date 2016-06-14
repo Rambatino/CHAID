@@ -20,7 +20,7 @@ setup(
     long_description=long_description,
     url='https://github.com/Rambatino/CHAID',
     author='Mark Ramotowski',
-    author_email='mark.ramotowski@me.com',
+    author_email='mark.tint.ramotowski@gmail.com',
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Alpha',
