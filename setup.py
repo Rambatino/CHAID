@@ -23,8 +23,8 @@ setup(
     author_email='mark.tint.ramotowski@gmail.com',
     license='MIT',
     classifiers=[
-        'Development Status :: 4 - Alpha',
-        'Intended Audience :: Developers & Statisticians',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2',
@@ -37,7 +37,7 @@ setup(
     ],
     keywords='CHAID pandas numpy scipy statistics statistical analysis',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['numpy', 'scipy', 'collections', 'itertools'],
+    install_requires=['numpy', 'scipy', 'itertools'],
     extras_require={
         'dev': ['check-manifest'],
         'test': ['coverage'],
