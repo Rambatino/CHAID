@@ -37,7 +37,7 @@ setup(
     ],
     keywords='CHAID pandas numpy scipy statistics statistical analysis',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['numpy', 'scipy', 'itertools'],
+    install_requires=['numpy', 'scipy'],
     extras_require={
         'dev': ['check-manifest'],
         'test': ['coverage'],
