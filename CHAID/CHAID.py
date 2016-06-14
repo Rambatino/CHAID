@@ -12,14 +12,13 @@ DEFAULT_CONDITIONS =  {
 }	
 
 class Node(object):
-	def __init__(self, choices=None, members={}, split_variable=None, chi=0, p=0, terminal_indices=[], is_terminal=False, id=0, parent=None):
+	def __init__(self, choices=None, members={}, split_variable=None, chi=0, p=0, terminal_indices=[], id=0, parent=None):
 		self.choices = choices
 		self.members = members
 		self.split_variable = split_variable
 		self.chi = chi
 		self.p = p			
 		self.terminal_indices = terminal_indices
-		self.is_terminal = is_terminal
 		self.id = id
 		self.parent = parent
 
@@ -58,7 +57,7 @@ def chaid_node(params, rows, ind, dep, conditions, depth=0, tree_store=[], paren
 	uni = dict(np.transpose(np.unique(dep, return_counts=True)))
 
 	if conditions['max_depth'] < depth:
-		terminal_node = Node(choices=parent_decisions, members=uni, id=node_id, parent=parent, is_terminal=True, terminal_indices=rows)
+		terminal_node = Node(choices=parent_decisions, members=uni, id=node_id, parent=parent, terminal_indices=rows)
 		tree_store.append(terminal_node)
 		return tree_store, node_id + 1
 
@@ -81,7 +80,7 @@ def chaid_node(params, rows, ind, dep, conditions, depth=0, tree_store=[], paren
 			tree_store, node_id = chaid_node(params, row_slice, ind_slice, dep_slice, conditions, depth, node_id=node_id, parent=parent, tree_store=tree_store, parent_decisions=choices)
 		else:
 			uni = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
-			terminal_node = Node(choices=choices, members=uni, is_terminal=True, id=node_id, parent=parent, terminal_indices=row_slice)
+			terminal_node = Node(choices=choices, members=uni, id=node_id, parent=parent, terminal_indices=row_slice)
 			tree_store.append(terminal_node)
 			node_id = node_id + 1
 
