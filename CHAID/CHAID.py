@@ -61,18 +61,18 @@ def chaid_node(params, rows, ind, dep, conditions, depth=0, tree_store=[], paren
 		tree_store.append(terminal_node)
 		return tree_store, node_id + 1
 
-	best_case = generate_best_split(ind, dep, conditions)
+	split_variable, split_keys, chi, p = generate_best_split(ind, dep, conditions)
 
-	node = Node(choices=parent_decisions, members=uni, id=node_id, parent=parent, split_variable=best_case[0], chi=best_case[2], p=best_case[3])
+	node = Node(choices=parent_decisions, members=uni, id=node_id, parent=parent, split_variable=split_variable, chi=chi, p=p)
 	tree_store.append(node)
 	parent = node_id
 	node_id = node_id + 1
 
-	if best_case[0] is None:
+	if split_variable is None:
 		return tree_store, node_id
 
-	for choices in best_case[1]:
-		correct_rows = np.in1d(ind[:, best_case[0]], choices)
+	for choices in split_keys:
+		correct_rows = np.in1d(ind[:, split_variable], choices)
 		dep_slice = dep[correct_rows]
 		ind_slice = ind[correct_rows, :]
 		row_slice = rows[correct_rows]
@@ -119,7 +119,7 @@ def generate_best_split(ind, dep, conditions):
 
 			if size == 1 or highest_p_split < conditions['alpha_merge']:
 				if highest_p_split < most_sig_ind[3]:
-					most_sig_ind = (i, [ mappings.get(x,[x]) for x in unique ], sub_data[correct_row][1], highest_p_split)
+					most_sig_ind = (i, [ mappings.get(x, [x]) for x in unique ], sub_data[correct_row][1], highest_p_split)
 				break
 
 			split = list(sub_data[correct_row, 0])
@@ -170,4 +170,4 @@ if __name__ == "__main__":
 		config['alpha_merge'] = nspace.alpha_merge
 	if nspace.min_samples:
 		config['min_sample'] = nspace.min_samples
-	model_prediction(chaid(ind_df, dep_series, config), ind_df.shape[0])
+	to_tree(chaid(ind_df, dep_series, config)).show()
