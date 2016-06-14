@@ -14,7 +14,7 @@ setup(
     name='CHAID',
     version='1.0',
     description='A CHAID tree building algorithm',
-    long_description='CHAID enables the building of decision trees using the Chi-Squared test for significance within python. It is built using numpy dataframes, which enables it to integrate into pandas. It returns an array of tree nodes with the root at the top, but this can be converted into a Treelib tree',
+    long_description='CHAID enables the building of decision trees using the Chi-Squared test for significance. As it is built on numpy dataframes, it works well with pandas.',
     url='https://github.com/Rambatino/CHAID',
     author='Mark Ramotowski',
     author_email='mark.tint.ramotowski@gmail.com',

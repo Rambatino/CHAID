@@ -11,7 +11,7 @@ pip install CHAID
 
 ## Usage
 
-Currently the only use case is running the CHAID algorithm on a respondent-level (pandas)[https://github.com/pydata/pandas] dataframe. Defining which are the independent variables and which is the dependent variable along with some tree growing conditions is all that is necessary.
+Currently the only use case is running the CHAID algorithm on a respondent-level [pandas](https://github.com/pydata/pandas) dataframe. Defining which are the independent variables and which is the dependent variable along with some tree growing conditions is all that is necessary.
 
 After installing the package it can be used like so:
 
