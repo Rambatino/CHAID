@@ -33,7 +33,7 @@ ipdb> ind_df.head(n=10)
 8                                       (4)  (4)      probably (4)  (3)
 9                                       (4)  (4)               NaN  (3)
 
-  q16_001_bompat q16_002_bompat q16_003_bompat q16_005_bompat q16_006_bompat
+  q16_001          q16_002          q16_003          q16_005          q16_006         
 0            yes             no             no             no             no
 1            NaN            NaN            NaN            NaN            NaN
 2            NaN            NaN            NaN            NaN            NaN
@@ -47,7 +47,7 @@ ipdb> ind_df.head(n=10)
 
 
 ipdb> dep_series.head(n=10)
-   Q14_dichotom
+   loves_chocolate
 0             1
 1             1
 2             1
