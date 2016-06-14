@@ -3,18 +3,21 @@ import pandas as pd
 from scipy import stats
 import numpy as np
 import collections as cl
-from treelib import Node, Tree
+from treelib import Tree
 
 
-class Node(object):
-    def __init__(self, choices=None, members={}, split_variable=None, chi=0, p=0, terminal_indices=[], id=0, parent=None):
+class CHAIDNode(object):
+    def __init__(self, choices=None, members=None, split_variable=None, chi=0,
+                 p=0, terminal_indices=None, node_id=0, parent=None):
+        members = {} if members is None else members
+        terminal_indices = [] if terminal_indices is None else terminal_indices
         self.choices = choices
         self.members = members
         self.split_variable = split_variable
         self.chi = chi
         self.p = p
         self.terminal_indices = terminal_indices
-        self.id = id
+        self.node_id = node_id
         self.parent = parent
 
     def __hash__(self):
@@ -27,7 +30,8 @@ class Node(object):
             return False
 
     def __repr__(self):
-        return str((self.choices, self.members, self.split_variable, self.chi, self.p))
+        format_str = '({choices}, {members}, {split_variable}, {chi}, {p})'
+        return format_str.format(**self.__dict__)
 
 
 class Split(object):
@@ -66,13 +70,13 @@ class CHAID(object):
         members = dict(np.transpose(np.unique(dep, return_counts=True)))
 
         if conditions['max_depth'] < depth:
-            terminal_node = Node(choices=parent_decisions, members=members, id=node_id, parent=parent, terminal_indices=rows)
+            terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=node_id, parent=parent, terminal_indices=rows)
             tree_store.append(terminal_node)
             return tree_store, node_id + 1
 
         split = self.generate_best_split(ind, dep, conditions)
 
-        node = Node(choices=parent_decisions, members=members, id=node_id, parent=parent, split_variable=split.index, chi=split.chi, p=split.p)
+        node = CHAIDNode(choices=parent_decisions, members=members, node_id=node_id, parent=parent, split_variable=split.index, chi=split.chi, p=split.p)
         tree_store.append(node)
         parent = node_id
         node_id = node_id + 1
@@ -89,13 +93,14 @@ class CHAID(object):
                 tree_store, node_id = self.node(params, row_slice, ind_slice, dep_slice, conditions, depth, node_id=node_id, parent=parent, tree_store=tree_store, parent_decisions=choices)
             else:
                 memebers = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
-                terminal_node = Node(choices=choices, members=memebers, id=node_id, parent=parent, terminal_indices=row_slice)
+                terminal_node = CHAIDNode(choices=choices, members=memebers, node_id=node_id, parent=parent, terminal_indices=row_slice)
                 tree_store.append(terminal_node)
                 node_id = node_id + 1
 
         return tree_store, node_id
 
     def generate_best_split(self, ind, dep, conditions):
+        y = () + 12
         split = Split(None, None, None, 1)
         for i in range(0, ind.shape[1]):
             index = np.array(ind[:, i])
@@ -130,7 +135,9 @@ class CHAID(object):
 
                 if size == 1 or highest_p_split < conditions['alpha_merge']:
                     if highest_p_split < split.p:
-                        split = Split(i, [mappings.get(x, [x]) for x in unique], sub_data[correct_row][1], highest_p_split)
+                        responces = [mappings[x] for x in unique]
+                        chi = sub_data[correct_row][1]
+                        split = Split(i, responces, chi, highest_p_split)
                     break
 
                 choice = list(sub_data[correct_row, 0])
