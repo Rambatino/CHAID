@@ -181,4 +181,4 @@ if __name__ == "__main__":
 		config['alpha_merge'] = nspace.alpha_merge
 	if nspace.min_samples:
 		config['min_sample'] = nspace.min_samples
-	print CHAID().from_pandas_df(ind_df, dep_series, config)
+	CHAID().from_pandas_df(ind_df, dep_series, config).print_tree()

@@ -43,9 +43,4 @@ setup(
         'test': ['coverage'],
     },
     data_files=[('my_data', ['example_files/CHAID.csv'])],
-    entry_points={
-        'console_scripts': [
-            'sample=sample:main',
-        ],
-    },
 )
