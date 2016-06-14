@@ -14,8 +14,8 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='sample',
-    version='0.1',
+    name='CHAID',
+    version='1.0',
     description='A CHAID tree building algorithm',
     long_description=long_description,
     url='https://github.com/Rambatino/CHAID',
@@ -23,8 +23,8 @@ setup(
     author_email='mark.ramotowski@me.com',
     license='MIT',
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
+        'Development Status :: 4 - Alpha',
+        'Intended Audience :: Developers & Statisticians',
         'Topic :: Software Development :: Build Tools',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2',
@@ -35,14 +35,14 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
-    keywords='CHAID pandas numpy scipy',
+    keywords='CHAID pandas numpy scipy statistics statistical analysis',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['numpy', 'pandas', 'scipy'],
+    install_requires=['numpy', 'scipy', 'collections', 'itertools'],
     extras_require={
         'dev': ['check-manifest'],
         'test': ['coverage'],
     },
-    data_files=[('my_data', ['data/data_file'])],
+    data_files=[('my_data', ['example_files/CHAID.csv'])],
     entry_points={
         'console_scripts': [
             'sample=sample:main',
