@@ -1,0 +1,1 @@
+CHAID enables the building of decision trees using the Chi-Squared test for significance. As it is built on numpy dataframes, it works well with pandas.'
