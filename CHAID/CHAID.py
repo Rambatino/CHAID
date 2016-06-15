@@ -57,6 +57,7 @@ class CHAID(object):
         self.tree_store = []
         self.data_size = None
         self.independent_variable_names = []
+        self.node_count = 0
 
     @staticmethod
     def fill_data_frame(data_frame):
@@ -65,34 +66,37 @@ class CHAID(object):
         else:
             data_frame.fillna(-1.0, inplace=True)
 
-    def from_pandas_df(self, ind_df, dep_series):
-        self.independent_variable_names = ind_df.columns
-        ind_df.apply(self.fill_data_frame)
+    @staticmethod
+    def from_pandas_df(ind_df, dep_series, alpha_merge=0.05, max_depth=2, min_sample=30):
+        tree = CHAID(alpha_merge, max_depth, min_sample)
+        tree.independent_variable_names = ind_df.columns
+        ind_df.apply(tree.fill_data_frame)
         ind_values = ind_df.values
         dep_values = dep_series.values
-        self.data_size = dep_values.shape[0]
-        self.node(np.arange(0, self.data_size + 1, dtype=np.int), ind_values, dep_values)
-        return self
+        tree.data_size = dep_values.shape[0]
+        tree.node(np.arange(0, tree.data_size + 1, dtype=np.int), ind_values, dep_values)
+        return tree
 
-    def node(self, rows, ind, dep, depth=0, parent=None, node_id=0, parent_decisions=None):
+    def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         depth = depth + 1
 
         members = dict(np.transpose(np.unique(dep, return_counts=True)))
 
         if self.max_depth < depth:
-            terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=node_id, parent=parent, terminal_indices=rows)
+            terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count, parent=parent, terminal_indices=rows)
             self.tree_store.append(terminal_node)
-            return node_id + 1
+            self.node_count += 1
+            return self.tree_store
 
         split = self.generate_best_split(ind, dep)
 
-        node = CHAIDNode(choices=parent_decisions, members=members, node_id=node_id, parent=parent, split_variable=split.index, chi=split.chi, p=split.p)
+        node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count, parent=parent, split_variable=split.index, chi=split.chi, p=split.p)
         self.tree_store.append(node)
-        parent = node_id
-        node_id = node_id + 1
+        parent = self.node_count
+        self.node_count += 1
 
         if split.index is None:
-            return self.tree_store, node_id
+            return self.tree_store
 
         for choices in split.splits:
             correct_rows = np.in1d(ind[:, split.index], choices)
@@ -100,14 +104,13 @@ class CHAID(object):
             ind_slice = ind[correct_rows, :]
             row_slice = rows[correct_rows]
             if self.min_sample < len(dep_slice):
-                self.tree_store, node_id = self.node(row_slice, ind_slice, dep_slice, depth=depth, node_id=node_id, parent=parent, parent_decisions=choices)
+                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=choices)
             else:
                 memebers = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
-                terminal_node = CHAIDNode(choices=choices, members=memebers, node_id=node_id, parent=parent, terminal_indices=row_slice)
+                terminal_node = CHAIDNode(choices=choices, members=memebers, node_id=self.node_count, parent=parent, terminal_indices=row_slice)
                 self.tree_store.append(terminal_node)
-                node_id = node_id + 1
-
-        return self.tree_store, node_id
+                self.node_count += 1
+        return self.tree_store
 
     def generate_best_split(self, ind, dep):
         split = Split(None, None, None, 1)
@@ -208,4 +211,4 @@ if __name__ == "__main__":
         config['alpha_merge'] = nspace.alpha_merge
     if nspace.min_samples:
         config['min_sample'] = nspace.min_samples
-    CHAID(**config).from_pandas_df(ind_df, dep_series).print_tree()
+    CHAID.from_pandas_df(ind_df, dep_series, **config).print_tree()
