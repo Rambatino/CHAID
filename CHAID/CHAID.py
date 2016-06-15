@@ -49,58 +49,67 @@ class MappingDict(dict):
 
 
 class CHAID(object):
-    DEFAULT_CONDITIONS = {'alpha_merge': .05, 'max_depth': 2, 'min_sample': 30}
 
-    def from_pandas_df(self, ind_df, dep_series, conditions):
-        new_conditions = self.DEFAULT_CONDITIONS.copy()
-        new_conditions.update(conditions)
-        params = {
-            'independent_variable_names': ind_df.columns
-        }
-        ind_df.apply(lambda x: x.fillna('-1.0', inplace=True) if (x.dtype == object) else x.fillna(-1.0, inplace=True))
+    def __init__(self, alpha_merge=0.05, max_depth=2, min_sample=30):
+        self.alpha_merge = alpha_merge
+        self.max_depth = max_depth
+        self.min_sample = min_sample
+        self.tree_store = []
+        self.data_size = None
+        self.independent_variable_names = []
+
+    @staticmethod
+    def fill_data_frame(data_frame):
+        if data_frame.dtype == object:
+            data_frame.fillna('-1.0', inplace=True)
+        else:
+            data_frame.fillna(-1.0, inplace=True)
+
+    def from_pandas_df(self, ind_df, dep_series):
+        self.independent_variable_names = ind_df.columns
+        ind_df.apply(self.fill_data_frame)
         ind_values = ind_df.values
         dep_values = dep_series.values
         self.data_size = dep_values.shape[0]
-        self.tree_data, node_id = self.node(params, np.arange(0, dep_values.shape[0] + 1, dtype=np.int), ind_values, dep_values, new_conditions)
+        self.node(np.arange(0, self.data_size + 1, dtype=np.int), ind_values, dep_values)
         return self
 
-    def node(self, params, rows, ind, dep, conditions, depth=0, tree_store=[], parent=None, node_id=0, parent_decisions=None):
+    def node(self, rows, ind, dep, depth=0, parent=None, node_id=0, parent_decisions=None):
         depth = depth + 1
 
         members = dict(np.transpose(np.unique(dep, return_counts=True)))
 
-        if conditions['max_depth'] < depth:
+        if self.max_depth < depth:
             terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=node_id, parent=parent, terminal_indices=rows)
-            tree_store.append(terminal_node)
-            return tree_store, node_id + 1
+            self.tree_store.append(terminal_node)
+            return node_id + 1
 
-        split = self.generate_best_split(ind, dep, conditions)
+        split = self.generate_best_split(ind, dep)
 
         node = CHAIDNode(choices=parent_decisions, members=members, node_id=node_id, parent=parent, split_variable=split.index, chi=split.chi, p=split.p)
-        tree_store.append(node)
+        self.tree_store.append(node)
         parent = node_id
         node_id = node_id + 1
 
         if split.index is None:
-            return tree_store, node_id
+            return self.tree_store, node_id
 
         for choices in split.splits:
             correct_rows = np.in1d(ind[:, split.index], choices)
             dep_slice = dep[correct_rows]
             ind_slice = ind[correct_rows, :]
             row_slice = rows[correct_rows]
-            if conditions['min_sample'] < len(dep_slice):
-                tree_store, node_id = self.node(params, row_slice, ind_slice, dep_slice, conditions, depth, node_id=node_id, parent=parent, tree_store=tree_store, parent_decisions=choices)
+            if self.min_sample < len(dep_slice):
+                self.tree_store, node_id = self.node(row_slice, ind_slice, dep_slice, depth=depth, node_id=node_id, parent=parent, parent_decisions=choices)
             else:
                 memebers = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
                 terminal_node = CHAIDNode(choices=choices, members=memebers, node_id=node_id, parent=parent, terminal_indices=row_slice)
-                tree_store.append(terminal_node)
+                self.tree_store.append(terminal_node)
                 node_id = node_id + 1
 
-        return tree_store, node_id
+        return self.tree_store, node_id
 
-    def generate_best_split(self, ind, dep, conditions):
-        y = () + 12
+    def generate_best_split(self, ind, dep):
         split = Split(None, None, None, 1)
         for i in range(0, ind.shape[1]):
             index = np.array(ind[:, i])
@@ -133,7 +142,7 @@ class CHAID(object):
                 highest_p_split = np.sort(sub_data[:, 2])[-1]
                 correct_row = np.where(np.in1d(sub_data[:, 2], highest_p_split))[0][0]
 
-                if size == 1 or highest_p_split < conditions['alpha_merge']:
+                if size == 1 or highest_p_split < self.alpha_merge:
                     if highest_p_split < split.p:
                         responces = [mappings[x] for x in unique]
                         chi = sub_data[correct_row][1]
@@ -159,8 +168,8 @@ class CHAID(object):
 
     def to_tree(self):
         tree = Tree()
-        for node in self.tree_data:
-            tree.create_node(node, node.id, parent=node.parent)
+        for node in self.tree_store:
+            tree.create_node(node, node.node_id, parent=node.parent)
         return tree
 
     def print_tree(self):
@@ -168,12 +177,12 @@ class CHAID(object):
 
     def predict(self):
         pred = np.zeros(self.data_size)
-        for node in self.tree_data:
-            pred[node.terminal_indices] = node.id
+        for node in self.tree_store:
+            pred[node.terminal_indices] = node.node_id
         return pred
 
     def __repr__(self):
-        return str(self.tree_data)
+        return str(self.tree_store)
 
 
 if __name__ == "__main__":
@@ -199,4 +208,4 @@ if __name__ == "__main__":
         config['alpha_merge'] = nspace.alpha_merge
     if nspace.min_samples:
         config['min_sample'] = nspace.min_samples
-    CHAID().from_pandas_df(ind_df, dep_series, config).print_tree()
+    CHAID(**config).from_pandas_df(ind_df, dep_series).print_tree()
