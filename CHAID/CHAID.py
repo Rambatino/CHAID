@@ -71,7 +71,7 @@ class CHAID(object):
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = []
-        self.node(np.arange(0, self.data_size, dtype=np.int), ndarr, arr) 
+        self.node(np.arange(0, self.data_size, dtype=np.int), ndarr, arr)
 
     def sub_non_floats(self, vect):
         vector = vect
@@ -79,7 +79,7 @@ class CHAID(object):
         if vect.dtype != float:
             unique_v = np.unique(vector.astype(str))
             float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
-            for value, new_id in float_map: 
+            for value, new_id in float_map:
                 vector[vector == value] = new_id
             vector = vector.astype(float, subok=False, order='K', copy=False)
             nans = np.isnan(vector)
@@ -89,7 +89,7 @@ class CHAID(object):
             nans = np.isnan(vector)
             vector[nans] = -1.0
         meta[-1.0] = self.missing_id
-        return vector, meta        
+        return vector, meta
 
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30):
@@ -104,7 +104,7 @@ class CHAID(object):
         members = dict(np.transpose(np.unique(dep, return_counts=True)))
 
         if self.max_depth < depth:
-            terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count, 
+            terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count,
                                       parent=parent, terminal_indices=rows)
             self.tree_store.append(terminal_node)
             self.node_count += 1
@@ -112,7 +112,7 @@ class CHAID(object):
 
         split = self.generate_best_split(ind, dep)
 
-        node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count, 
+        node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count,
                          parent=parent, split_variable=split.index, chi=split.chi, p=split.p)
         self.tree_store.append(node)
         parent = self.node_count
@@ -130,7 +130,7 @@ class CHAID(object):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
             else:
                 members = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
-                terminal_node = CHAIDNode(choices=split.split_map[index], members=members, node_id=self.node_count, 
+                terminal_node = CHAIDNode(choices=split.split_map[index], members=members, node_id=self.node_count,
                                           parent=parent, terminal_indices=row_slice)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
