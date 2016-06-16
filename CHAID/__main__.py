@@ -17,8 +17,6 @@ def main():
     nspace = parser.parse_args()
 
     df = pd.read_csv(nspace.file)
-    dep_series = df[nspace.dependent_variable]
-    ind_df = df[nspace.independent_variables]
 
     config = {}
     if nspace.max_depth:
@@ -27,7 +25,7 @@ def main():
         config['alpha_merge'] = nspace.alpha_merge
     if nspace.min_samples:
         config['min_sample'] = nspace.min_samples
-    CHAID.from_pandas_df(ind_df, dep_series, **config).print_tree()
+    CHAID.from_pandas_df(df, nspace.independent_variables, nspace.dependent_variable[0], **config).print_tree()
 
 
 if __name__ == "__main__":
