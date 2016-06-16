@@ -34,13 +34,17 @@ class CHAIDNode(object):
         return format_str.format(**self.__dict__)
 
 
-class Split(object):
+class CHAIDSplit(object):
     def __init__(self, index, splits, chi, p):
         self.index = index
         self.splits = splits
-        self.chi = chi
+        if splits is not None: self.split_map = [None] * len(splits)
+        self.chi = chi 
         self.p = p
 
+    def sub_values(self, sub):
+        for i, arr in enumerate(self.splits):
+            self.split_map[i] = map(lambda x: sub[x], arr)
 
 class MappingDict(dict):
     def __missing__(self, key):
@@ -49,32 +53,46 @@ class MappingDict(dict):
 
 
 class CHAID(object):
-
-    def __init__(self, alpha_merge=0.05, max_depth=2, min_sample=30):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, missing_id='<missing>'):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_sample = min_sample
-        self.tree_store = []
-        self.data_size = None
-        self.independent_variable_names = []
+        self.missing_id = missing_id
+        self.ind_metadata = {}
+        self.dep_metadata = {}
+        for ind in range(0, ndarr.shape[1]):
+            ndarr[:, ind], self.ind_metadata[ind] = self.sub_non_floats(ndarr[:, ind])
+        ndarr = ndarr.astype(float, subok=False, order='K', copy=False)
+        arr, self.dep_metadata = self.sub_non_floats(arr)
+        self.data_size = ndarr.shape[0]
         self.node_count = 0
+        self.tree_store = []
+        self.node(np.arange(0, self.data_size, dtype=np.int), ndarr, arr) 
 
-    @staticmethod
-    def fill_data_frame(data_frame):
-        if data_frame.dtype == object:
-            data_frame.fillna('-1.0', inplace=True)
+    def sub_non_floats(self, vect):
+        vector = vect
+        meta = {}
+        if vect.dtype != float:
+            unique_v  = np.unique(vector)
+            float_map = dict([[x, float(i)] for i,x in enumerate(unique_v)])
+            float_map[np.nan] = -1.0
+            for k, v in float_map.iteritems(): 
+                vector[vector == k] = v
+            vector = vector.astype(float, subok=False, order='K', copy=False)
+            nans = np.isnan(vector)
+            vector[nans] = -1.0
+            meta = {v: k for k, v in float_map.iteritems()}
         else:
-            data_frame.fillna(-1.0, inplace=True)
+            nans = np.isnan(vector)
+            vector[nans] = -1.0
+        meta[-1.0] = self.missing_id
+        return vector, meta        
 
     @staticmethod
-    def from_pandas_df(ind_df, dep_series, alpha_merge=0.05, max_depth=2, min_sample=30):
-        tree = CHAID(alpha_merge, max_depth, min_sample)
-        tree.independent_variable_names = ind_df.columns
-        ind_df.apply(tree.fill_data_frame)
-        ind_values = ind_df.values
-        dep_values = dep_series.values
-        tree.data_size = dep_values.shape[0]
-        tree.node(np.arange(0, tree.data_size + 1, dtype=np.int), ind_values, dep_values)
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30):
+        ind_values = df[i_variables].values
+        dep_values = df[d_variable].values
+        tree = CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample)
         return tree
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
@@ -83,14 +101,16 @@ class CHAID(object):
         members = dict(np.transpose(np.unique(dep, return_counts=True)))
 
         if self.max_depth < depth:
-            terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count, parent=parent, terminal_indices=rows)
+            terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count, 
+                                      parent=parent, terminal_indices=rows)
             self.tree_store.append(terminal_node)
             self.node_count += 1
             return self.tree_store
 
         split = self.generate_best_split(ind, dep)
 
-        node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count, parent=parent, split_variable=split.index, chi=split.chi, p=split.p)
+        node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count, 
+                         parent=parent, split_variable=split.index, chi=split.chi, p=split.p)
         self.tree_store.append(node)
         parent = self.node_count
         self.node_count += 1
@@ -98,39 +118,40 @@ class CHAID(object):
         if split.index is None:
             return self.tree_store
 
-        for choices in split.splits:
+        for index, choices in enumerate(split.splits):
             correct_rows = np.in1d(ind[:, split.index], choices)
             dep_slice = dep[correct_rows]
             ind_slice = ind[correct_rows, :]
             row_slice = rows[correct_rows]
             if self.min_sample < len(dep_slice):
-                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=choices)
+                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
             else:
-                memebers = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
-                terminal_node = CHAIDNode(choices=choices, members=memebers, node_id=self.node_count, parent=parent, terminal_indices=row_slice)
+                members = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
+                terminal_node = CHAIDNode(choices=split.split_map[index], members=members, node_id=self.node_count, 
+                                          parent=parent, terminal_indices=row_slice)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
 
     def generate_best_split(self, ind, dep):
-        split = Split(None, None, None, 1)
+        split = CHAIDSplit(None, None, None, 1)
         for i in range(0, ind.shape[1]):
             index = np.array(ind[:, i])
             unique = set(index)
 
             mappings = MappingDict()
-            frequincies = {}
+            frequencies = {}
             for col in unique:
                 counts = np.unique(dep[index == col][0], return_counts=True)
-                frequincies[col] = cl.defaultdict(int)
-                frequincies[col].update(np.transpose(counts))
+                frequencies[col] = cl.defaultdict(int)
+                frequencies[col].update(np.transpose(counts))
 
             while len(unique) > 1:
                 size = (len(unique) * (len(unique) - 1)) / 2
                 sub_data = np.ndarray(shape=(size, 3), dtype=object, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
-                    y = frequincies[comb[0]]
-                    g = frequincies[comb[1]]
+                    y = frequencies[comb[0]]
+                    g = frequencies[comb[1]]
 
                     keys = set(y.keys() + g.keys())
 
@@ -147,9 +168,9 @@ class CHAID(object):
 
                 if size == 1 or highest_p_split < self.alpha_merge:
                     if highest_p_split < split.p:
-                        responces = [mappings[x] for x in unique]
+                        responses = [mappings[x] for x in unique]
                         chi = sub_data[correct_row][1]
-                        split = Split(i, responces, chi, highest_p_split)
+                        split = CHAIDSplit(i, responses, chi, highest_p_split)
                     break
 
                 choice = list(sub_data[correct_row, 0])
@@ -163,10 +184,11 @@ class CHAID(object):
                 index[index == choice[1]] = choice[0]
                 unique.remove(choice[1])
 
-                for val, count in frequincies[choice[1]].items():
-                    frequincies[choice[0]][val] += count
-                del frequincies[choice[1]]
+                for val, count in frequencies[choice[1]].items():
+                    frequencies[choice[0]][val] += count
+                del frequencies[choice[1]]
 
+        if split.index is not None: split.sub_values(self.ind_metadata[split.index])
         return split
 
     def to_tree(self):

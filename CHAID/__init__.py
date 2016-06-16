@@ -1,1 +1,1 @@
-from CHAID import CHAID, Split, CHAIDNode
+from CHAID import CHAID, CHAIDSplit, CHAIDNode
