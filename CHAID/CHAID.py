@@ -11,7 +11,7 @@ class CHAIDNode(object):
                  p=0, terminal_indices=None, node_id=0, parent=None):
         members = {} if members is None else members
         terminal_indices = [] if terminal_indices is None else terminal_indices
-        self.choices = choices
+        self.choices = list(choices) if choices else []
         self.members = members
         self.split_variable = split_variable
         self.chi = chi
