@@ -11,7 +11,7 @@ class CHAIDNode(object):
                  p=0, terminal_indices=None, node_id=0, parent=None):
         members = {} if members is None else members
         terminal_indices = [] if terminal_indices is None else terminal_indices
-        self.choices = choices
+        self.choices = list(choices) if choices else []
         self.members = members
         self.split_variable = split_variable
         self.chi = chi
@@ -32,6 +32,9 @@ class CHAIDNode(object):
     def __repr__(self):
         format_str = '({choices}, {members}, {split_variable}, {chi}, {p})'
         return format_str.format(**self.__dict__)
+
+    def __lt__(self, other):
+        return self.node_id < other.node_id
 
 
 class CHAIDSplit(object):
@@ -73,15 +76,14 @@ class CHAID(object):
         vector = vect
         meta = {}
         if vect.dtype != float:
-            unique_v  = np.unique(vector)
-            float_map = dict([[x, float(i)] for i,x in enumerate(unique_v)])
-            float_map[np.nan] = -1.0
-            for k, v in float_map.iteritems(): 
-                vector[vector == k] = v
+            unique_v = np.unique(vector.astype(str))
+            float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
+            for value, new_id in float_map: 
+                vector[vector == value] = new_id
             vector = vector.astype(float, subok=False, order='K', copy=False)
             nans = np.isnan(vector)
             vector[nans] = -1.0
-            meta = {v: k for k, v in float_map.iteritems()}
+            meta = {v: k for k, v in float_map}
         else:
             nans = np.isnan(vector)
             vector[nans] = -1.0
@@ -153,7 +155,7 @@ class CHAID(object):
                     y = frequencies[comb[0]]
                     g = frequencies[comb[1]]
 
-                    keys = set(y.keys() + g.keys())
+                    keys = set(y.keys()).union(g.keys())
 
                     cr_table = [
                         [y.get(k, 0) for k in keys],
