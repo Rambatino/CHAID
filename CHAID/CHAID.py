@@ -76,15 +76,14 @@ class CHAID(object):
         vector = vect
         meta = {}
         if vect.dtype != float:
-            unique_v  = np.unique(vector.astype(str))
-            float_map = dict([[x, float(i)] for i,x in enumerate(unique_v)])
-            float_map[np.nan] = -1.0
-            for k, v in float_map.items(): 
-                vector[vector == k] = v
+            unique_v = np.unique(vector.astype(str))
+            float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
+            for value, new_id in float_map: 
+                vector[vector == value] = new_id
             vector = vector.astype(float, subok=False, order='K', copy=False)
             nans = np.isnan(vector)
             vector[nans] = -1.0
-            meta = {v: k for k, v in float_map.items()}
+            meta = {v: k for k, v in float_map}
         else:
             nans = np.isnan(vector)
             vector[nans] = -1.0
