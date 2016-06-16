@@ -41,13 +41,14 @@ class CHAIDSplit(object):
     def __init__(self, index, splits, chi, p):
         self.index = index
         self.splits = splits
-        if splits is not None: self.split_map = [None] * len(splits)
-        self.chi = chi 
+        self.split_map = [None] * len(splits) if splits is not None else []
+        self.chi = chi
         self.p = p
 
     def sub_values(self, sub):
         for i, arr in enumerate(self.splits):
-            self.split_map[i] = map(lambda x: sub[x], arr)
+            self.split_map[i] = [sub[x] for x in arr]
+
 
 class MappingDict(dict):
     def __missing__(self, key):
