@@ -191,7 +191,8 @@ class CHAID(object):
                     frequencies[choice[0]][val] += count
                 del frequencies[choice[1]]
 
-        if split.index is not None: split.sub_values(self.ind_metadata[split.index])
+        if split.index is not None:
+            split.sub_values(self.ind_metadata[split.index])
         return split
 
     def to_tree(self):
