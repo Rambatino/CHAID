@@ -40,8 +40,8 @@ class CHAIDNode(object):
 class CHAIDSplit(object):
     def __init__(self, index, splits, chi, p):
         self.index = index
-        self.splits = list(splits)
-        self.split_map = [None] * len(splits)
+        self.splits = list(splits or [])
+        self.split_map = [None] * len(self.splits)
         self.chi = chi
         self.p = p
 
