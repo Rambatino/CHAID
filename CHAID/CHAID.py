@@ -101,7 +101,8 @@ class CHAID(object):
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         depth = depth + 1
 
-        members = dict(np.transpose(np.unique(dep, return_counts=True)))
+        members = np.transpose(np.unique(dep, return_counts=True))
+        members = dict((self.dep_metadata[k], v) for k, v in members)
 
         if self.max_depth < depth:
             terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count,
@@ -129,7 +130,9 @@ class CHAID(object):
             if self.min_sample < len(dep_slice):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
             else:
-                members = dict(np.transpose(np.unique(dep_slice, return_counts=True)))
+                members = np.transpose(np.unique(dep_slice, return_counts=True))
+                members = dict((self.dep_metadata[k], v) for k, v in members)
+
                 terminal_node = CHAIDNode(choices=split.split_map[index], members=members, node_id=self.node_count,
                                           parent=parent, terminal_indices=row_slice)
                 self.tree_store.append(terminal_node)
