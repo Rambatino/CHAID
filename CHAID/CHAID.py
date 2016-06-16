@@ -33,6 +33,9 @@ class CHAIDNode(object):
         format_str = '({choices}, {members}, {split_variable}, {chi}, {p})'
         return format_str.format(**self.__dict__)
 
+    def __lt__(self, other):
+        return self.node_id < other.node_id
+
 
 class CHAIDSplit(object):
     def __init__(self, index, splits, chi, p):
@@ -73,15 +76,15 @@ class CHAID(object):
         vector = vect
         meta = {}
         if vect.dtype != float:
-            unique_v  = np.unique(vector)
+            unique_v  = np.unique(vector.astype(str))
             float_map = dict([[x, float(i)] for i,x in enumerate(unique_v)])
             float_map[np.nan] = -1.0
-            for k, v in float_map.iteritems(): 
+            for k, v in float_map.items(): 
                 vector[vector == k] = v
             vector = vector.astype(float, subok=False, order='K', copy=False)
             nans = np.isnan(vector)
             vector[nans] = -1.0
-            meta = {v: k for k, v in float_map.iteritems()}
+            meta = {v: k for k, v in float_map.items()}
         else:
             nans = np.isnan(vector)
             vector[nans] = -1.0
@@ -153,7 +156,7 @@ class CHAID(object):
                     y = frequencies[comb[0]]
                     g = frequencies[comb[1]]
 
-                    keys = set(y.keys() + g.keys())
+                    keys = set(y.keys()).union(g.keys())
 
                     cr_table = [
                         [y.get(k, 0) for k in keys],
