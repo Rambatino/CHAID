@@ -15,7 +15,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='CHAID',
-    version='0.0.5',
+    version='0.0.6',
     description='A CHAID tree building algorithm',
     long_description=long_description,
     url='https://github.com/Rambatino/CHAID',
