@@ -9,9 +9,10 @@ from treelib import Tree
 class CHAIDNode(object):
     def __init__(self, choices=None, members=None, split_variable=None, chi=0,
                  p=0, terminal_indices=None, node_id=0, parent=None):
-        members = {} if members is None else members
-        terminal_indices = [] if terminal_indices is None else terminal_indices
-        self.choices = list(choices) if choices else []
+        members = members or {}
+        choices = choices or []
+        terminal_indices = terminal_indices or []
+        self.choices = list(choices)
         self.members = members
         self.split_variable = split_variable
         self.chi = chi
@@ -39,15 +40,16 @@ class CHAIDNode(object):
 
 class CHAIDSplit(object):
     def __init__(self, index, splits, chi, p):
+        splits = splits or []
         self.index = index
-        self.splits = list(splits) if splits else []
+        self.splits = list(splits)
         self.split_map = [None] * len(self.splits)
         self.chi = chi
         self.p = p
 
     def sub_split_values(self, sub):
         for i, arr in enumerate(self.splits):
-            self.split_map[i] = [sub[x] for x in arr]
+            self.split_map[i] = [sub.get(x, x) for x in arr]
 
 
 class MappingDict(dict):
@@ -103,7 +105,7 @@ class CHAID(object):
         depth = depth + 1
 
         members = np.transpose(np.unique(dep, return_counts=True))
-        members = dict((self.dep_metadata[k], v) for k, v in members)
+        members = dict((self.dep_metadata.get(k, k), v) for k, v in members)
 
         if self.max_depth < depth:
             terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count,
@@ -137,7 +139,7 @@ class CHAID(object):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
             else:
                 members = np.transpose(np.unique(dep_slice, return_counts=True))
-                members = dict((self.dep_metadata[k], v) for k, v in members)
+                members = dict((self.dep_metadata.get(k, k), v) for k, v in members)
 
                 terminal_node = CHAIDNode(choices=split.split_map[index], members=members, node_id=self.node_count,
                                           parent=parent, terminal_indices=row_slice)
@@ -200,8 +202,7 @@ class CHAID(object):
                     frequencies[choice[0]][val] += count
                 del frequencies[choice[1]]
 
-        if split.index is not None and split.index in self.ind_metadata:
-            split.sub_split_values(self.ind_metadata[split.index])
+        split.sub_split_values(self.ind_metadata.get(split.index, {}))
         return split
 
     def to_tree(self):
