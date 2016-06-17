@@ -57,12 +57,12 @@ class MappingDict(dict):
 
 
 class CHAID(object):
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, missing_id='<missing>', split_titles=[]):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, missing_id='<missing>', split_titles=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_sample = min_sample
         self.missing_id = missing_id
-        self.split_titles = split_titles
+        self.split_titles = split_titles or []
         self.ind_metadata = {}
         self.dep_metadata = {}
         for ind in range(0, ndarr.shape[1]):
@@ -79,7 +79,7 @@ class CHAID(object):
         ind_df = df[i_variables]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
-        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=ind_df.columns)
+        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values))
 
     def sub_non_floats(self, vect):
         vector = vect
