@@ -7,6 +7,28 @@ from treelib import Tree
 
 
 class CHAIDNode(object):
+    """
+    A node in the CHAID tree
+
+    Parameters
+    ----------
+    choices : array-like
+        Contains a list of the splits that gave rise to that node
+    members : dict
+        Frequency of the members at that node
+    split_variable : number or string
+        A value indicating what independent variable the node derived from
+    chi : float
+        The chi-squared score for the split
+    p : float
+        The p-value for the split
+    terminal_indices : array-like or None
+        The row index that ended up in the node (only occurs in terminal nodes)
+    node_id : float 
+        A float representing the id of the node
+    parent : float or None
+        The node_id of the parent of that node
+    """
     def __init__(self, choices=None, members=None, split_variable=None, chi=0,
                  p=0, terminal_indices=None, node_id=0, parent=None):
         members = members or {}
@@ -39,6 +61,22 @@ class CHAIDNode(object):
 
 
 class CHAIDSplit(object):
+    """
+    A potential split for a node in to produce children
+
+    Parameters
+    ----------
+    index : float
+        The key of where the split is occuring relative to the input data
+    splits : array-like
+        The grouped variables
+    split_map : array-like
+        The name of the grouped variables
+    chi : float
+        The chi-square value of that split
+    p : float
+        The p value of that split
+    """
     def __init__(self, index, splits, chi, p):
         splits = splits or []
         self.index = index
@@ -48,17 +86,42 @@ class CHAIDSplit(object):
         self.p = p
 
     def sub_split_values(self, sub):
+        """ substiutes the splits with other values into the split_map """
         for i, arr in enumerate(self.splits):
             self.split_map[i] = [sub.get(x, x) for x in arr]
 
 
 class MappingDict(dict):
+    """ a dict with a default value when no key present """
     def __missing__(self, key):
         value = self[key] = [key]
         return value
 
 
 class CHAID(object):
+    """
+    Create a CHAID object which contains all the information of the tree
+
+    Parameters
+    ----------
+    ndarr : numpy.ndarray
+        non-aggregated 2-dimensional array containing 
+        independent variables on the veritcal axis and (usually)
+        respondent level data on the horizontal axis
+    arr : numpy.ndarray
+        1-dimensional array of the dependent variable associated with
+        ndarr
+    alpha_merge : float
+        the threshold value in which to create a split (default 0.05)
+    max_depth : float
+        the threshold value for the maximum number of levels after the root node in the tree (default 2)
+    min_sample : float
+        the threshold value of the number of respondents that the node must contain (default 30)
+    missing_id : string 
+        the name of the nan values in the data
+    split_titles : array-like 
+        array of names for the independent variables in the data
+    """
     def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, missing_id='<missing>', split_titles=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
@@ -78,12 +141,42 @@ class CHAID(object):
 
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30):
+        """
+        Helper method to pre-process a pandas data frame in order to run CHAID analysis
+        
+        Parameters
+        ----------
+        df :  pandas.DataFrame
+            the dataframe with the dependent and independent variables in which to slice from
+        i_variables :  array-like
+            list of the column names for the independent variables
+        d_variable : string
+            the name of the dependent variable in the dataframe 
+        alpha_merge : float
+            the threshold value in which to create a split (default 0.05)
+        max_depth : float
+            the threshold value for the maximum number of levels after the root node in the tree (default 2)
+        min_sample : float
+            the threshold value of the number of respondents that the node must contain (default 30)
+        """
         ind_df = df[i_variables]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values))
 
     def sub_non_floats(self, vect):
+        """
+        substitute floats into the vector if it does not have a dtype of float
+
+        Parameters
+        ----------     
+        vect : nd.array
+            the vector in whcih to substitute the float
+
+        Returns
+        ----------
+        tuple : prcoessed vector, hash or substitutions
+        """
         vector = vect
         meta = {}
         if vect.dtype != float:
@@ -102,6 +195,7 @@ class CHAID(object):
         return vector, meta
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
+        """ inteneral method to create a node in the tree """
         depth = depth + 1
 
         members = np.transpose(np.unique(dep, return_counts=True))
@@ -148,6 +242,7 @@ class CHAID(object):
         return self.tree_store
 
     def generate_best_split(self, ind, dep):
+        """ inteneral method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
         for i in range(0, ind.shape[1]):
             index = np.array(ind[:, i])
@@ -206,15 +301,18 @@ class CHAID(object):
         return split
 
     def to_tree(self):
+        """ returns a TreeLib tree """
         tree = Tree()
         for node in self.tree_store:
             tree.create_node(node, node.node_id, parent=node.parent)
         return tree
 
     def print_tree(self):
+        """ prints the tree out """
         self.to_tree().show()
 
     def predict(self):
+        """ determines which rows fall into which node """
         pred = np.zeros(self.data_size)
         for node in self.tree_store:
             pred[node.terminal_indices] = node.node_id
