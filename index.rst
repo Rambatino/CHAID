@@ -11,7 +11,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   chaid
+   CHAID
+   ...
 
 
 Indices and tables
