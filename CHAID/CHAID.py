@@ -4,6 +4,7 @@ from scipy import stats
 import numpy as np
 import collections as cl
 from treelib import Tree
+from enum import Enum
 
 class CHAIDNode(object):
     """
@@ -69,17 +70,17 @@ class CHAIDSplit(object):
         The grouped variables
     split_map : array-like
         The name of the grouped variables
-    chi : float
-        The chi-square value of that split
+    score : float
+        The statistical score value of that split
     p : float
         The p value of that split
     """
-    def __init__(self, index, splits, chi, p):
+    def __init__(self, index, splits, score, p):
         splits = splits or []
         self.index = index
         self.splits = list(splits)
         self.split_map = [None] * len(self.splits)
-        self.chi = chi
+        self.score = score
         self.p = p
 
     def sub_split_values(self, sub):
@@ -94,6 +95,11 @@ class MappingDict(dict):
         value = self[key] = [key]
         return value
 
+
+class CHAIDVariableTypes(Enum):
+    nominal = 0
+    ordinal = 1
+    continuous = 3
 
 class CHAID(object):
     """
@@ -119,11 +125,14 @@ class CHAID(object):
     split_titles : array-like 
         array of names for the independent variables in the data
     """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, missing_id='<missing>', split_titles=None):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, missing_id='<missing>', 
+                 split_titles=None, independent_variable_types=None, dependent_variable_type=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_sample = min_sample
         self.missing_id = missing_id
+        self.i_v_types = independent_variable_types or [CHAIDVariableTypes(0)] * ndarr.shape[1]
+        self.d_v_type = dependent_variable_type or CHAIDVariableTypes(0)
         self.split_titles = split_titles or []
         self.ind_metadata = {}
         self.dep_metadata = {}
@@ -160,8 +169,13 @@ class CHAID(object):
         ind_df = df[i_variables]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
-        import ipdb; ipdb.set_trace()
-        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values))
+        if independent_variable_types is not None:
+            independent_variable_types = [CHAIDVariableTypes[x] for x in independent_variable_types]
+        if dependent_variable_type is not None:
+            dependent_variable_type = CHAIDVariableTypes[dependent_variable_type]
+        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, 
+                     split_titles=list(ind_df.columns.values), independent_variable_types=independent_variable_types,
+                     dependent_variable_type=dependent_variable_type)
 
     def sub_non_floats(self, vect):
         """
@@ -250,9 +264,12 @@ class CHAID(object):
             mappings = MappingDict()
             frequencies = {}
             for col in unique:
-                counts = np.unique(dep[index == col][0], return_counts=True)
-                frequencies[col] = cl.defaultdict(int)
-                frequencies[col].update(np.transpose(counts))
+                if self.d_v_type == CHAIDVariableTypes(3):
+                    frequencies[col] = dep[index == col]
+                else:
+                    counts = np.unique(dep[index == col][0], return_counts=True)
+                    frequencies[col] = cl.defaultdict(int)
+                    frequencies[col].update(np.transpose(counts))
 
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
@@ -260,16 +277,19 @@ class CHAID(object):
                 for j, comb in enumerate(it.combinations(unique, 2)):
                     y = frequencies[comb[0]]
                     g = frequencies[comb[1]]
+                    if self.d_v_type == CHAIDVariableTypes(3):
+                        levene = stats.levene(y, g)
+                        sub_data[j] = (comb, levene[0], levene[1])
+                    else:
+                        keys = set(y.keys()).union(g.keys())
 
-                    keys = set(y.keys()).union(g.keys())
+                        cr_table = [
+                            [y.get(k, 0) for k in keys],
+                            [g.get(k, 0) for k in keys]
+                        ]
 
-                    cr_table = [
-                        [y.get(k, 0) for k in keys],
-                        [g.get(k, 0) for k in keys]
-                    ]
-
-                    chi = stats.chi2_contingency(np.array(cr_table))
-                    sub_data[j] = (comb, chi[0], chi[1])
+                        chi = stats.chi2_contingency(np.array(cr_table))
+                        sub_data[j] = (comb, chi[0], chi[1])
 
                 highest_p_split = np.sort(sub_data[:, 2])[-1]
                 correct_row = np.where(np.in1d(sub_data[:, 2], highest_p_split))[0][0]
