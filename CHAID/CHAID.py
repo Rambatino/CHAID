@@ -254,7 +254,7 @@ class CHAID(object):
                 frequencies[col].update(np.transpose(counts))
 
             while len(unique) > 1:
-                size = (len(unique) * (len(unique) - 1)) / 2
+                size = int((len(unique) * (len(unique) - 1)) / 2)
                 sub_data = np.ndarray(shape=(size, 3), dtype=object, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
                     y = frequencies[comb[0]]
