@@ -5,7 +5,6 @@ import numpy as np
 import collections as cl
 from treelib import Tree
 
-
 class CHAIDNode(object):
     """
     A node in the CHAID tree
