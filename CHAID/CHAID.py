@@ -31,11 +31,9 @@ class CHAIDNode(object):
     """
     def __init__(self, choices=None, members=None, split_variable=None, chi=0,
                  p=0, terminal_indices=None, node_id=0, parent=None):
-        members = members or {}
-        choices = choices or []
         terminal_indices = [] if terminal_indices is None else terminal_indices
-        self.choices = list(choices)
-        self.members = members
+        self.choices = list(choices or [])
+        self.members = members or {}
         self.split_variable = split_variable
         self.chi = chi
         self.p = p
