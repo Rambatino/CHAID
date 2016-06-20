@@ -137,7 +137,8 @@ class CHAID(object):
         self.node(np.arange(0, self.data_size, dtype=np.int), ndarr, arr)
 
     @staticmethod
-    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30):
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30,
+                        independent_variable_types=None, dependent_variable_type=None):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID analysis
         
@@ -159,6 +160,7 @@ class CHAID(object):
         ind_df = df[i_variables]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
+        import ipdb; ipdb.set_trace()
         return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values))
 
     def sub_non_floats(self, vect):
