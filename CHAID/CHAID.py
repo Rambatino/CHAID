@@ -194,7 +194,6 @@ class CHAID(object):
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ inteneral method to create a node in the tree """
         depth = depth + 1
-
         members = np.transpose(np.unique(dep, return_counts=True))
         members = dict((self.dep_metadata.get(k, k), v) for k, v in members)
 
@@ -300,9 +299,23 @@ class CHAID(object):
     def to_tree(self):
         """ returns a TreeLib tree """
         tree = Tree()
-        for node in self.tree_store:
+        for node in self:
             tree.create_node(node, node.node_id, parent=node.parent)
         return tree
+
+    def __iter__(self):
+        """ Function to allow nodes to be iterated over """
+        return iter(self.tree_store)
+
+    def get_node(self, node_id):
+        """
+        Returns the node with the given id
+        Parameters
+        ----------
+        node_id : integer
+            Find the node with this ID
+        """
+        return self.tree_store[node_id]
 
     def print_tree(self):
         """ prints the tree out """
