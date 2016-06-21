@@ -8,16 +8,11 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-here = path.abspath(path.dirname(__file__))
-
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
-    long_description = f.read()
-
 setup(
     name='CHAID',
-    version='0.0.7',
+    version='0.0.8',
     description='A CHAID tree building algorithm',
-    long_description=long_description,
+    long_description="This package provides a python implementation of the Chi-Squared Automatic Inference Detection (CHAID) decision tree",
     url='https://github.com/Rambatino/CHAID',
     author='Mark Ramotowski, Richard Fitzgerald',
     author_email='mark.tint.ramotowski@gmail.com',
