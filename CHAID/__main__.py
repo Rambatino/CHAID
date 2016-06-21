@@ -25,9 +25,7 @@ def main():
         config['alpha_merge'] = nspace.alpha_merge
     if nspace.min_samples:
         config['min_sample'] = nspace.min_samples
-    chi = CHAID.from_pandas_df(df, nspace.independent_variables, nspace.dependent_variable[0], **config)
-    for x in chi:
-        print x
+    CHAID.from_pandas_df(df, nspace.independent_variables, nspace.dependent_variable[0], **config).print_tree()
 
 
 if __name__ == "__main__":
