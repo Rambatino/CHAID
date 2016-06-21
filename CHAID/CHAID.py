@@ -229,7 +229,7 @@ class CHAID(object):
             split_name = split.index
 
         node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count,
-                         parent=parent, chi=split.chi, p=split.p, split_variable=split_name)
+                         parent=parent, chi=split.score, p=split.p, split_variable=split_name)
         self.tree_store.append(node)
         parent = self.node_count
         self.node_count += 1
@@ -296,9 +296,12 @@ class CHAID(object):
 
                 if size == 1 or highest_p_split < self.alpha_merge:
                     if highest_p_split < split.p:
+                        score = sub_data[correct_row][1]
+                        # if self.d_v_type == CHAIDVariableTypes(3):
+                        #     responses = []
+                        # else:
                         responses = [mappings[x] for x in unique]
-                        chi = sub_data[correct_row][1]
-                        split = CHAIDSplit(i, responses, chi, highest_p_split)
+                        split = CHAIDSplit(i, responses, score, highest_p_split)
                     break
 
                 choice = list(sub_data[correct_row, 0])
@@ -312,8 +315,11 @@ class CHAID(object):
                 index[index == choice[1]] = choice[0]
                 unique.remove(choice[1])
 
-                for val, count in frequencies[choice[1]].items():
-                    frequencies[choice[0]][val] += count
+                if self.d_v_type == CHAIDVariableTypes(3):
+                    frequencies[choice[0]] = np.concatenate((frequencies[choice[0]], frequencies[choice[1]]), axis=0)        
+                else:
+                    for val, count in frequencies[choice[1]].items():
+                        frequencies[choice[0]][val] += count
                 del frequencies[choice[1]]
 
         split.sub_split_values(self.ind_metadata.get(split.index, {}))
