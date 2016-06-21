@@ -305,10 +305,18 @@ class CHAID(object):
         return tree
 
     def __iter__(self):
+        """ Function to allow nodes to be iterated over """
         return iter(self.tree_store)
 
-    def get_node(self, i):
-        return self.tree_store[i]
+    def get_node(self, node_id):
+        """
+        Returns the node with the given id
+        Parameters
+        ----------
+        node_id : integer
+            Find the node with this ID
+        """
+        return self.tree_store[node_id]
 
     def print_tree(self):
         """ prints the tree out """
