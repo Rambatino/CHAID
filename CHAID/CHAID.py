@@ -5,6 +5,7 @@ import numpy as np
 import collections as cl
 from treelib import Tree
 from enum import Enum
+import math
 
 class CHAIDNode(object):
     """
@@ -277,7 +278,23 @@ class CHAID(object):
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
                 sub_data = np.ndarray(shape=(size, 3), dtype=object, order='F')
-                for j, comb in enumerate(it.combinations(unique, 2)):
+
+                if self.i_v_types[i] == CHAIDVariableTypes(0):
+                    combinations = it.combinations(unique, 2)
+                else:
+                    combinations = list(it.combinations(unique, 2))
+                    for comb in list(combinations):
+                        if comb[0] in mappings:
+                            delete = True
+                            for el in mappings[comb[0]]:
+                                if math.fabs(comb[1] - el) == 1:
+                                    delete = False
+                            if delete == True:
+                                combinations.remove(comb)
+                        elif math.fabs(comb[0] - comb[1]) != 1:
+                            combinations.remove(comb)
+
+                for j, comb in enumerate(combinations):
                     y = frequencies[comb[0]]
                     g = frequencies[comb[1]]
                     if self.d_v_type == CHAIDVariableTypes(2):
