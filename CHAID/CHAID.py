@@ -4,6 +4,8 @@ from scipy import stats
 import numpy as np
 import collections as cl
 from treelib import Tree
+from enum import Enum
+import math
 
 class CHAIDNode(object):
     """
@@ -69,17 +71,17 @@ class CHAIDSplit(object):
         The grouped variables
     split_map : array-like
         The name of the grouped variables
-    chi : float
-        The chi-square value of that split
+    score : float
+        The statistical score value of that split
     p : float
         The p value of that split
     """
-    def __init__(self, index, splits, chi, p):
+    def __init__(self, index, splits, score, p):
         splits = splits or []
         self.index = index
         self.splits = list(splits)
         self.split_map = [None] * len(self.splits)
-        self.chi = chi
+        self.score = score
         self.p = p
 
     def sub_split_values(self, sub):
@@ -94,6 +96,11 @@ class MappingDict(dict):
         value = self[key] = [key]
         return value
 
+
+class CHAIDVariableTypes(Enum):
+    nominal = 0
+    ordinal = 1
+    continuous = 2
 
 class CHAID(object):
     """
@@ -119,11 +126,14 @@ class CHAID(object):
     split_titles : array-like 
         array of names for the independent variables in the data
     """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, missing_id='<missing>', split_titles=None):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, missing_id='<missing>', 
+                 split_titles=None, independent_variable_types=None, dependent_variable_type=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_sample = min_sample
         self.missing_id = missing_id
+        self.i_v_types = independent_variable_types or [CHAIDVariableTypes(0)] * ndarr.shape[1]
+        self.d_v_type = dependent_variable_type or CHAIDVariableTypes(0)
         self.split_titles = split_titles or []
         self.ind_metadata = {}
         self.dep_metadata = {}
@@ -137,7 +147,8 @@ class CHAID(object):
         self.node(np.arange(0, self.data_size, dtype=np.int), ndarr, arr)
 
     @staticmethod
-    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30):
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30,
+                        independent_variable_types=None, dependent_variable_type=None):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID analysis
         
@@ -159,7 +170,13 @@ class CHAID(object):
         ind_df = df[i_variables]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
-        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values))
+        if independent_variable_types is not None:
+            independent_variable_types = [CHAIDVariableTypes[x] for x in independent_variable_types]
+        if dependent_variable_type is not None:
+            dependent_variable_type = CHAIDVariableTypes[dependent_variable_type]
+        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, 
+                     split_titles=list(ind_df.columns.values), independent_variable_types=independent_variable_types,
+                     dependent_variable_type=dependent_variable_type)
 
     def sub_non_floats(self, vect):
         """
@@ -195,11 +212,8 @@ class CHAID(object):
         """ inteneral method to create a node in the tree """
         depth = depth + 1
 
-        members = np.transpose(np.unique(dep, return_counts=True))
-        members = dict((self.dep_metadata.get(k, k), v) for k, v in members)
-
         if self.max_depth < depth:
-            terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count,
+            terminal_node = CHAIDNode(choices=parent_decisions, members=self.node_members(dep), node_id=self.node_count,
                                       parent=parent, terminal_indices=rows)
             self.tree_store.append(terminal_node)
             self.node_count += 1
@@ -212,8 +226,8 @@ class CHAID(object):
         else:
             split_name = split.index
 
-        node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count,
-                         parent=parent, chi=split.chi, p=split.p, split_variable=split_name)
+        node = CHAIDNode(choices=parent_decisions, members=self.node_members(dep), node_id=self.node_count,
+                         parent=parent, chi=split.score, p=split.p, split_variable=split_name)
         self.tree_store.append(node)
         parent = self.node_count
         self.node_count += 1
@@ -227,16 +241,22 @@ class CHAID(object):
             ind_slice = ind[correct_rows, :]
             row_slice = rows[correct_rows]
             if self.min_sample < len(dep_slice):
-                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
+                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, 
+                          parent_decisions=split.split_map[index])
             else:
-                members = np.transpose(np.unique(dep_slice, return_counts=True))
-                members = dict((self.dep_metadata.get(k, k), v) for k, v in members)
-
-                terminal_node = CHAIDNode(choices=split.split_map[index], members=members, node_id=self.node_count,
-                                          parent=parent, terminal_indices=row_slice)
+                terminal_node = CHAIDNode(choices=split.split_map[index], members=self.node_members(dep_slice), 
+                                          node_id=self.node_count, parent=parent, terminal_indices=row_slice)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
+
+    def node_members(self, dep):
+        if self.d_v_type == CHAIDVariableTypes(2):
+            members = {'mean': dep.mean(), 'variance': dep.var()}
+        else:
+            counts = np.transpose(np.unique(dep, return_counts=True))
+            members = dict((self.dep_metadata.get(k, k), v) for k, v in counts)
+        return members
 
     def generate_best_split(self, ind, dep):
         """ inteneral method to generate the best split """
@@ -248,35 +268,57 @@ class CHAID(object):
             mappings = MappingDict()
             frequencies = {}
             for col in unique:
-                counts = np.unique(dep[index == col][0], return_counts=True)
-                frequencies[col] = cl.defaultdict(int)
-                frequencies[col].update(np.transpose(counts))
+                if self.d_v_type == CHAIDVariableTypes(2):
+                    frequencies[col] = dep[index == col]
+                else:
+                    counts = np.unique(dep[index == col][0], return_counts=True)
+                    frequencies[col] = cl.defaultdict(int)
+                    frequencies[col].update(np.transpose(counts))
 
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
                 sub_data = np.ndarray(shape=(size, 3), dtype=object, order='F')
-                for j, comb in enumerate(it.combinations(unique, 2)):
+
+                if self.i_v_types[i] == CHAIDVariableTypes(0):
+                    combinations = it.combinations(unique, 2)
+                else:
+                    combinations = list(it.combinations(unique, 2))
+                    for comb in list(combinations):
+                        if comb[0] in mappings:
+                            delete = True
+                            for el in mappings[comb[0]]:
+                                if math.fabs(comb[1] - el) == 1:
+                                    delete = False
+                            if delete == True:
+                                combinations.remove(comb)
+                        elif math.fabs(comb[0] - comb[1]) != 1:
+                            combinations.remove(comb)
+
+                for j, comb in enumerate(combinations):
                     y = frequencies[comb[0]]
                     g = frequencies[comb[1]]
+                    if self.d_v_type == CHAIDVariableTypes(2):
+                        levene = stats.levene(y, g)
+                        sub_data[j] = (comb, levene[0], levene[1])
+                    else:
+                        keys = set(y.keys()).union(g.keys())
 
-                    keys = set(y.keys()).union(g.keys())
+                        cr_table = [
+                            [y.get(k, 0) for k in keys],
+                            [g.get(k, 0) for k in keys]
+                        ]
 
-                    cr_table = [
-                        [y.get(k, 0) for k in keys],
-                        [g.get(k, 0) for k in keys]
-                    ]
-
-                    chi = stats.chi2_contingency(np.array(cr_table))
-                    sub_data[j] = (comb, chi[0], chi[1])
+                        chi = stats.chi2_contingency(np.array(cr_table))
+                        sub_data[j] = (comb, chi[0], chi[1])
 
                 highest_p_split = np.sort(sub_data[:, 2])[-1]
                 correct_row = np.where(np.in1d(sub_data[:, 2], highest_p_split))[0][0]
 
                 if size == 1 or highest_p_split < self.alpha_merge:
                     if highest_p_split < split.p:
+                        score = sub_data[correct_row][1]
                         responses = [mappings[x] for x in unique]
-                        chi = sub_data[correct_row][1]
-                        split = CHAIDSplit(i, responses, chi, highest_p_split)
+                        split = CHAIDSplit(i, responses, score, highest_p_split)
                     break
 
                 choice = list(sub_data[correct_row, 0])
@@ -290,8 +332,11 @@ class CHAID(object):
                 index[index == choice[1]] = choice[0]
                 unique.remove(choice[1])
 
-                for val, count in frequencies[choice[1]].items():
-                    frequencies[choice[0]][val] += count
+                if self.d_v_type == CHAIDVariableTypes(2):
+                    frequencies[choice[0]] = np.concatenate((frequencies[choice[0]], frequencies[choice[1]]), axis=0)        
+                else:
+                    for val, count in frequencies[choice[1]].items():
+                        frequencies[choice[0]][val] += count
                 del frequencies[choice[1]]
 
         split.sub_split_values(self.ind_metadata.get(split.index, {}))
