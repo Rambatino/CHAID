@@ -133,7 +133,7 @@ class CHAID(object):
         arr, self.dep_metadata = self.sub_non_floats(arr)
         self.data_size = ndarr.shape[0]
         self.node_count = 0
-        self.tree_store = []
+        self.tree_store = None
         self.node(np.arange(0, self.data_size, dtype=np.int), ndarr, arr)
 
     @staticmethod
@@ -194,7 +194,7 @@ class CHAID(object):
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ inteneral method to create a node in the tree """
         depth = depth + 1
-
+        self.tree_store = self.tree_store or []
         members = np.transpose(np.unique(dep, return_counts=True))
         members = dict((self.dep_metadata.get(k, k), v) for k, v in members)
 
@@ -300,9 +300,15 @@ class CHAID(object):
     def to_tree(self):
         """ returns a TreeLib tree """
         tree = Tree()
-        for node in self.tree_store:
+        for node in self:
             tree.create_node(node, node.node_id, parent=node.parent)
         return tree
+
+    def __iter__(self):
+        return iter(self.tree_store)
+
+    def get_node(self, i):
+        return self.tree_store[i]
 
     def print_tree(self):
         """ prints the tree out """
