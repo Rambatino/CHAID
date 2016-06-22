@@ -14,6 +14,7 @@ def main():
     parser.add_argument('--max-depth', type=int, help='Max depth of generated tree')
     parser.add_argument('--min-samples', type=int, help='Minimum number of samples required to split node')
     parser.add_argument('--alpha-merge', type=float, help='Alpha Merge')
+    parser.add_argument('--classify', action='store_true', help='Classify input rather than printing the tree')
     nspace = parser.parse_args()
 
     df = pd.read_csv(nspace.file)
@@ -25,7 +26,16 @@ def main():
         config['alpha_merge'] = nspace.alpha_merge
     if nspace.min_samples:
         config['min_sample'] = nspace.min_samples
-    CHAID.from_pandas_df(df, nspace.independent_variables, nspace.dependent_variable[0], **config).print_tree()
+    tree = CHAID.from_pandas_df(df, nspace.independent_variables, nspace.dependent_variable[0], **config)
+
+    if nspace.classify:
+        predictions = pd.Series(tree.predict())
+        predictions.name = 'node_id'
+        df = pd.concat([df, predictions], axis=1)
+        print(df.to_csv())
+    else:
+        tree.print_tree()
+
 
 
 if __name__ == "__main__":
