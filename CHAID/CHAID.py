@@ -101,13 +101,10 @@ class CHAIDNode(object):
     dep_v : array-like
         The dependent variable set
     """
-    def __init__(self, choices=None, split_variable=None, chi=0,
-                 p=0, indices=None, node_id=0, parent=None, dep_v=None):
+    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
-        self.split_variable = split_variable
-        self.chi = chi
-        self.p = p
+        self.split = split or CHAIDSplit(None, None, None, None)
         self.indices = indices
         self.node_id = node_id
         self.parent = parent
@@ -131,6 +128,18 @@ class CHAIDNode(object):
         return self.node_id < other.node_id
 
     @property
+    def chi(self):
+        return self.split.chi
+
+    @property
+    def p(self):
+        return self.split.p
+
+    @property
+    def split_variable(self):
+        return self.split.column
+
+    @property
     def members(self):
         if self._members is None:
             counts = np.transpose(np.unique(self.dep_v.arr, return_counts=True))
@@ -145,7 +154,7 @@ class CHAIDSplit(object):
 
     Parameters
     ----------
-    index : float
+    column : float
         The key of where the split is occuring relative to the input data
     splits : array-like
         The grouped variables
@@ -156,10 +165,11 @@ class CHAIDSplit(object):
     p : float
         The p value of that split
     """
-    def __init__(self, index, splits, chi, p):
+    def __init__(self, column, splits, chi, p):
         splits = splits or []
         self.surrogates = []
-        self.index = index
+        self.column_id = column
+        self.split_name = None
         self.splits = list(splits)
         self.split_map = [None] * len(self.splits)
         self.chi = chi
@@ -171,6 +181,22 @@ class CHAIDSplit(object):
             self.split_map[i] = [sub.get(x, x) for x in arr]
         for s in self.surrogates:
             s.sub_split_values(sub)
+
+    def name_columns(self, sub):
+        """ Substiutes the split column index with a human readable string """ 
+        if self.column_id and len(sub) > self.column_id:
+            self.split_name = sub[self.column_id]
+        for s in self.surrogates:
+            s.name_columns(sub)
+
+    @property
+    def column(self):
+        if not self.valid():
+            return None
+        return self.split_name or str(self.column_id)
+
+    def valid(self):
+        return self.column_id is not None
 
 
 class MappingDict(dict):
@@ -254,23 +280,20 @@ class CHAID(object):
 
         split = self.generate_best_split(ind, dep)
 
-        if split.index is not None and len(self.split_titles) > split.index:
-            split_name = self.split_titles[split.index]
-        else:
-            split_name = split.index
+        split.name_columns(self.split_titles)
 
         node = CHAIDNode(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
-                         parent=parent, chi=split.chi, p=split.p, split_variable=split_name)
+                         parent=parent, split=split)
 
         self.tree_store.append(node)
         parent = self.node_count
         self.node_count += 1
 
-        if split.index is None:
+        if not split.valid():
             return self.tree_store
 
         for index, choices in enumerate(split.splits):
-            correct_rows = np.in1d(ind[split.index].arr, choices)
+            correct_rows = np.in1d(ind[split.column_id].arr, choices)
             dep_slice = dep[correct_rows]
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
@@ -325,7 +348,7 @@ class CHAID(object):
                     if highest_p_split < split.p:
                         split, temp_split = temp_split, split
                     
-                    if temp_split.index and (temp_split.chi / split.chi) >= (1 - self.split_threshold):
+                    if temp_split.valid() and (temp_split.chi / split.chi) >= (1 - self.split_threshold):
                         for sur_split in temp_split.surrogates:
                             if (sur_split.chi / split.chi) >= (1 - self.split_threshold):
                                 split.surrogates.append(sur_split)
@@ -353,8 +376,8 @@ class CHAID(object):
                     frequencies[choice[0]][val] += count
                 del frequencies[choice[1]]
 
-        if split.index is not None:
-            split.sub_split_values(ind[split.index].metadata)
+        if split.valid():
+            split.sub_split_values(ind[split.column_id].metadata)
         return split
 
     def to_tree(self):
