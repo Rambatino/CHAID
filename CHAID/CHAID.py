@@ -6,7 +6,19 @@ import collections as cl
 from treelib import Tree
 
 class CHAIDVector(object):
-    def __init__(self, arr=None, missing_id='<missing>', metadata=None):
+    """
+    A numpy array with metadata
+
+    Parameters
+    ----------
+    arr : array-like
+        The numpy array
+    metadata : dict
+        The substitutions of the vector
+    missing_id : string
+        An identifier for the missing value to be associated
+    """
+    def __init__(self, arr=None, metadata=None, missing_id='<missing>'):
         self._metadata = metadata or {}
         self._arr = None
         self._missing_id = missing_id
@@ -14,7 +26,7 @@ class CHAIDVector(object):
 
     def sub_non_floats(self, vect):
         """
-        substitute floats into the vector if it does not have a dtype of float
+        Substitute floats into the vector if it does not have a dtype of float
 
         Parameters
         ----------     
@@ -154,7 +166,7 @@ class CHAIDSplit(object):
         self.p = p
 
     def sub_split_values(self, sub):
-        """ substiutes the splits with other values into the split_map """
+        """ Substiutes the splits with other values into the split_map """
         for i, arr in enumerate(self.splits):
             self.split_map[i] = [sub.get(x, x) for x in arr]
 
@@ -227,7 +239,7 @@ class CHAID(object):
         return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values))
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
-        """ inteneral method to create a node in the tree """
+        """ internal method to create a node in the tree """
         depth = depth + 1
 
         if self.max_depth < depth:
@@ -269,7 +281,7 @@ class CHAID(object):
         return self.tree_store
 
     def generate_best_split(self, ind, dep):
-        """ inteneral method to generate the best split """
+        """ internal method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
         for i, index in enumerate(ind):
             index = index.deep_copy()
