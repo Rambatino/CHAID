@@ -7,7 +7,7 @@ from treelib import Tree
 
 class CHAIDVector(object):
     def __init__(self, arr=None, missing_id='<missing>'):
-        self._metadata = None
+        self._metadata = {}
         self._arr = None
         self._missing_id = missing_id
         self.sub_non_floats(arr)
@@ -26,7 +26,6 @@ class CHAIDVector(object):
         tuple : prcoessed vector, hash or substitutions
         """
         self._arr = vect
-        self._metadata = {}
         if vect.dtype != float:
             unique_v = np.unique(self._arr.astype(str))
             float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
@@ -44,6 +43,10 @@ class CHAIDVector(object):
     @property
     def arr(self):
         return self._arr
+
+    @property
+    def metadata(self):
+        return self._metadata
     
         
 
@@ -93,8 +96,8 @@ class CHAIDNode(object):
             return False
 
     def __repr__(self):
-        format_str = '({choices}, {_members}, {split_variable}, {chi}, {p})'
-        return format_str.format(**self.__dict__)
+        format_str = '({0.choices}, {0.members}, {0.split_variable}, {0.chi}, {0.p})'
+        return format_str.format(self)
 
     def __lt__(self, other):
         return self.node_id < other.node_id
@@ -102,8 +105,8 @@ class CHAIDNode(object):
     @property
     def members(self):
         if self._members is None:
-            counts = np.transpose(np.unique(self.dep_v, return_counts=True))
-            members = dict((self.dep_metadata.get(k, k), v) for k, v in counts)
+            counts = np.transpose(np.unique(self.dep_v.arr, return_counts=True))
+            members = dict((self.dep_v.metadata.get(k, k), v) for k, v in counts)
             self._members = members
         return self._members
 
@@ -228,7 +231,7 @@ class CHAID(object):
 
         node = CHAIDNode(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
                          parent=parent, chi=split.chi, p=split.p, split_variable=split_name)
-        import ipdb; ipdb.set_trace()
+
         self.tree_store.append(node)
         parent = self.node_count
         self.node_count += 1
