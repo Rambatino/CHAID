@@ -46,6 +46,9 @@ class CHAIDVector(object):
     def __getitem__(self, key):
         return CHAIDVector(self.arr[key])
 
+    def deep_copy(self):
+        return CHAIDVector(np.array(self.arr))
+
     @property
     def arr(self):
         return self._arr
@@ -266,7 +269,8 @@ class CHAID(object):
     def generate_best_split(self, ind, dep):
         """ inteneral method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
-        for i, index in enumerate(ind):
+        for i, original_index in enumerate(ind):
+            index = original_index.deep_copy()
             unique = set(index.arr)
 
             mappings = MappingDict()
