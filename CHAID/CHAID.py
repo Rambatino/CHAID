@@ -21,7 +21,7 @@ class CHAIDNode(object):
         The chi-squared score for the split
     p : float
         The p-value for the split
-    terminal_indices : array-like or None
+    indices : array-like or None
         The row index that ended up in the node (only occurs in terminal nodes)
     node_id : float 
         A float representing the id of the node
@@ -29,14 +29,14 @@ class CHAIDNode(object):
         The node_id of the parent of that node
     """
     def __init__(self, choices=None, members=None, split_variable=None, chi=0,
-                 p=0, terminal_indices=None, node_id=0, parent=None):
-        terminal_indices = [] if terminal_indices is None else terminal_indices
+                 p=0, indices=None, node_id=0, parent=None):
+        indices = [] if indices is None else indices
         self.choices = list(choices or [])
         self.members = members or {}
         self.split_variable = split_variable
         self.chi = chi
         self.p = p
-        self.terminal_indices = terminal_indices
+        self.indices = indices
         self.node_id = node_id
         self.parent = parent
 
@@ -199,7 +199,7 @@ class CHAID(object):
 
         if self.max_depth < depth:
             terminal_node = CHAIDNode(choices=parent_decisions, members=members, node_id=self.node_count,
-                                      parent=parent, terminal_indices=rows)
+                                      parent=parent, indices=rows)
             self.tree_store.append(terminal_node)
             self.node_count += 1
             return self.tree_store
@@ -232,7 +232,7 @@ class CHAID(object):
                 members = dict((self.dep_metadata.get(k, k), v) for k, v in members)
 
                 terminal_node = CHAIDNode(choices=split.split_map[index], members=members, node_id=self.node_count,
-                                          parent=parent, terminal_indices=row_slice)
+                                          parent=parent, indices=row_slice)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
@@ -325,7 +325,7 @@ class CHAID(object):
         """ determines which rows fall into which node """
         pred = np.zeros(self.data_size)
         for node in self.tree_store:
-            pred[node.terminal_indices] = node.node_id
+            pred[node.indices] = node.node_id
         return pred
 
     def __repr__(self):
