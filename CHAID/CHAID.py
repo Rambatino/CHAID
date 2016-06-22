@@ -50,6 +50,10 @@ class CHAIDVector(object):
     def arr(self):
         return self._arr
 
+    @arr.setter
+    def arr(self, value):
+        self._arr = value
+
     @property
     def metadata(self):
         return self._metadata
@@ -307,7 +311,9 @@ class CHAID(object):
                 else:
                     mappings[choice[0]] += [choice[1]]
 
-                index.arr[index.arr == choice[1]] = choice[0]
+                col = index.arr
+                col[index.arr == choice[1]] = choice[0]
+                index.arr = col
                 unique.remove(choice[1])
 
                 for val, count in frequencies[choice[1]].items():
