@@ -36,9 +36,15 @@ class CHAIDVector(object):
             self._arr[nans] = -1.0
             self._metadata = {v: k for k, v in float_map}
         else:
-            nans = np.isnan(vector)
-            vector[nans] = -1.0
+            nans = np.isnan(self._arr)
+            self._arr[nans] = -1.0
         self._metadata[-1.0] = self._missing_id
+
+    def __iter__(self):
+        return iter(self.arr)
+        
+    def __getitem__(self, key):
+        return CHAIDVector(self.arr[key])
 
     @property
     def arr(self):
@@ -240,11 +246,11 @@ class CHAID(object):
             return self.tree_store
 
         for index, choices in enumerate(split.splits):
-            correct_rows = np.in1d(ind[:, split.index], choices)
+            correct_rows = np.in1d(ind[split.index].arr, choices)
             dep_slice = dep[correct_rows]
-            ind_slice = ind[correct_rows, :]
+            ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
-            if self.min_sample < len(dep_slice):
+            if self.min_sample < len(dep_slice.arr):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
             else:
                 terminal_node = CHAIDNode(choices=split.split_map[index], node_id=self.node_count,
