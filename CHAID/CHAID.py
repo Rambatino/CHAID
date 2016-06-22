@@ -46,6 +46,10 @@ class CHAIDVector(object):
     def __getitem__(self, key):
         return CHAIDVector(self.arr[key], metadata=self.metadata)
 
+    def __setitem__(self, key, value):
+        self.arr[key] = value
+        return CHAIDVector(self.arr, metadata=self.metadata)
+
     def deep_copy(self):
         return CHAIDVector(np.array(self.arr), metadata=self.metadata)
 
@@ -313,9 +317,7 @@ class CHAID(object):
                 else:
                     mappings[choice[0]] += [choice[1]]
 
-                col = index.arr
-                col[index.arr == choice[1]] = choice[0]
-                index.arr = col
+                index[index.arr == choice[1]] = choice[0]
                 unique.remove(choice[1])
 
                 for val, count in frequencies[choice[1]].items():
