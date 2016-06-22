@@ -53,17 +53,17 @@ class CHAIDVector(object):
         self._metadata[-1.0] = self._missing_id
 
     def __iter__(self):
-        return iter(self.arr)
+        return iter(self._arr)
         
     def __getitem__(self, key):
-        return CHAIDVector(self.arr[key], metadata=self.metadata)
+        return CHAIDVector(self._arr[key], metadata=self.metadata)
 
     def __setitem__(self, key, value):
-        self.arr[key] = value
-        return CHAIDVector(self.arr, metadata=self.metadata)
+        self._arr[key] = value
+        return CHAIDVector(np.array(self._arr), metadata=self.metadata)
 
     def deep_copy(self):
-        return CHAIDVector(np.array(self.arr), metadata=self.metadata)
+        return CHAIDVector(np.array(self._arr), metadata=self.metadata)
 
     @property
     def arr(self):
@@ -78,7 +78,6 @@ class CHAIDVector(object):
         return self._metadata
     
         
-
 class CHAIDNode(object):
     """
     A node in the CHAID tree
@@ -290,7 +289,7 @@ class CHAID(object):
             mappings = MappingDict()
             frequencies = {}
             for col in unique:
-                counts = np.unique(dep[index == col], return_counts=True)
+                counts = np.unique(dep.arr[index.arr == col], return_counts=True)
                 frequencies[col] = cl.defaultdict(int)
                 frequencies[col].update(np.transpose(counts))
 
