@@ -202,7 +202,7 @@ class CHAID(object):
     split_titles : array-like 
         array of names for the independent variables in the data
     """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None, split_threshold=0):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_sample = min_sample
@@ -213,10 +213,11 @@ class CHAID(object):
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = []
+        self.split_threshold = split_threshold
         self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, CHAIDVector(arr))
 
     @staticmethod
-    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30):
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID analysis
         
@@ -238,7 +239,7 @@ class CHAID(object):
         ind_df = df[i_variables]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
-        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values))
+        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold)
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -282,7 +283,7 @@ class CHAID(object):
                 self.node_count += 1
         return self.tree_store
 
-    def generate_best_split(self, ind, dep, split_threshold=0):
+    def generate_best_split(self, ind, dep):
         """ internal method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
         for i, index in enumerate(ind):
@@ -324,14 +325,14 @@ class CHAID(object):
                     if highest_p_split < split.p:
                         split, temp_split = temp_split, split
                     
-                    if temp_split.index and (temp_split.chi / split.chi) >= (1 - split_threshold):
+                    if temp_split.index and (temp_split.chi / split.chi) >= (1 - self.split_threshold):
                         for sur_split in temp_split.surrogates:
-                            if (sur_split.chi / split.chi) >= (1 - split_threshold):
+                            if (sur_split.chi / split.chi) >= (1 - self.split_threshold):
                                 split.surrogates.append(sur_split)
                         split.surrogates.append(temp_split)
 
                     for _, surrogate_chi, surrogate_p in sub_data[1:]:
-                        if (surrogate_chi / split.chi) >= (1 - split_threshold):
+                        if (surrogate_chi / split.chi) >= (1 - self.split_threshold):
                             break
                         temp_split = CHAIDSplit(i, responses, surrogate_chi, surrogate_p)
                         split.surrogates.append(temp_split)
