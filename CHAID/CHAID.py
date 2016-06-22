@@ -158,6 +158,7 @@ class CHAIDSplit(object):
     """
     def __init__(self, index, splits, chi, p):
         splits = splits or []
+        self.surrogates = []
         self.index = index
         self.splits = list(splits)
         self.split_map = [None] * len(self.splits)
@@ -168,6 +169,8 @@ class CHAIDSplit(object):
         """ Substiutes the splits with other values into the split_map """
         for i, arr in enumerate(self.splits):
             self.split_map[i] = [sub.get(x, x) for x in arr]
+        for s in self.surrogates:
+            s.sub_split_values(sub)
 
 
 class MappingDict(dict):
@@ -279,7 +282,7 @@ class CHAID(object):
                 self.node_count += 1
         return self.tree_store
 
-    def generate_best_split(self, ind, dep):
+    def generate_best_split(self, ind, dep, split_threshold=0):
         """ internal method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
         for i, index in enumerate(ind):
@@ -295,7 +298,8 @@ class CHAID(object):
 
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
-                sub_data = np.ndarray(shape=(size, 3), dtype=object, order='F')
+                sub_data_columns = [('combinations', object), ('chi', float), ('p', float)]
+                sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
                     y = frequencies[comb[0]]
                     g = frequencies[comb[1]]
@@ -310,17 +314,29 @@ class CHAID(object):
                     chi = stats.chi2_contingency(np.array(cr_table))
                     sub_data[j] = (comb, chi[0], chi[1])
 
-                highest_p_split = np.sort(sub_data[:, 2])[-1]
-                correct_row = np.where(np.in1d(sub_data[:, 2], highest_p_split))[0][0]
+                sub_data = np.sort(sub_data, order='p')[::-1]
+                choice, chi, highest_p_split = sub_data[0]
 
                 if size == 1 or highest_p_split < self.alpha_merge:
-                    if highest_p_split < split.p:
-                        responses = [mappings[x] for x in unique]
-                        chi = sub_data[correct_row][1]
-                        split = CHAIDSplit(i, responses, chi, highest_p_split)
-                    break
+                    responses = [mappings[x] for x in unique]
+                    temp_split = CHAIDSplit(i, responses, chi, highest_p_split)
 
-                choice = list(sub_data[correct_row, 0])
+                    if highest_p_split < split.p:
+                        split, temp_split = temp_split, split
+                    
+                    if temp_split.index and (temp_split.chi / split.chi) >= (1 - split_threshold):
+                        for sur_split in temp_split.surrogates:
+                            if (sur_split.chi / split.chi) >= (1 - split_threshold):
+                                split.surrogates.append(sur_split)
+                        split.surrogates.append(temp_split)
+
+                    for _, surrogate_chi, surrogate_p in sub_data[1:]:
+                        if (surrogate_chi / split.chi) >= (1 - split_threshold):
+                            break
+                        temp_split = CHAIDSplit(i, responses, surrogate_chi, surrogate_p)
+                        split.surrogates.append(temp_split)
+
+                    break
 
                 if choice[1] in mappings:
                     mappings[choice[0]] += mappings[choice[1]]
