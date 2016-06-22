@@ -6,8 +6,8 @@ import collections as cl
 from treelib import Tree
 
 class CHAIDVector(object):
-    def __init__(self, arr=None, missing_id='<missing>'):
-        self._metadata = {}
+    def __init__(self, arr=None, missing_id='<missing>', metadata=None):
+        self._metadata = metadata or {}
         self._arr = None
         self._missing_id = missing_id
         self.sub_non_floats(arr)
@@ -44,10 +44,10 @@ class CHAIDVector(object):
         return iter(self.arr)
         
     def __getitem__(self, key):
-        return CHAIDVector(self.arr[key])
+        return CHAIDVector(self.arr[key], metadata=self.metadata)
 
     def deep_copy(self):
-        return CHAIDVector(np.array(self.arr))
+        return CHAIDVector(np.array(self.arr), metadata=self.metadata)
 
     @property
     def arr(self):
@@ -189,8 +189,6 @@ class CHAID(object):
         self.max_depth = max_depth
         self.min_sample = min_sample
         self.split_titles = split_titles or []
-        self.ind_metadata = {}
-        self.dep_metadata = {}
         self.vectorised_array = []
         for ind in range(0, ndarr.shape[1]):
             self.vectorised_array.append(CHAIDVector(ndarr[:, ind]))
@@ -269,8 +267,8 @@ class CHAID(object):
     def generate_best_split(self, ind, dep):
         """ inteneral method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
-        for i, original_index in enumerate(ind):
-            index = original_index.deep_copy()
+        for i, index in enumerate(ind):
+            index = index.deep_copy()
             unique = set(index.arr)
 
             mappings = MappingDict()
@@ -324,7 +322,8 @@ class CHAID(object):
                     frequencies[choice[0]][val] += count
                 del frequencies[choice[1]]
 
-        split.sub_split_values(self.ind_metadata.get(split.index, {}))
+        if split.index is not None:
+            split.sub_split_values(ind[split.index].metadata)
         return split
 
     def to_tree(self):
