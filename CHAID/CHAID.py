@@ -247,7 +247,7 @@ class CHAID(object):
             mappings = MappingDict()
             frequencies = {}
             for col in unique:
-                counts = np.unique(dep[index == col][0], return_counts=True)
+                counts = np.unique(dep[index == col], return_counts=True)
                 frequencies[col] = cl.defaultdict(int)
                 frequencies[col].update(np.transpose(counts))
 
