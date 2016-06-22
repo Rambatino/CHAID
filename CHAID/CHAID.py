@@ -329,6 +329,7 @@ class CHAID(object):
                         for sur_split in temp_split.surrogates:
                             if (sur_split.chi / split.chi) >= (1 - self.split_threshold):
                                 split.surrogates.append(sur_split)
+                        temp_split.surrogates = []
                         split.surrogates.append(temp_split)
 
                     for _, surrogate_chi, surrogate_p in sub_data[1:]:
