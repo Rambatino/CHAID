@@ -350,6 +350,9 @@ class CHAID(object):
         """ Function to allow nodes to be iterated over """
         return iter(self.tree_store)
 
+    def __repr__(self):
+        return str(self.tree_store)
+            
     def get_node(self, node_id):
         """
         Returns the node with the given id
@@ -370,6 +373,3 @@ class CHAID(object):
         for node in self.tree_store:
             pred[node.indices] = node.node_id
         return pred
-
-    def __repr__(self):
-        return str(self.tree_store)
