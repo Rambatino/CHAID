@@ -101,6 +101,8 @@ class CHAIDNode(object):
         The node_id of the parent of that node
     dep_v : array-like
         The dependent variable set
+    is_terminal : boolean 
+        Whether the node is terminal
     """
     def __init__(self, choices=None, split_variable=None, chi=0,
                  p=0, indices=None, node_id=0, parent=None, dep_v=None,
@@ -202,8 +204,6 @@ class CHAID(object):
         the threshold value of the number of respondents that the node must contain (default 30)
     split_titles : array-like 
         array of names for the independent variables in the data
-    is_terminal : boolean 
-        whether the node is terminal
     """
     def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None):
         self.alpha_merge = alpha_merge
@@ -391,7 +391,7 @@ class CHAID(object):
         pred = np.zeros(self.data_size)
         for node in self.tree_store:
             if node.is_terminal:
-                pred[node.indices] = sorted(node.members.items(), key=operator.itemgetter(1))[0][0]
+                pred[node.indices] = max(node.member, key=node.member.get)[0]
         return pred
 
     def risk(self):
