@@ -122,7 +122,7 @@ class CHAIDNode(object):
     is_terminal : boolean 
         Whether the node is terminal
     """
-    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=None):
+    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
         self.split = split or CHAIDSplit(None, None, None, None)
@@ -319,6 +319,7 @@ class CHAID(object):
         self.node_count += 1
 
         if not split.valid():
+            node.is_terminal = True
             return self.tree_store
 
         for index, choices in enumerate(split.splits):
@@ -457,7 +458,7 @@ class CHAID(object):
         pred = np.zeros(self.data_size)
         for node in self.tree_store:
             if node.is_terminal:
-                pred[node.indices] = max(node.member, key=node.member.get)[0]
+                pred[node.indices] = max(node.members, key=node.members.get)
         return pred
 
     def risk(self):
