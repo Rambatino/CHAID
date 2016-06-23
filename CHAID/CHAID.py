@@ -101,13 +101,10 @@ class CHAIDNode(object):
     dep_v : array-like
         The dependent variable set
     """
-    def __init__(self, choices=None, split_variable=None, chi=0,
-                 p=0, indices=None, node_id=0, parent=None, dep_v=None):
+    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
-        self.split_variable = split_variable
-        self.chi = chi
-        self.p = p
+        self.split = split or CHAIDSplit(None, None, None, None)
         self.indices = indices
         self.node_id = node_id
         self.parent = parent
@@ -131,6 +128,18 @@ class CHAIDNode(object):
         return self.node_id < other.node_id
 
     @property
+    def chi(self):
+        return self.split.chi
+
+    @property
+    def p(self):
+        return self.split.p
+
+    @property
+    def split_variable(self):
+        return self.split.column
+
+    @property
     def members(self):
         if self._members is None:
             counts = np.transpose(np.unique(self.dep_v.arr, return_counts=True))
@@ -145,7 +154,7 @@ class CHAIDSplit(object):
 
     Parameters
     ----------
-    index : float
+    column : float
         The key of where the split is occuring relative to the input data
     splits : array-like
         The grouped variables
@@ -156,9 +165,11 @@ class CHAIDSplit(object):
     p : float
         The p value of that split
     """
-    def __init__(self, index, splits, chi, p):
+    def __init__(self, column, splits, chi, p):
         splits = splits or []
-        self.index = index
+        self.surrogates = []
+        self.column_id = column
+        self.split_name = None
         self.splits = list(splits)
         self.split_map = [None] * len(self.splits)
         self.chi = chi
@@ -168,6 +179,24 @@ class CHAIDSplit(object):
         """ Substiutes the splits with other values into the split_map """
         for i, arr in enumerate(self.splits):
             self.split_map[i] = [sub.get(x, x) for x in arr]
+        for s in self.surrogates:
+            s.sub_split_values(sub)
+
+    def name_columns(self, sub):
+        """ Substiutes the split column index with a human readable string """ 
+        if self.column_id and len(sub) > self.column_id:
+            self.split_name = sub[self.column_id]
+        for s in self.surrogates:
+            s.name_columns(sub)
+
+    @property
+    def column(self):
+        if not self.valid():
+            return None
+        return self.split_name or str(self.column_id)
+
+    def valid(self):
+        return self.column_id is not None
 
 
 class MappingDict(dict):
@@ -199,7 +228,7 @@ class CHAID(object):
     split_titles : array-like 
         array of names for the independent variables in the data
     """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None, split_threshold=0):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_sample = min_sample
@@ -210,10 +239,11 @@ class CHAID(object):
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = []
+        self.split_threshold = split_threshold
         self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, CHAIDVector(arr))
 
     @staticmethod
-    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30):
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID analysis
         
@@ -235,7 +265,7 @@ class CHAID(object):
         ind_df = df[i_variables]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
-        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values))
+        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold)
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -250,23 +280,20 @@ class CHAID(object):
 
         split = self.generate_best_split(ind, dep)
 
-        if split.index is not None and len(self.split_titles) > split.index:
-            split_name = self.split_titles[split.index]
-        else:
-            split_name = split.index
+        split.name_columns(self.split_titles)
 
         node = CHAIDNode(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
-                         parent=parent, chi=split.chi, p=split.p, split_variable=split_name)
+                         parent=parent, split=split)
 
         self.tree_store.append(node)
         parent = self.node_count
         self.node_count += 1
 
-        if split.index is None:
+        if not split.valid():
             return self.tree_store
 
         for index, choices in enumerate(split.splits):
-            correct_rows = np.in1d(ind[split.index].arr, choices)
+            correct_rows = np.in1d(ind[split.column_id].arr, choices)
             dep_slice = dep[correct_rows]
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
@@ -295,7 +322,8 @@ class CHAID(object):
 
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
-                sub_data = np.ndarray(shape=(size, 3), dtype=object, order='F')
+                sub_data_columns = [('combinations', object), ('chi', float), ('p', float)]
+                sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
                     y = frequencies[comb[0]]
                     g = frequencies[comb[1]]
@@ -310,17 +338,30 @@ class CHAID(object):
                     chi = stats.chi2_contingency(np.array(cr_table))
                     sub_data[j] = (comb, chi[0], chi[1])
 
-                highest_p_split = np.sort(sub_data[:, 2])[-1]
-                correct_row = np.where(np.in1d(sub_data[:, 2], highest_p_split))[0][0]
+                sub_data = np.sort(sub_data, order='p')[::-1]
+                choice, chi, highest_p_split = sub_data[0]
 
                 if size == 1 or highest_p_split < self.alpha_merge:
-                    if highest_p_split < split.p:
-                        responses = [mappings[x] for x in unique]
-                        chi = sub_data[correct_row][1]
-                        split = CHAIDSplit(i, responses, chi, highest_p_split)
-                    break
+                    responses = [mappings[x] for x in unique]
+                    temp_split = CHAIDSplit(i, responses, chi, highest_p_split)
 
-                choice = list(sub_data[correct_row, 0])
+                    if not split.valid() or highest_p_split < split.p:
+                        split, temp_split = temp_split, split
+                    
+                    if temp_split.valid() and (temp_split.chi / split.chi) >= (1 - self.split_threshold):
+                        for sur_split in temp_split.surrogates:
+                            if (sur_split.chi / split.chi) >= (1 - self.split_threshold):
+                                split.surrogates.append(sur_split)
+                        temp_split.surrogates = []
+                        split.surrogates.append(temp_split)
+
+                    for _, surrogate_chi, surrogate_p in sub_data[1:]:
+                        if (surrogate_chi / split.chi) >= (1 - self.split_threshold):
+                            break
+                        temp_split = CHAIDSplit(i, responses, surrogate_chi, surrogate_p)
+                        split.surrogates.append(temp_split)
+
+                    break
 
                 if choice[1] in mappings:
                     mappings[choice[0]] += mappings[choice[1]]
@@ -335,8 +376,8 @@ class CHAID(object):
                     frequencies[choice[0]][val] += count
                 del frequencies[choice[1]]
 
-        if split.index is not None:
-            split.sub_split_values(ind[split.index].metadata)
+        if split.valid():
+            split.sub_split_values(ind[split.column_id].metadata)
         return split
 
     def to_tree(self):
