@@ -10,7 +10,7 @@ from os import path
 
 setup(
     name='CHAID',
-    version='0.0.11',
+    version='0.1.0',
     description='A CHAID tree building algorithm',
     long_description="This package provides a python implementation of the Chi-Squared Automatic Inference Detection (CHAID) decision tree",
     url='https://github.com/Rambatino/CHAID',
