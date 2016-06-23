@@ -7,6 +7,7 @@ import collections as cl
 import numpy as np
 from scipy import stats
 from treelib import Tree
+import operator
 
 
 class CHAIDVector(object):
@@ -118,8 +119,13 @@ class CHAIDNode(object):
         The node_id of the parent of that node
     dep_v : array-like
         The dependent variable set
+    is_terminal : boolean 
+        Whether the node is terminal
     """
-    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None):
+    def __init__(self, choices=None, split_variable=None, chi=0,
+                 p=0, indices=None, node_id=0, parent=None, dep_v=None,
+                 is_terminal=False
+                 ):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
         self.split = split or CHAIDSplit(None, None, None, None)
@@ -128,6 +134,7 @@ class CHAIDNode(object):
         self.parent = parent
         self.dep_v = dep_v
         self._members = None
+        self.is_terminal = is_terminal
 
     def __hash__(self):
         return hash(self.__dict__)
@@ -259,6 +266,7 @@ class CHAID(object):
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = []
+        self.observed = arr
         self.split_threshold = split_threshold
         self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, CHAIDVector(arr))
 
@@ -297,7 +305,7 @@ class CHAID(object):
 
         if self.max_depth < depth:
             terminal_node = CHAIDNode(choices=parent_decisions, node_id=self.node_count,
-                                      parent=parent, indices=rows, dep_v=dep)
+                                      parent=parent, indices=rows, dep_v=dep, is_terminal=True)
             self.tree_store.append(terminal_node)
             self.node_count += 1
             return self.tree_store
@@ -325,7 +333,7 @@ class CHAID(object):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
             else:
                 terminal_node = CHAIDNode(choices=split.split_map[index], node_id=self.node_count,
-                                          parent=parent, indices=row_slice, dep_v=dep_slice)
+                                          parent=parent, indices=row_slice, dep_v=dep_slice, is_terminal=True)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
@@ -435,9 +443,31 @@ class CHAID(object):
         """ prints the tree out """
         self.to_tree().show()
 
-    def predict(self):
-        """ determines which rows fall into which node """
+    def node_predictions(self):
+        """ Determines which rows fall into which node """
         pred = np.zeros(self.data_size)
         for node in self.tree_store:
-            pred[node.indices] = node.node_id
+            if node.is_terminal:
+                pred[node.indices] = node.node_id
         return pred
+
+    def model_predictions(self):
+        """  
+        Determines the highest frequency of 
+        categorical dependent variable in the
+        terminal node where that row fell
+        """
+        pred = np.zeros(self.data_size)
+        for node in self.tree_store:
+            if node.is_terminal:
+                pred[node.indices] = max(node.member, key=node.member.get)[0]
+        return pred
+
+    def risk(self):
+        """ 
+        Calculates the fraction of risk associated
+        with the model predictions
+        """
+        model_predictions = self.model_predictions()
+        observed = self.observed
+        return float((model_predictions == observed).sum()) / self.data_size
