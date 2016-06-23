@@ -1,9 +1,13 @@
+"""
+This package provides a python implementation of the Chi-Squared Automatic
+Inference Detection (CHAID) decision tree.
+"""
 import itertools as it
-import pandas as pd
-from scipy import stats
-import numpy as np
 import collections as cl
+import numpy as np
+from scipy import stats
 from treelib import Tree
+
 
 class CHAIDVector(object):
     """
@@ -29,7 +33,7 @@ class CHAIDVector(object):
         Substitute floats into the vector if it does not have a dtype of float
 
         Parameters
-        ----------     
+        ----------
         vect : nd.array
             the vector in whcih to substitute the float
 
@@ -43,7 +47,7 @@ class CHAIDVector(object):
             float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
             for value, new_id in float_map:
                 self._arr[self._arr == value] = new_id
-            self._arr = self._arr.astype(float, subok=False, order='K', copy=False)
+            self._arr = self._arr.astype(float, subok=False, copy=False)
             nans = np.isnan(self._arr)
             self._arr[nans] = -1.0
             self._metadata = {v: k for k, v in float_map}
@@ -54,7 +58,7 @@ class CHAIDVector(object):
 
     def __iter__(self):
         return iter(self._arr)
-        
+
     def __getitem__(self, key):
         return CHAIDVector(self._arr[key], metadata=self.metadata)
 
@@ -63,21 +67,35 @@ class CHAIDVector(object):
         return CHAIDVector(np.array(self._arr), metadata=self.metadata)
 
     def deep_copy(self):
+        """
+        Returns a deep copy.
+        """
         return CHAIDVector(np.array(self._arr), metadata=self.metadata)
 
     @property
     def arr(self):
+        """
+        Provides access to the internal numpy array
+        """
         return self._arr
 
     @arr.setter
     def arr(self, value):
+        """
+        Allows writing to the internal numpy array
+        """
         self._arr = value
 
     @property
     def metadata(self):
+        """
+        Provides access to the internal metadata e.g. when a string has been
+        replaced with a float, this will provide a mapping back to the original
+        string
+        """
         return self._metadata
-    
-        
+
+
 class CHAIDNode(object):
     """
     A node in the CHAID tree
@@ -94,7 +112,7 @@ class CHAIDNode(object):
         The p-value for the split
     indices : array-like or None
         The row index that ended up in the node (only occurs in terminal nodes)
-    node_id : float 
+    node_id : float
         A float representing the id of the node
     parent : float or None
         The node_id of the parent of that node
@@ -142,9 +160,9 @@ class CHAIDNode(object):
     @property
     def members(self):
         if self._members is None:
-            counts = np.transpose(np.unique(self.dep_v.arr, return_counts=True))
-            members = dict((self.dep_v.metadata.get(k, k), v) for k, v in counts)
-            self._members = members
+            dep_v = self.dep_v
+            counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
+            self._members = {dep_v.metadata.get(k, k): v for k, v in counts}
         return self._members
 
 
@@ -179,15 +197,15 @@ class CHAIDSplit(object):
         """ Substiutes the splits with other values into the split_map """
         for i, arr in enumerate(self.splits):
             self.split_map[i] = [sub.get(x, x) for x in arr]
-        for s in self.surrogates:
-            s.sub_split_values(sub)
+        for split in self.surrogates:
+            split.sub_split_values(sub)
 
     def name_columns(self, sub):
-        """ Substiutes the split column index with a human readable string """ 
+        """ Substiutes the split column index with a human readable string """
         if self.column_id and len(sub) > self.column_id:
             self.split_name = sub[self.column_id]
-        for s in self.surrogates:
-            s.name_columns(sub)
+        for split in self.surrogates:
+            split.name_columns(sub)
 
     @property
     def column(self):
@@ -213,7 +231,7 @@ class CHAID(object):
     Parameters
     ----------
     ndarr : numpy.ndarray
-        non-aggregated 2-dimensional array containing 
+        non-aggregated 2-dimensional array containing
         independent variables on the veritcal axis and (usually)
         respondent level data on the horizontal axis
     arr : numpy.ndarray
@@ -222,10 +240,12 @@ class CHAID(object):
     alpha_merge : float
         the threshold value in which to create a split (default 0.05)
     max_depth : float
-        the threshold value for the maximum number of levels after the root node in the tree (default 2)
+        the threshold value for the maximum number of levels after the root
+        node in the tree (default 2)
     min_sample : float
-        the threshold value of the number of respondents that the node must contain (default 30)
-    split_titles : array-like 
+        the threshold value of the number of respondents that the node must
+        contain (default 30)
+    split_titles : array-like
         array of names for the independent variables in the data
     """
     def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None, split_threshold=0):
@@ -245,22 +265,26 @@ class CHAID(object):
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0):
         """
-        Helper method to pre-process a pandas data frame in order to run CHAID analysis
-        
+        Helper method to pre-process a pandas data frame in order to run CHAID
+        analysis
+
         Parameters
         ----------
         df :  pandas.DataFrame
-            the dataframe with the dependent and independent variables in which to slice from
+            the dataframe with the dependent and independent variables in which
+            to slice from
         i_variables :  array-like
             list of the column names for the independent variables
         d_variable : string
-            the name of the dependent variable in the dataframe 
+            the name of the dependent variable in the dataframe
         alpha_merge : float
             the threshold value in which to create a split (default 0.05)
         max_depth : float
-            the threshold value for the maximum number of levels after the root node in the tree (default 2)
+            the threshold value for the maximum number of levels after the root
+            node in the tree (default 2)
         min_sample : float
-            the threshold value of the number of respondents that the node must contain (default 30)
+            the threshold value of the number of respondents that the node must
+            contain (default 30)
         """
         ind_df = df[i_variables]
         ind_values = ind_df.values
@@ -309,6 +333,7 @@ class CHAID(object):
     def generate_best_split(self, ind, dep):
         """ internal method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
+        relative_split_threshold = 1 - self.split_threshold
         for i, index in enumerate(ind):
             index = index.deep_copy()
             unique = set(index.arr)
@@ -325,14 +350,14 @@ class CHAID(object):
                 sub_data_columns = [('combinations', object), ('chi', float), ('p', float)]
                 sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
-                    y = frequencies[comb[0]]
-                    g = frequencies[comb[1]]
+                    col1_freq = frequencies[comb[0]]
+                    col2_freq = frequencies[comb[1]]
 
-                    keys = set(y.keys()).union(g.keys())
+                    keys = set(col1_freq.keys()).union(col2_freq.keys())
 
                     cr_table = [
-                        [y.get(k, 0) for k in keys],
-                        [g.get(k, 0) for k in keys]
+                        [col1_freq.get(k, 0) for k in keys],
+                        [col2_freq.get(k, 0) for k in keys]
                     ]
 
                     chi = stats.chi2_contingency(np.array(cr_table))
@@ -347,16 +372,18 @@ class CHAID(object):
 
                     if not split.valid() or highest_p_split < split.p:
                         split, temp_split = temp_split, split
-                    
-                    if temp_split.valid() and (temp_split.chi / split.chi) >= (1 - self.split_threshold):
+
+                    chi_threshold = relative_split_threshold * split.chi
+
+                    if temp_split.valid() and temp_split.chi >= chi_threshold:
                         for sur_split in temp_split.surrogates:
-                            if (sur_split.chi / split.chi) >= (1 - self.split_threshold):
+                            if sur_split.chi >= chi_threshold:
                                 split.surrogates.append(sur_split)
                         temp_split.surrogates = []
                         split.surrogates.append(temp_split)
 
                     for _, surrogate_chi, surrogate_p in sub_data[1:]:
-                        if (surrogate_chi / split.chi) >= (1 - self.split_threshold):
+                        if surrogate_chi <= chi_threshold:
                             break
                         temp_split = CHAIDSplit(i, responses, surrogate_chi, surrogate_p)
                         split.surrogates.append(temp_split)
@@ -393,7 +420,7 @@ class CHAID(object):
 
     def __repr__(self):
         return str(self.tree_store)
-            
+
     def get_node(self, node_id):
         """
         Returns the node with the given id
