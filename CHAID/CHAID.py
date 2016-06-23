@@ -4,6 +4,7 @@ from scipy import stats
 import numpy as np
 import collections as cl
 from treelib import Tree
+import operator
 
 class CHAIDVector(object):
     """
@@ -210,6 +211,7 @@ class CHAID(object):
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = []
+        self.observed = arr
         self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, CHAIDVector(arr))
 
     @staticmethod
@@ -352,7 +354,7 @@ class CHAID(object):
 
     def __repr__(self):
         return str(self.tree_store)
-            
+
     def get_node(self, node_id):
         """
         Returns the node with the given id
@@ -367,9 +369,23 @@ class CHAID(object):
         """ prints the tree out """
         self.to_tree().show()
 
-    def predict(self):
+    def node_predictions(self):
         """ determines which rows fall into which node """
         pred = np.zeros(self.data_size)
         for node in self.tree_store:
             pred[node.indices] = node.node_id
         return pred
+
+    def model_predictions(self):
+        """  Determines the highest frequency of 
+             categorical dependent variable for that row
+        """
+        pred = np.zeros(self.data_size)
+        for node in self.tree_store:
+            pred[node.indices] = sorted(node.members.items(), key=operator.itemgetter(1))[0][0]
+        return pred
+
+    def risk(self):
+        model_predictions = self.model_predictions()
+        observed = self.observed
+        return float((model_predictions == observed).sum()) / self.data_size
