@@ -122,10 +122,7 @@ class CHAIDNode(object):
     is_terminal : boolean 
         Whether the node is terminal
     """
-    def __init__(self, choices=None, split_variable=None, chi=0,
-                 p=0, indices=None, node_id=0, parent=None, dep_v=None,
-                 is_terminal=False
-                 ):
+    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=None):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
         self.split = split or CHAIDSplit(None, None, None, None)
