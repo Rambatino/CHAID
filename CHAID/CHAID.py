@@ -375,7 +375,7 @@ class CHAID(object):
         self.to_tree().show()
 
     def node_predictions(self):
-        """ determines which rows fall into which node """
+        """ Determines which rows fall into which node """
         pred = np.zeros(self.data_size)
         for node in self.tree_store:
             if node.is_terminal:
@@ -383,9 +383,10 @@ class CHAID(object):
         return pred
 
     def model_predictions(self):
-        """  Determines the highest frequency of 
-             categorical dependent variable in the
-             terminal node where that row fell
+        """  
+        Determines the highest frequency of 
+        categorical dependent variable in the
+        terminal node where that row fell
         """
         pred = np.zeros(self.data_size)
         for node in self.tree_store:
@@ -394,8 +395,9 @@ class CHAID(object):
         return pred
 
     def risk(self):
-        """ Calculates the fraction of risk associated
-            with the model predictions
+        """ 
+        Calculates the fraction of risk associated
+        with the model predictions
         """
         model_predictions = self.model_predictions()
         observed = self.observed
