@@ -119,7 +119,7 @@ class CHAIDNode(object):
         The node_id of the parent of that node
     dep_v : array-like
         The dependent variable set
-    is_terminal : boolean 
+    is_terminal : boolean
         Whether the node is terminal
     """
     def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False):
@@ -143,7 +143,7 @@ class CHAIDNode(object):
             return False
 
     def __repr__(self):
-        format_str = '({0.choices}, {0.members}, {0.split_variable}, {0.chi}, {0.p})'
+        format_str = '({0.choices}, {0.members}, {0.split})'
         return format_str.format(self)
 
     def __lt__(self, other):
@@ -211,11 +211,25 @@ class CHAIDSplit(object):
         for split in self.surrogates:
             split.name_columns(sub)
 
+    def __repr__(self):
+        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'
+        if not self.valid():
+            return '<Invalid Chaid Split>'
+        return format_str.format(self)
+
     @property
     def column(self):
         if not self.valid():
             return None
         return self.split_name or str(self.column_id)
+
+    @property
+    def groupings(self):
+        if not self.valid():
+            return "[]"
+        if all(x is None for x in self.split_map):
+            return str(self.splits)
+        return str(self.split_map)
 
     def valid(self):
         return self.column_id is not None
@@ -369,8 +383,7 @@ class CHAID(object):
                     chi = stats.chi2_contingency(np.array(cr_table))
                     sub_data[j] = (comb, chi[0], chi[1])
 
-                sub_data = np.sort(sub_data, order='p')[::-1]
-                choice, chi, highest_p_split = sub_data[0]
+                choice, chi, highest_p_split = max(sub_data, key=lambda x: x[2])
 
                 if size == 1 or highest_p_split < self.alpha_merge:
                     responses = [mappings[x] for x in unique]
@@ -382,16 +395,11 @@ class CHAID(object):
                     chi_threshold = relative_split_threshold * split.chi
 
                     if temp_split.valid() and temp_split.chi >= chi_threshold:
-                        for sur_split in temp_split.surrogates:
-                            if sur_split.chi >= chi_threshold:
-                                split.surrogates.append(sur_split)
-                        temp_split.surrogates = []
-                        split.surrogates.append(temp_split)
+                        for sur in temp_split.surrogates:
+                            if sur.column_id != i and sur.chi >= chi_threshold:
+                                split.surrogates.append(sur)
 
-                    for _, surrogate_chi, surrogate_p in sub_data[1:]:
-                        if surrogate_chi <= chi_threshold:
-                            break
-                        temp_split = CHAIDSplit(i, responses, surrogate_chi, surrogate_p)
+                        temp_split.surrogates = []
                         split.surrogates.append(temp_split)
 
                     break
@@ -450,8 +458,8 @@ class CHAID(object):
         return pred
 
     def model_predictions(self):
-        """  
-        Determines the highest frequency of 
+        """
+        Determines the highest frequency of
         categorical dependent variable in the
         terminal node where that row fell
         """
@@ -462,7 +470,7 @@ class CHAID(object):
         return pred
 
     def risk(self):
-        """ 
+        """
         Calculates the fraction of risk associated
         with the model predictions
         """
