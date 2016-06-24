@@ -42,7 +42,7 @@ class CHAIDVector(object):
         ----------
         tuple : prcoessed vector, hash or substitutions
         """
-        self._arr = vect
+        self._arr = np.array(vect)
         if vect.dtype != float:
             unique_v = np.unique(self._arr.astype(str))
             float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
@@ -119,7 +119,7 @@ class CHAIDNode(object):
         The node_id of the parent of that node
     dep_v : array-like
         The dependent variable set
-    is_terminal : boolean 
+    is_terminal : boolean
         Whether the node is terminal
     """
     def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=None):
@@ -262,10 +262,14 @@ class CHAID(object):
             self.vectorised_array.append(CHAIDVector(ndarr[:, ind]))
         self.data_size = ndarr.shape[0]
         self.node_count = 0
-        self.tree_store = []
-        self.observed = arr
+        self.tree_store = None
+        self.observed = CHAIDVector(arr)
         self.split_threshold = split_threshold
-        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, CHAIDVector(arr))
+
+    def build_tree(self):
+        """ Build chaid tree """
+        self.tree_store = []
+        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed)
 
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0):
@@ -421,9 +425,13 @@ class CHAID(object):
 
     def __iter__(self):
         """ Function to allow nodes to be iterated over """
+        if not self.tree_store:
+            self.build_tree()
         return iter(self.tree_store)
 
     def __repr__(self):
+        if not self.tree_store:
+            self.build_tree()
         return str(self.tree_store)
 
     def get_node(self, node_id):
@@ -434,6 +442,8 @@ class CHAID(object):
         node_id : integer
             Find the node with this ID
         """
+        if not self.tree_store:
+            self.build_tree()
         return self.tree_store[node_id]
 
     def print_tree(self):
@@ -449,19 +459,19 @@ class CHAID(object):
         return pred
 
     def model_predictions(self):
-        """  
-        Determines the highest frequency of 
+        """
+        Determines the highest frequency of
         categorical dependent variable in the
         terminal node where that row fell
         """
         pred = np.zeros(self.data_size)
-        for node in self.tree_store:
+        for node in self:
             if node.is_terminal:
                 pred[node.indices] = max(node.member, key=node.member.get)[0]
         return pred
 
     def risk(self):
-        """ 
+        """
         Calculates the fraction of risk associated
         with the model predictions
         """
