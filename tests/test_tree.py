@@ -25,14 +25,14 @@ def list_ordered_equal(a, b):
         return a == b
 
 
-def test_best_split():
+def test_best_split_unique_values():
     """
     Test passing in a perfect split data, with no catagory merges needed
     """
     arr = np.array(([1] * 5) + ([2] * 5))
-    orig_arr = np.array(([1] * 5) + ([2] * 5))
+    orig_arr = arr.copy()
     ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
-    orig_ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
+    orig_ndarr = ndarr.copy()
     tree = CHAID.CHAID(ndarr, arr)
 
     split = tree.generate_best_split(
@@ -43,6 +43,27 @@ def test_best_split():
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
     assert split.column_id == 0, 'Identifies correct column to split on'
     assert list_unordered_equal(split.splits, [[1.0], [2.0]]), 'Correctly identifies catagories'
+    assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
+    assert split.p < 0.015
+
+def test_best_split_with_combination():
+    """
+    Test passing in a perfect split data, with no catagory merges needed
+    """
+    arr = np.array(([1] * 5) + ([2] * 10))
+    orig_arr = arr.copy()
+    ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5) + ([3, 2, 3] * 5)).reshape(15, 3)
+    orig_ndarr = ndarr.copy()
+    tree = CHAID.CHAID(ndarr, arr)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed
+    )
+    assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
+    assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
+    assert split.column_id == 0, 'Identifies correct column to split on'
+    assert list_unordered_equal(split.splits, [[1.0], [2.0, 3.0]]), 'Correctly identifies catagories'
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
     assert split.p < 0.015
 
