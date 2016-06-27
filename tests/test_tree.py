@@ -1,28 +1,10 @@
 """
 Testing module for the class CHAID
 """
-import collections
+from setup_tests import list_ordered_equal, list_unordered_equal
 from unittest import TestCase
 import numpy as np
 import CHAID
-
-def list_unordered_equal(a, b):
-    """ Compares the unordered contents of two nd lists"""
-    if isinstance(a, collections.Iterable) and isinstance(b, collections.Iterable):
-        a = sorted(a)
-        b = sorted(b)
-        return all(list_unordered_equal(i_a, i_b) for i_a, i_b in zip(a, b))
-    else:
-        return a == b
-
-
-def list_ordered_equal(a, b):
-    """ Compares the unordered contents of two nd lists"""
-    if isinstance(a, collections.Iterable) and isinstance(b, collections.Iterable):
-        return all(list_ordered_equal(i_a, i_b) for i_a, i_b in zip(a, b))
-    else:
-        return a == b
-
 
 def test_best_split_unique_values():
     """
@@ -105,6 +87,7 @@ def test_p_and_chi_values():
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """
     def setUp(self):
+        """ Set up for tree generation tests """
         arr = np.array(([1] * 5) + ([2] * 5))
         orig_arr = np.array(([1] * 5) + ([2] * 5))
         ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
