@@ -43,7 +43,7 @@ class CHAIDVector(object):
         tuple : prcoessed vector, hash or substitutions
         """
         self._arr = np.array(vect)
-        if vect.dtype != float:
+        if vect.dtype != float and vect.dtype != int:
             unique_v = np.unique(self._arr.astype(str))
             float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
             for value, new_id in float_map:

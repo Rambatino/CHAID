@@ -6,7 +6,6 @@ from unittest import TestCase
 import numpy as np
 import CHAID
 
-
 def list_unordered_equal(a, b):
     """ Compares the unordered contents of two nd lists"""
     if isinstance(a, collections.Iterable) and isinstance(b, collections.Iterable):
@@ -99,8 +98,8 @@ def test_p_and_chi_values():
         tree.vectorised_array,
         tree.observed
     )
-    assert round(split.chi, 4) == .5929
-    assert round(split.p, 4) == 0.2857
+    assert round(split.chi, 4) == 1.4705 #chi2_contingency([[3, 1], [0, 3]])
+    assert round(split.p, 4) == 0.2253
 
 
 class TestTreeGenerated(TestCase):
