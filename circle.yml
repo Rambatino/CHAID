@@ -3,4 +3,4 @@ dependencies:
     - pip install .
 test:
   override:
-    - py.test tests/*
+    - python -m py.test tests
