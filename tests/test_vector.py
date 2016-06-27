@@ -1,5 +1,5 @@
 """
-Testing module for the class CHAIDTree
+Testing module for the class CHAIDVector
 """
 import collections
 from unittest import TestCase
