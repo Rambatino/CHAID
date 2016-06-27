@@ -206,7 +206,7 @@ class CHAIDSplit(object):
 
     def name_columns(self, sub):
         """ Substiutes the split column index with a human readable string """
-        if self.column_id and len(sub) > self.column_id:
+        if self.column_id is not None and len(sub) > self.column_id:
             self.split_name = sub[self.column_id]
         for split in self.surrogates:
             split.name_columns(sub)
