@@ -1,11 +1,9 @@
 """
 Testing module for the class CHAIDVector
 """
-from setup_tests import list_ordered_equal
+from setup_tests import list_ordered_equal, CHAID
 from unittest import TestCase
 import numpy as np
-import CHAID
-
 
 def test_chaid_vector_converts_strings_with_correct_metadata():
     """ Checking that the metadata is correct when CHAIDVectors are created from strings """
@@ -43,7 +41,7 @@ class TestDeepCopy(TestCase):
     """ Test fixture class for deep copy method """
     def setUp(self):
         """ Setup for copy tests"""
-        arr = np.array([{'a': 'b'}, {'c': 'd'}])
+        arr = np.array([5.0, 10.0])
         self.orig = CHAID.CHAIDVector(arr)
         self.copy = self.orig.deep_copy()
 

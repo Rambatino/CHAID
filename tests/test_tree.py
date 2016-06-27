@@ -1,10 +1,9 @@
 """
 Testing module for the class CHAID
 """
-from setup_tests import list_ordered_equal, list_unordered_equal
+from setup_tests import list_ordered_equal, list_unordered_equal, CHAID
 from unittest import TestCase
 import numpy as np
-import CHAID
 
 def test_best_split_unique_values():
     """
