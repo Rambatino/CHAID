@@ -31,3 +31,11 @@ class TestVectorGenerated(TestCase):
 
         assert np.array_equal(vector.arr, np.array([1.0, 2.0])), 'The indices are correctly substituted'
         assert vector._metadata == {-1.0: '<missing>'}, 'The metadata is formed correctly'
+
+    def test_chaid_vector_converts_ints_when_dtype_is_object(self):
+        """ Checking that the metadata is correct when CHAIDVectors are created from ints """
+        arr = np.array([1, 2], dtype="object")
+        vector = CHAID.CHAIDVector(arr)
+
+        assert np.array_equal(vector.arr, np.array([0.0, 1.0])), 'The indices are correctly substituted'
+        assert vector._metadata == {0.0: 1, 1.0: 2, -1.0: '<missing>'}, 'The metadata is formed correctly'

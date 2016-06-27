@@ -44,7 +44,7 @@ class CHAIDVector(object):
         """
         self._arr = np.array(vect)
         if vect.dtype != float and vect.dtype != int:
-            unique_v = np.unique(self._arr.astype(str))
+            unique_v = np.unique(self._arr)
             float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
             for value, new_id in float_map:
                 self._arr[self._arr == value] = new_id
