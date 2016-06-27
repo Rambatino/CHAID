@@ -1,3 +1,6 @@
+dependencies:
+  pre:
+    - pip install .
 test:
   override:
     - py.test tests/*
