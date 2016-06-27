@@ -42,9 +42,9 @@ class CHAIDVector(object):
         ----------
         tuple : prcoessed vector, hash or substitutions
         """
-        self._arr = vect
-        if vect.dtype != float:
-            unique_v = np.unique(self._arr.astype(str))
+        self._arr = np.array(vect)
+        if vect.dtype != float and vect.dtype != int:
+            unique_v = np.unique(self._arr)
             float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
             for value, new_id in float_map:
                 self._arr[self._arr == value] = new_id
@@ -206,7 +206,7 @@ class CHAIDSplit(object):
 
     def name_columns(self, sub):
         """ Substiutes the split column index with a human readable string """
-        if self.column_id and len(sub) > self.column_id:
+        if self.column_id is not None and len(sub) > self.column_id:
             self.split_name = sub[self.column_id]
         for split in self.surrogates:
             split.name_columns(sub)
@@ -276,10 +276,14 @@ class CHAID(object):
             self.vectorised_array.append(CHAIDVector(ndarr[:, ind]))
         self.data_size = ndarr.shape[0]
         self.node_count = 0
-        self.tree_store = []
-        self.observed = arr
+        self.tree_store = None
+        self.observed = CHAIDVector(arr)
         self.split_threshold = split_threshold
-        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, CHAIDVector(arr))
+
+    def build_tree(self):
+        """ Build chaid tree """
+        self.tree_store = []
+        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed)
 
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0):
@@ -430,9 +434,13 @@ class CHAID(object):
 
     def __iter__(self):
         """ Function to allow nodes to be iterated over """
+        if not self.tree_store:
+            self.build_tree()
         return iter(self.tree_store)
 
     def __repr__(self):
+        if not self.tree_store:
+            self.build_tree()
         return str(self.tree_store)
 
     def get_node(self, node_id):
@@ -443,6 +451,8 @@ class CHAID(object):
         node_id : integer
             Find the node with this ID
         """
+        if not self.tree_store:
+            self.build_tree()
         return self.tree_store[node_id]
 
     def print_tree(self):
@@ -464,7 +474,7 @@ class CHAID(object):
         terminal node where that row fell
         """
         pred = np.zeros(self.data_size)
-        for node in self.tree_store:
+        for node in self:
             if node.is_terminal:
                 pred[node.indices] = max(node.members, key=node.members.get)
         return pred
