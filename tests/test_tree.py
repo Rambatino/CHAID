@@ -48,7 +48,7 @@ def test_best_split_unique_values():
 
 def test_best_split_with_combination():
     """
-    Test passing in a perfect split data, with no catagory merges needed
+    Test passing in a perfect split data, with a single catagory merges needed
     """
     arr = np.array(([1] * 5) + ([2] * 10))
     orig_arr = arr.copy()
@@ -66,6 +66,41 @@ def test_best_split_with_combination():
     assert list_unordered_equal(split.splits, [[1.0], [2.0, 3.0]]), 'Correctly identifies catagories'
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
     assert split.p < 0.015
+
+def test_surrogate_correctly_identified():
+    """
+    Test passing in data, in which a surrogate split exists
+    """
+    arr = np.array(([1] * 20) + ([2] * 20))
+    orig_arr = arr.copy()
+    ndarr = np.array(([1, 2, 3] * 20) + ([2, 3, 3] * 19) + [2, 2, 3]).reshape(40, 3)
+    orig_ndarr = ndarr.copy()
+    tree = CHAID.CHAID(ndarr, arr, split_threshold=0.9)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed
+    )
+    assert len(split.surrogates) == 1
+    assert split.surrogates[0].column_id == 1
+
+def test_p_and_chi_values():
+    """
+    Check chi and p value against hand calculated values
+    """
+    arr = np.array(([1] * 3) + ([2] * 4))
+    orig_arr = arr.copy()
+    ndarr = np.array(([1] * 4) + ([2] * 3)).reshape(7, 1)
+    orig_ndarr = ndarr.copy()
+
+    tree = CHAID.CHAID(ndarr, arr, split_threshold=0.9)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed
+    )
+    assert round(split.chi, 4) == .5929
+    assert round(split.p, 4) == 0.2857
 
 
 class TestTreeGenerated(TestCase):
