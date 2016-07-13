@@ -485,5 +485,5 @@ class CHAID(object):
         with the model predictions
         """
         model_predictions = self.model_predictions()
-        observed = self.observed
-        return float((model_predictions == observed).sum()) / self.data_size
+        observed = self.observed.arr
+        return 1 - float((model_predictions == observed).sum()) / self.data_size
