@@ -1,0 +1,6 @@
+dependencies:
+  pre:
+    - pip install .
+test:
+  override:
+    - python -m py.test tests

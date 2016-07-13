@@ -10,7 +10,7 @@ from os import path
 
 setup(
     name='CHAID',
-    version='0.0.11',
+    version='0.2.0',
     description='A CHAID tree building algorithm',
     long_description="This package provides a python implementation of the Chi-Squared Automatic Inference Detection (CHAID) decision tree",
     url='https://github.com/Rambatino/CHAID',
@@ -32,7 +32,7 @@ setup(
     ],
     keywords='CHAID pandas numpy scipy statistics statistical analysis',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['numpy', 'scipy', 'pandas', 'treelib'],
+    install_requires=['numpy', 'scipy', 'pandas', 'treelib', 'pytest'],
     extras_require={
         'dev': ['check-manifest'],
         'test': ['coverage'],

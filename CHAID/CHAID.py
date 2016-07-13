@@ -1,9 +1,14 @@
+"""
+This package provides a python implementation of the Chi-Squared Automatic
+Inference Detection (CHAID) decision tree.
+"""
 import itertools as it
-import pandas as pd
-from scipy import stats
-import numpy as np
 import collections as cl
+import numpy as np
+from scipy import stats
 from treelib import Tree
+import operator
+
 
 class CHAIDVector(object):
     """
@@ -29,7 +34,7 @@ class CHAIDVector(object):
         Substitute floats into the vector if it does not have a dtype of float
 
         Parameters
-        ----------     
+        ----------
         vect : nd.array
             the vector in whcih to substitute the float
 
@@ -37,13 +42,13 @@ class CHAIDVector(object):
         ----------
         tuple : prcoessed vector, hash or substitutions
         """
-        self._arr = vect
-        if vect.dtype != float:
-            unique_v = np.unique(self._arr.astype(str))
+        self._arr = np.array(vect)
+        if vect.dtype != float and vect.dtype != int:
+            unique_v = np.unique(self._arr)
             float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
             for value, new_id in float_map:
                 self._arr[self._arr == value] = new_id
-            self._arr = self._arr.astype(float, subok=False, order='K', copy=False)
+            self._arr = self._arr.astype(float, subok=False, copy=False)
             nans = np.isnan(self._arr)
             self._arr[nans] = -1.0
             self._metadata = {v: k for k, v in float_map}
@@ -54,7 +59,7 @@ class CHAIDVector(object):
 
     def __iter__(self):
         return iter(self._arr)
-        
+
     def __getitem__(self, key):
         return CHAIDVector(self._arr[key], metadata=self.metadata)
 
@@ -63,21 +68,35 @@ class CHAIDVector(object):
         return CHAIDVector(np.array(self._arr), metadata=self.metadata)
 
     def deep_copy(self):
+        """
+        Returns a deep copy.
+        """
         return CHAIDVector(np.array(self._arr), metadata=self.metadata)
 
     @property
     def arr(self):
+        """
+        Provides access to the internal numpy array
+        """
         return self._arr
 
     @arr.setter
     def arr(self, value):
+        """
+        Allows writing to the internal numpy array
+        """
         self._arr = value
 
     @property
     def metadata(self):
+        """
+        Provides access to the internal metadata e.g. when a string has been
+        replaced with a float, this will provide a mapping back to the original
+        string
+        """
         return self._metadata
-    
-        
+
+
 class CHAIDNode(object):
     """
     A node in the CHAID tree
@@ -94,25 +113,25 @@ class CHAIDNode(object):
         The p-value for the split
     indices : array-like or None
         The row index that ended up in the node (only occurs in terminal nodes)
-    node_id : float 
+    node_id : float
         A float representing the id of the node
     parent : float or None
         The node_id of the parent of that node
     dep_v : array-like
         The dependent variable set
+    is_terminal : boolean
+        Whether the node is terminal
     """
-    def __init__(self, choices=None, split_variable=None, chi=0,
-                 p=0, indices=None, node_id=0, parent=None, dep_v=None):
+    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
-        self.split_variable = split_variable
-        self.chi = chi
-        self.p = p
+        self.split = split or CHAIDSplit(None, None, None, None)
         self.indices = indices
         self.node_id = node_id
         self.parent = parent
         self.dep_v = dep_v
         self._members = None
+        self.is_terminal = is_terminal
 
     def __hash__(self):
         return hash(self.__dict__)
@@ -124,18 +143,30 @@ class CHAIDNode(object):
             return False
 
     def __repr__(self):
-        format_str = '({0.choices}, {0.members}, {0.split_variable}, {0.chi}, {0.p})'
+        format_str = '({0.choices}, {0.members}, {0.split})'
         return format_str.format(self)
 
     def __lt__(self, other):
         return self.node_id < other.node_id
 
     @property
+    def chi(self):
+        return self.split.chi
+
+    @property
+    def p(self):
+        return self.split.p
+
+    @property
+    def split_variable(self):
+        return self.split.column
+
+    @property
     def members(self):
         if self._members is None:
-            counts = np.transpose(np.unique(self.dep_v.arr, return_counts=True))
-            members = dict((self.dep_v.metadata.get(k, k), v) for k, v in counts)
-            self._members = members
+            dep_v = self.dep_v
+            counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
+            self._members = {dep_v.metadata.get(k, k): v for k, v in counts}
         return self._members
 
 
@@ -145,7 +176,7 @@ class CHAIDSplit(object):
 
     Parameters
     ----------
-    index : float
+    column : float
         The key of where the split is occuring relative to the input data
     splits : array-like
         The grouped variables
@@ -156,9 +187,11 @@ class CHAIDSplit(object):
     p : float
         The p value of that split
     """
-    def __init__(self, index, splits, chi, p):
+    def __init__(self, column, splits, chi, p):
         splits = splits or []
-        self.index = index
+        self.surrogates = []
+        self.column_id = column
+        self.split_name = None
         self.splits = list(splits)
         self.split_map = [None] * len(self.splits)
         self.chi = chi
@@ -168,6 +201,38 @@ class CHAIDSplit(object):
         """ Substiutes the splits with other values into the split_map """
         for i, arr in enumerate(self.splits):
             self.split_map[i] = [sub.get(x, x) for x in arr]
+        for split in self.surrogates:
+            split.sub_split_values(sub)
+
+    def name_columns(self, sub):
+        """ Substiutes the split column index with a human readable string """
+        if self.column_id is not None and len(sub) > self.column_id:
+            self.split_name = sub[self.column_id]
+        for split in self.surrogates:
+            split.name_columns(sub)
+
+    def __repr__(self):
+        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'
+        if not self.valid():
+            return '<Invalid Chaid Split>'
+        return format_str.format(self)
+
+    @property
+    def column(self):
+        if not self.valid():
+            return None
+        return self.split_name or str(self.column_id)
+
+    @property
+    def groupings(self):
+        if not self.valid():
+            return "[]"
+        if all(x is None for x in self.split_map):
+            return str(self.splits)
+        return str(self.split_map)
+
+    def valid(self):
+        return self.column_id is not None
 
 
 class MappingDict(dict):
@@ -184,7 +249,7 @@ class CHAID(object):
     Parameters
     ----------
     ndarr : numpy.ndarray
-        non-aggregated 2-dimensional array containing 
+        non-aggregated 2-dimensional array containing
         independent variables on the veritcal axis and (usually)
         respondent level data on the horizontal axis
     arr : numpy.ndarray
@@ -193,13 +258,15 @@ class CHAID(object):
     alpha_merge : float
         the threshold value in which to create a split (default 0.05)
     max_depth : float
-        the threshold value for the maximum number of levels after the root node in the tree (default 2)
+        the threshold value for the maximum number of levels after the root
+        node in the tree (default 2)
     min_sample : float
-        the threshold value of the number of respondents that the node must contain (default 30)
-    split_titles : array-like 
+        the threshold value of the number of respondents that the node must
+        contain (default 30)
+    split_titles : array-like
         array of names for the independent variables in the data
     """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None, split_threshold=0):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_sample = min_sample
@@ -209,33 +276,43 @@ class CHAID(object):
             self.vectorised_array.append(CHAIDVector(ndarr[:, ind]))
         self.data_size = ndarr.shape[0]
         self.node_count = 0
+        self.tree_store = None
+        self.observed = CHAIDVector(arr)
+        self.split_threshold = split_threshold
+
+    def build_tree(self):
+        """ Build chaid tree """
         self.tree_store = []
-        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, CHAIDVector(arr))
+        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed)
 
     @staticmethod
-    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30):
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0):
         """
-        Helper method to pre-process a pandas data frame in order to run CHAID analysis
-        
+        Helper method to pre-process a pandas data frame in order to run CHAID
+        analysis
+
         Parameters
         ----------
         df :  pandas.DataFrame
-            the dataframe with the dependent and independent variables in which to slice from
+            the dataframe with the dependent and independent variables in which
+            to slice from
         i_variables :  array-like
             list of the column names for the independent variables
         d_variable : string
-            the name of the dependent variable in the dataframe 
+            the name of the dependent variable in the dataframe
         alpha_merge : float
             the threshold value in which to create a split (default 0.05)
         max_depth : float
-            the threshold value for the maximum number of levels after the root node in the tree (default 2)
+            the threshold value for the maximum number of levels after the root
+            node in the tree (default 2)
         min_sample : float
-            the threshold value of the number of respondents that the node must contain (default 30)
+            the threshold value of the number of respondents that the node must
+            contain (default 30)
         """
         ind_df = df[i_variables]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
-        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values))
+        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold)
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -243,30 +320,28 @@ class CHAID(object):
 
         if self.max_depth < depth:
             terminal_node = CHAIDNode(choices=parent_decisions, node_id=self.node_count,
-                                      parent=parent, indices=rows, dep_v=dep)
+                                      parent=parent, indices=rows, dep_v=dep, is_terminal=True)
             self.tree_store.append(terminal_node)
             self.node_count += 1
             return self.tree_store
 
         split = self.generate_best_split(ind, dep)
 
-        if split.index is not None and len(self.split_titles) > split.index:
-            split_name = self.split_titles[split.index]
-        else:
-            split_name = split.index
+        split.name_columns(self.split_titles)
 
         node = CHAIDNode(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
-                         parent=parent, chi=split.chi, p=split.p, split_variable=split_name)
+                         parent=parent, split=split)
 
         self.tree_store.append(node)
         parent = self.node_count
         self.node_count += 1
 
-        if split.index is None:
+        if not split.valid():
+            node.is_terminal = True
             return self.tree_store
 
         for index, choices in enumerate(split.splits):
-            correct_rows = np.in1d(ind[split.index].arr, choices)
+            correct_rows = np.in1d(ind[split.column_id].arr, choices)
             dep_slice = dep[correct_rows]
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
@@ -274,7 +349,7 @@ class CHAID(object):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
             else:
                 terminal_node = CHAIDNode(choices=split.split_map[index], node_id=self.node_count,
-                                          parent=parent, indices=row_slice, dep_v=dep_slice)
+                                          parent=parent, indices=row_slice, dep_v=dep_slice, is_terminal=True)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
@@ -282,6 +357,7 @@ class CHAID(object):
     def generate_best_split(self, ind, dep):
         """ internal method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
+        relative_split_threshold = 1 - self.split_threshold
         for i, index in enumerate(ind):
             index = index.deep_copy()
             unique = set(index.arr)
@@ -295,32 +371,42 @@ class CHAID(object):
 
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
-                sub_data = np.ndarray(shape=(size, 3), dtype=object, order='F')
+                sub_data_columns = [('combinations', object), ('chi', float), ('p', float)]
+                sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
-                    y = frequencies[comb[0]]
-                    g = frequencies[comb[1]]
+                    col1_freq = frequencies[comb[0]]
+                    col2_freq = frequencies[comb[1]]
 
-                    keys = set(y.keys()).union(g.keys())
+                    keys = set(col1_freq.keys()).union(col2_freq.keys())
 
                     cr_table = [
-                        [y.get(k, 0) for k in keys],
-                        [g.get(k, 0) for k in keys]
+                        [col1_freq.get(k, 0) for k in keys],
+                        [col2_freq.get(k, 0) for k in keys]
                     ]
 
                     chi = stats.chi2_contingency(np.array(cr_table))
                     sub_data[j] = (comb, chi[0], chi[1])
 
-                highest_p_split = np.sort(sub_data[:, 2])[-1]
-                correct_row = np.where(np.in1d(sub_data[:, 2], highest_p_split))[0][0]
+                choice, chi, highest_p_split = max(sub_data, key=lambda x: x[2])
 
                 if size == 1 or highest_p_split < self.alpha_merge:
-                    if highest_p_split < split.p:
-                        responses = [mappings[x] for x in unique]
-                        chi = sub_data[correct_row][1]
-                        split = CHAIDSplit(i, responses, chi, highest_p_split)
-                    break
+                    responses = [mappings[x] for x in unique]
+                    temp_split = CHAIDSplit(i, responses, chi, highest_p_split)
 
-                choice = list(sub_data[correct_row, 0])
+                    if not split.valid() or highest_p_split < split.p:
+                        split, temp_split = temp_split, split
+
+                    chi_threshold = relative_split_threshold * split.chi
+
+                    if temp_split.valid() and temp_split.chi >= chi_threshold:
+                        for sur in temp_split.surrogates:
+                            if sur.column_id != i and sur.chi >= chi_threshold:
+                                split.surrogates.append(sur)
+
+                        temp_split.surrogates = []
+                        split.surrogates.append(temp_split)
+
+                    break
 
                 if choice[1] in mappings:
                     mappings[choice[0]] += mappings[choice[1]]
@@ -335,8 +421,8 @@ class CHAID(object):
                     frequencies[choice[0]][val] += count
                 del frequencies[choice[1]]
 
-        if split.index is not None:
-            split.sub_split_values(ind[split.index].metadata)
+        if split.valid():
+            split.sub_split_values(ind[split.column_id].metadata)
         return split
 
     def to_tree(self):
@@ -348,7 +434,14 @@ class CHAID(object):
 
     def __iter__(self):
         """ Function to allow nodes to be iterated over """
+        if not self.tree_store:
+            self.build_tree()
         return iter(self.tree_store)
+
+    def __repr__(self):
+        if not self.tree_store:
+            self.build_tree()
+        return str(self.tree_store)
 
     def get_node(self, node_id):
         """
@@ -358,18 +451,39 @@ class CHAID(object):
         node_id : integer
             Find the node with this ID
         """
+        if not self.tree_store:
+            self.build_tree()
         return self.tree_store[node_id]
 
     def print_tree(self):
         """ prints the tree out """
         self.to_tree().show()
 
-    def predict(self):
-        """ determines which rows fall into which node """
+    def node_predictions(self):
+        """ Determines which rows fall into which node """
         pred = np.zeros(self.data_size)
         for node in self.tree_store:
-            pred[node.indices] = node.node_id
+            if node.is_terminal:
+                pred[node.indices] = node.node_id
         return pred
 
-    def __repr__(self):
-        return str(self.tree_store)
+    def model_predictions(self):
+        """
+        Determines the highest frequency of
+        categorical dependent variable in the
+        terminal node where that row fell
+        """
+        pred = np.zeros(self.data_size)
+        for node in self:
+            if node.is_terminal:
+                pred[node.indices] = max(node.members, key=node.members.get)
+        return pred
+
+    def risk(self):
+        """
+        Calculates the fraction of risk associated
+        with the model predictions
+        """
+        model_predictions = self.model_predictions()
+        observed = self.observed
+        return float((model_predictions == observed).sum()) / self.data_size

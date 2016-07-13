@@ -1,1 +1,1 @@
-from .CHAID import CHAID, CHAIDSplit, CHAIDNode
+from .CHAID import CHAID, CHAIDSplit, CHAIDNode, CHAIDVector
