@@ -395,7 +395,9 @@ class CHAID(object):
                     responses = [mappings[x] for x in unique]
                     temp_split = CHAIDSplit(i, responses, chi, highest_p_split)
 
-                    if not split.valid() or highest_p_split < split.p or (highest_p_split == split.p and chi > split.chi):
+                    better_split = highest_p_split < split.p or (highest_p_split == split.p and chi > split.chi)
+                    
+                    if not split.valid() or better_split:
                         split, temp_split = temp_split, split
 
                     chi_threshold = relative_split_threshold * split.chi
