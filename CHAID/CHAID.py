@@ -389,13 +389,13 @@ class CHAID(object):
                     chi = stats.chi2_contingency(np.array(cr_table), correction=False)
                     sub_data[j] = (comb, chi[0], chi[1])
 
-                choice, chi, highest_p_split = max(sub_data, key=lambda x: x[2])
+                choice, chi, highest_p_split = max(sub_data, key=lambda x: (x[2], x[1]))
 
                 if size == 1 or highest_p_split < self.alpha_merge:
                     responses = [mappings[x] for x in unique]
                     temp_split = CHAIDSplit(i, responses, chi, highest_p_split)
 
-                    if not split.valid() or highest_p_split < split.p:
+                    if not split.valid() or highest_p_split < split.p or (highest_p_split == split.p and chi > split.chi):
                         split, temp_split = temp_split, split
 
                     chi_threshold = relative_split_threshold * split.chi
