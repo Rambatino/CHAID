@@ -99,9 +99,8 @@ def test_p_and_chi_values():
         tree.vectorised_array,
         tree.observed
     )
-    # chi2_contingency([[3, 1], [0, 3]])
-    assert round(split.chi, 4) == 1.4705
-    assert round(split.p, 4) == 0.2253
+    assert round(split.chi, 4) == 3.9375
+    assert round(split.p, 4) == 0.0472
 
 
 class TestTreeGenerated(TestCase):

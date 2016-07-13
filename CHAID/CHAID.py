@@ -384,7 +384,7 @@ class CHAID(object):
                         [col2_freq.get(k, 0) for k in keys]
                     ]
 
-                    chi = stats.chi2_contingency(np.array(cr_table))
+                    chi = stats.chi2_contingency(np.array(cr_table), correction=False)
                     sub_data[j] = (comb, chi[0], chi[1])
 
                 choice, chi, highest_p_split = max(sub_data, key=lambda x: x[2])
