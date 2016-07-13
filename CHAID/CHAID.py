@@ -462,7 +462,7 @@ class CHAID(object):
     def node_predictions(self):
         """ Determines which rows fall into which node """
         pred = np.zeros(self.data_size)
-        for node in self.tree_store:
+        for node in self:
             if node.is_terminal:
                 pred[node.indices] = node.node_id
         return pred
