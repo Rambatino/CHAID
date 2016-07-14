@@ -137,11 +137,13 @@ class TestComplexStructures(TestCase):
         ndarr = self.df[['col_17', 'col_27']].values
         arr = self.df['dep'].values
 
-        tree = CHAID.CHAID(ndarr, arr)
+        tree = CHAID.CHAID(ndarr, arr, split_threshold=0.9)
 
         split = tree.generate_best_split(
             tree.vectorised_array,
             tree.observed
         )
-        assert round(split.chi, 0) == 2421
-        assert split.index == 1
+        assert round(split.chi, 4) == 2424.1843
+        assert split.column_id == 1
+        assert split.surrogates[0].p == split.p
+        assert split.surrogates[0].chi < split.chi
