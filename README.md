@@ -1,5 +1,5 @@
 <img src="https://img.shields.io/pypi/pyversions/pytest.svg">
-<img src="https://circleci.com/gh/circleci/circle.svg?style=shield&circle-token=3cc80b12ab3627373c76e13735b8bc00a1259b9e">
+<img src="https://circleci.com/gh/Rambatino/CHAID.png?style=shield&circle-token=031aab51ad1dea4a698d02f02288887f06c1a9ef">
 
 
 Chi-Squared Automatic Inference Detection
