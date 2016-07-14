@@ -8,7 +8,7 @@ import sys
 
 ROOT_FOLDER = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '/../')
 
-sys.path.append(ROOT_FOLDER + 'CHAID')
+sys.path.append(ROOT_FOLDER)
 
 import CHAID
 
