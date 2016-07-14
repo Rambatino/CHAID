@@ -6,7 +6,10 @@ from collections import Iterable
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../CHAID')
+ROOT_FOLDER = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '/../')
+
+sys.path.append(ROOT_FOLDER + 'CHAID')
+
 import CHAID
 
 
