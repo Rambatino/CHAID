@@ -165,7 +165,9 @@ class CHAIDNode(object):
     def members(self):
         if self._members is None:
             dep_v = self.dep_v
-            counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
+            freq = np.bincount(dep_v.arr.astype(int))
+            unique = np.unique(dep_v.arr)
+            counts = np.transpose(np.vstack([unique, freq]))
             self._members = {dep_v.metadata.get(k, k): v for k, v in counts}
         return self._members
 
