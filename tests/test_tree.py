@@ -3,8 +3,8 @@ Testing module for the class CHAID
 """
 from unittest import TestCase
 import numpy as np
-from setup_tests import list_ordered_equal, list_unordered_equal, CHAID
-
+from setup_tests import list_ordered_equal, list_unordered_equal, CHAID, ROOT_FOLDER
+import pandas as pd
 
 def test_best_split_unique_values():
     """
@@ -102,7 +102,6 @@ def test_p_and_chi_values():
     assert round(split.chi, 4) == 3.9375
     assert round(split.p, 4) == 0.0472
 
-
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """
     def setUp(self):
@@ -125,3 +124,24 @@ class TestTreeGenerated(TestCase):
         """ Test the calls to build_tree() populate the tree """
         self.tree.build_tree()
         assert self.tree.tree_store is not None
+
+class TestComplexStructures(TestCase):
+    """ Test case class to utilise logic only exposed from large datasets """
+    def setUp(self):
+        self.df = pd.read_csv(ROOT_FOLDER + '/tests/data/CHAID.csv')
+
+    def test_p_and_chi_values_selectivity(self):
+        """
+        Check chi taken into consideration when significance becomes 0 for multiple independent variables
+        """
+        ndarr = self.df[['col_17', 'col_27']].values
+        arr = self.df['dep'].values
+
+        tree = CHAID.CHAID(ndarr, arr)
+
+        split = tree.generate_best_split(
+            tree.vectorised_array,
+            tree.observed
+        )
+        assert round(split.chi, 0) == 2421
+        assert split.index == 1
