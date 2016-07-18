@@ -43,7 +43,7 @@ def main():
         predictions.name = 'node_id'
         data = pd.concat([data, predictions], axis=1)
         print(data.to_csv())
-    elif nspace.predictions:
+    elif nspace.predict:
         predictions = pd.Series(tree.model_predictions())
         predictions.name = 'predicted'
         data = pd.concat([data, predictions], axis=1)
