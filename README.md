@@ -5,16 +5,21 @@
 Chi-Squared Automatic Inference Detection
 =========================================
 
-This package provides a python implementation of the Chi-Squared Automatic Inference Detection (CHAID) decision tree. More details can be found here_.
+This package provides a python implementation of the [Chi-Squared Automatic Inference Detection (CHAID) decision tree](https://en.wikipedia.org/wiki/CHAID)
 
 
 Installation
 ------------
 
-CHAID is distributed via pypi_ and can be installed like:
+CHAID is distributed via [pypi](https://pypi.python.org/pypi/CHAID) and can be installed like:
 
 ``` bash
 pip install CHAID
+```
+
+Alternatively, you can clone the repository and install via
+``` bash
+pip install -e path/to/your/checkout
 ```
 
 Creating a Tree
@@ -46,3 +51,11 @@ It calls the `print_tree()` method, which prints the tree to terminal:
 └── (['S', '<missing>'], {'1': 306.0, '0': 610.0}, None, None, 1)
 ```
 To get a LibTree object, call to_tree() on the CHAID instance
+
+Testing
+-------
+
+CHAID uses [`pytest`](https://pypi.python.org/pypi/pytest) for its unit testing. The tests can be run from the root of a checkout with:
+``` bash
+py.test tests
+```
