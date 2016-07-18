@@ -3,7 +3,6 @@ This package provides a python implementation of the Chi-Squared Automatic
 Inference Detection (CHAID) decision tree.
 """
 import itertools as it
-import collections as cl
 import numpy as np
 import math
 from scipy import stats
@@ -171,13 +170,14 @@ class CHAIDNode(object):
     def members(self):
         if self._members is None:
             dep_v = self.dep_v
+            dep_max = max(dep_v.metadata.keys()) + 2
             metadata = dep_v.metadata
             self._members = {}
             for member in metadata.values():
                 self._members[member] = 0
 
-            counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
-            self._members.update((metadata[k], v) for k, v in counts)
+            counts = np.bincount(dep_v.arr + 1, minlength=dep_max)
+            self._members.update((metadata[k-1], v) for k, v in enumerate(counts) if v > 0)
 
         return self._members
 
@@ -370,6 +370,11 @@ class CHAID(object):
         """ internal method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
         relative_split_threshold = 1 - self.split_threshold
+        # We add one to the dependent array as when an answer hasn't been given
+        # it is encoded as a '-1'. Adding one means that the dependent variable
+        # should be a unsigned integer, therefore bincount can be used
+        dep_arr = dep.arr.astype(np.int64, copy=True) + 1
+        dep_max = np.max(dep_arr) + 1
         for i, index in enumerate(ind):
             index = index.deep_copy()
             unique = set(index.arr)
@@ -377,9 +382,11 @@ class CHAID(object):
             mappings = MappingDict()
             frequencies = {}
             for col in unique:
-                counts = np.unique(dep.arr[index.arr == col], return_counts=True)
-                frequencies[col] = cl.defaultdict(int)
-                frequencies[col].update(np.transpose(counts))
+                counts = np.bincount(
+                    dep_arr[index.arr == col],
+                    minlength=dep_max
+                )
+                frequencies[col] = counts
 
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
@@ -389,12 +396,9 @@ class CHAID(object):
                     col1_freq = frequencies[comb[0]]
                     col2_freq = frequencies[comb[1]]
 
-                    keys = set(col1_freq.keys()).union(col2_freq.keys())
-
-                    cr_table = [
-                        [col1_freq.get(k, 0) for k in keys],
-                        [col2_freq.get(k, 0) for k in keys]
-                    ]
+                    cr_table = np.transpose(np.array([
+                        [f1, f2] for f1, f2 in zip(col1_freq, col2_freq) if (f1 + f2) > 0
+                    ]))
 
                     chi = stats.chi2_contingency(np.array(cr_table), correction=False)
                     sub_data[j] = (comb, chi[0], chi[1])
@@ -431,8 +435,7 @@ class CHAID(object):
                 index[index.arr == choice[1]] = choice[0]
                 unique.remove(choice[1])
 
-                for val, count in frequencies[choice[1]].items():
-                    frequencies[choice[0]][val] += count
+                frequencies[choice[0]] += frequencies[choice[1]]
                 del frequencies[choice[1]]
 
         if split.valid():
