@@ -5,6 +5,7 @@ Inference Detection (CHAID) decision tree.
 import itertools as it
 import collections as cl
 import numpy as np
+import math
 from scipy import stats
 from treelib import Tree
 import operator
@@ -42,24 +43,30 @@ class CHAIDVector(object):
         ----------
         tuple : prcoessed vector, hash or substitutions
         """
-        self._arr = np.array(vect)
         if vect.dtype != float and vect.dtype != int:
-            unique_v = np.unique(self._arr)
-            float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
-            for value, new_id in float_map:
-                self._arr[self._arr == value] = new_id
-            self._arr = self._arr.astype(float, subok=False, copy=False)
+            unique = np.unique(vect)
+            unique = [
+                x for x in unique if not isinstance(x, float) or not math.isnan(x)
+            ]
+            arr = np.array(vect)
+            for new_id, value in enumerate(unique):
+                new_id = float(new_id)
+                arr[vect == value] = new_id
+                self._metadata[new_id] = value
+
+            self._arr = arr.astype(float, subok=False, copy=False)
             nans = np.isnan(self._arr)
             self._arr[nans] = -1.0
-            self._metadata = {v: k for k, v in float_map}
         else:
+            self._arr = np.array(vect)
             nans = np.isnan(self._arr)
             self._arr[nans] = -1.0
             if len(self._metadata) == 0:
                 for value in np.unique(self._arr):
-                    self._metadata[value] = value
-
-        self._metadata[-1.0] = self._missing_id
+                    if not math.isnan(value):
+                        self._metadata[value] = value
+        if any(nans):
+            self._metadata[-1.0] = self._missing_id
 
     def __iter__(self):
         return iter(self._arr)
@@ -137,12 +144,6 @@ class CHAIDNode(object):
         self._members = None
         self.is_terminal = is_terminal
 
-        metadata = dep_v.metadata
-        poss_members = [
-            metadata[k] for k in metadata.keys() if k != -1.0
-        ]
-        self.possible_members = poss_members
-
     def __hash__(self):
         return hash(self.__dict__)
 
@@ -177,7 +178,7 @@ class CHAIDNode(object):
             dep_v = self.dep_v
             metadata = dep_v.metadata
             self._members = {}
-            for member in self.possible_members:
+            for member in metadata.values():
                 self._members[member] = 0
 
             counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
