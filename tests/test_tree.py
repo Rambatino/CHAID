@@ -28,6 +28,28 @@ def test_best_split_unique_values():
     assert split.p < 0.015
 
 
+def test_spliting_identical_values():
+    """
+    Test that passing in identical data cannot be split
+    """
+    arr = np.array(([1] * 5) + ([1] * 5))
+    orig_arr = arr.copy()
+    ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
+    orig_ndarr = ndarr.copy()
+    tree = CHAID.CHAID(ndarr, arr)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed
+    )
+    assert list_ordered_equal(ndarr, orig_ndarr), \
+        'Calling chaid should have no side affects for original numpy arrays'
+    assert list_ordered_equal(arr, orig_arr), \
+        'Identifies correct column to split on'
+    assert not split.valid(), \
+        'Should not be able to split data with no skew'
+
+
 def test_best_split_with_combination():
     """
     Test passing in a perfect split data, with a single catagory merges needed
