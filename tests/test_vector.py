@@ -25,8 +25,10 @@ def test_chaid_vector_does_not_convert_ints():
     arr = np.array([1, 2])
     vector = CHAID.CHAIDVector(arr)
 
-    assert np.array_equal(vector.arr, np.array([1, 2])), 'The indices are correctly substituted'
-    assert vector.metadata == {-1.0: '<missing>'}, 'The metadata is formed correctly'
+    assert np.array_equal(vector.arr, np.array([1, 2])), \
+        'The indices are correctly substituted'
+    assert vector.metadata == {1: 1, 2: 2, -1.0: '<missing>'}, \
+        'The metadata is formed correctly'
 
 
 def test_chaid_vector_does_not_convert_floats():
@@ -37,8 +39,10 @@ def test_chaid_vector_does_not_convert_floats():
     arr = np.array([1.0, 2.0])
     vector = CHAID.CHAIDVector(arr)
 
-    assert np.array_equal(vector.arr, np.array([1.0, 2.0])), 'The indices are correctly substituted'
-    assert vector.metadata == {-1.0: '<missing>'}, 'The metadata is formed correctly'
+    assert np.array_equal(vector.arr, np.array([1.0, 2.0])), \
+        'The indices are correctly substituted'
+    assert vector.metadata == {1.0: 1.0, 2.0: 2.0, -1.0: '<missing>'}, \
+        'The metadata is formed correctly'
 
 
 def test_chaid_vector_converts_ints_when_dtype_is_object():
