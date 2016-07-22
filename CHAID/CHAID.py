@@ -389,12 +389,12 @@ class CHAID(object):
 
                 choice, chi, highest_p_split = max(sub_data, key=lambda x: (x[2], x[1]))
 
-                if size == 1 or highest_p_split < self.alpha_merge:
+                if highest_p_split < self.alpha_merge:
                     responses = [mappings[x] for x in unique]
                     temp_split = CHAIDSplit(i, responses, chi, highest_p_split)
 
                     better_split = highest_p_split < split.p or (highest_p_split == split.p and chi > split.chi)
-                    
+
                     if not split.valid() or better_split:
                         split, temp_split = temp_split, split
 
