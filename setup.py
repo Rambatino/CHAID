@@ -4,13 +4,35 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/Rambatino/CHAID
 """
 
-from setuptools import setup, find_packages
-from codecs import open
+import re
 from os import path
+from setuptools import setup, find_packages
+
+
+def get_version():
+    """
+    Read version from __init__.py
+    """
+    version_regex = re.compile(
+        '__version__\\s*=\\s*(?P<q>[\'"])(?P<version>\\d+(\\.\\d+)*)(?P=q)'
+    )
+    here = path.abspath(path.dirname(__file__))
+    init_location = path.join(here, "CHAID/__init__.py")
+
+    with open(init_location) as init_file:
+        for line in init_file:
+            match = version_regex.search(line)
+
+    if not match:
+        raise Exception(
+            "Couldn't read version information from '%s'" % init_location
+        )
+
+    return match.group('version')
 
 setup(
     name='CHAID',
-    version='0.3.2',
+    version=get_version(),
     description='A CHAID tree building algorithm',
     long_description="This package provides a python implementation of the Chi-Squared Automatic Inference Detection (CHAID) decision tree",
     url='https://github.com/Rambatino/CHAID',
