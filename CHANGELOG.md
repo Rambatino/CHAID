@@ -1,6 +1,6 @@
-__My nice application__
+__A python implementation of Chi-Squared Automatic Interaction Detection (CHAID)__
 
-#   (2016-07-25)
+#  0.3.3 (2016-07-25)
 
 
 
