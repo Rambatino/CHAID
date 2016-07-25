@@ -5,9 +5,9 @@ Inference Detection (CHAID) decision tree.
 import itertools as it
 import collections as cl
 import numpy as np
+import math
 from scipy import stats
 from treelib import Tree
-import operator
 
 
 class CHAIDVector(object):
@@ -16,46 +16,51 @@ class CHAIDVector(object):
 
     Parameters
     ----------
-    arr : array-like
+    arr : iterable object
         The numpy array
     metadata : dict
         The substitutions of the vector
     missing_id : string
         An identifier for the missing value to be associated
+    substitute : bool
+        Whether the objects in the given array need to be substitued for
+        integers
     """
-    def __init__(self, arr=None, metadata=None, missing_id='<missing>'):
-        self._metadata = metadata or {}
-        self._arr = None
+    def __init__(self, arr=None, metadata=None,
+                 missing_id='<missing>', substitute=True):
+        self._metadata = dict(metadata or {})
+        self._arr = np.array(arr)
         self._missing_id = missing_id
-        self.sub_non_floats(arr)
+        if substitute:
+            self.substitute_values(arr)
 
-    def sub_non_floats(self, vect):
+    def substitute_values(self, vect):
         """
-        Substitute floats into the vector if it does not have a dtype of float
+        Internal method to substitute integers into the vector, and construct
+        metadata to convert back to the original vector.
+
+        np.nan is always given -1, all other objects are given integers in
+        order of apperence.
 
         Parameters
         ----------
-        vect : nd.array
-            the vector in whcih to substitute the float
+        vect : np.array
+            the vector in which to substitute values in
 
-        Returns
-        ----------
-        tuple : prcoessed vector, hash or substitutions
         """
-        self._arr = np.array(vect)
-        if vect.dtype != float and vect.dtype != int:
-            unique_v = np.unique(self._arr)
-            float_map = [(x, float(i)) for i, x in enumerate(unique_v)]
-            for value, new_id in float_map:
-                self._arr[self._arr == value] = new_id
-            self._arr = self._arr.astype(float, subok=False, copy=False)
-            nans = np.isnan(self._arr)
-            self._arr[nans] = -1.0
-            self._metadata = {v: k for k, v in float_map}
-        else:
-            nans = np.isnan(self._arr)
-            self._arr[nans] = -1.0
-        self._metadata[-1.0] = self._missing_id
+        unique = np.unique(vect)
+        unique = [
+            x for x in unique if not isinstance(x, float) or not math.isnan(x)
+        ]
+
+        arr = np.zeros(len(vect), dtype=int) - 1
+        for new_id, value in enumerate(unique):
+            arr[vect == value] = new_id
+            self._metadata[new_id] = value
+        self._arr = arr
+
+        if -1 in arr:
+            self._metadata[-1] = self._missing_id
 
     def __iter__(self):
         return iter(self._arr)
@@ -71,7 +76,8 @@ class CHAIDVector(object):
         """
         Returns a deep copy.
         """
-        return CHAIDVector(np.array(self._arr), metadata=self.metadata)
+        return CHAIDVector(self._arr, metadata=self.metadata,
+                           missing_id=self._missing_id, substitute=False)
 
     @property
     def arr(self):
@@ -165,8 +171,14 @@ class CHAIDNode(object):
     def members(self):
         if self._members is None:
             dep_v = self.dep_v
+            metadata = dep_v.metadata
+            self._members = {}
+            for member in metadata.values():
+                self._members[member] = 0
+
             counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
-            self._members = {dep_v.metadata.get(k, k): v for k, v in counts}
+            self._members.update((metadata[k], v) for k, v in counts)
+
         return self._members
 
 

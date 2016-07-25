@@ -3,33 +3,53 @@ Testing module for the class CHAIDVector
 """
 from unittest import TestCase
 import numpy as np
+from numpy import nan
 from setup_tests import list_ordered_equal, CHAID
 
+NAN = float('nan')
 
-def test_chaid_vector_converts_strings_with_correct_metadata():
+
+def test_chaid_vector_converts_strings():
     """
     Check that the metadata is correct when CHAIDVectors are created from
     strings
     """
-    arr = np.array(['1', '2'])
+    arr = np.array(['2', '4'])
     vector = CHAID.CHAIDVector(arr)
 
-    assert np.array_equal(vector.arr, np.array([0.0, 1.0])), 'The indices are correctly substituted'
-    assert vector.metadata == {0.0: '1', 1.0: '2', -1.0: '<missing>'}, 'The metadata is formed correctly'
+    assert np.array_equal(vector.arr, np.array([0, 1])), \
+        'The indices are correctly substituted'
+    assert vector.metadata == {0: '2', 1: '4'}, \
+        'The metadata is formed correctly'
 
 
-def test_chaid_vector_does_not_convert_ints():
+def test_chaid_vector_with_ints():
     """
     Check that the metadata is correct when CHAIDVectors are created from ints
     """
     arr = np.array([1, 2])
     vector = CHAID.CHAIDVector(arr)
 
-    assert np.array_equal(vector.arr, np.array([1, 2])), 'The indices are correctly substituted'
-    assert vector.metadata == {-1.0: '<missing>'}, 'The metadata is formed correctly'
+    assert np.array_equal(vector.arr, np.array([0, 1])), \
+        'The indices are correctly substituted'
+    assert vector.metadata == {0: 1, 1: 2}, \
+        'The metadata is formed correctly'
 
 
-def test_chaid_vector_does_not_convert_floats():
+def test_chaid_vector_with_ints_and_nan():
+    """
+    Check that the metadata is correct when CHAIDVectors are created from ints
+    """
+    arr = np.array([1, 2, NAN])
+    vector = CHAID.CHAIDVector(arr)
+
+    assert np.array_equal(vector.arr, np.array([0, 1, -1])), \
+        'The indices are correctly substituted'
+    assert vector.metadata == {0: 1, 1: 2, -1: '<missing>'}, \
+        'The metadata is formed correctly'
+
+
+def test_chaid_vector_with_floats():
     """
     Check that the metadata is correct when CHAIDVectors are created from
     floats
@@ -37,11 +57,27 @@ def test_chaid_vector_does_not_convert_floats():
     arr = np.array([1.0, 2.0])
     vector = CHAID.CHAIDVector(arr)
 
-    assert np.array_equal(vector.arr, np.array([1.0, 2.0])), 'The indices are correctly substituted'
-    assert vector.metadata == {-1.0: '<missing>'}, 'The metadata is formed correctly'
+    assert np.array_equal(vector.arr, np.array([0, 1])), \
+        'The indices are correctly substituted'
+    assert vector.metadata == {0: 1.0, 1: 2.0}, \
+        'The metadata is formed correctly'
 
 
-def test_chaid_vector_converts_ints_when_dtype_is_object():
+def test_chaid_vector_with_floats_and_nan():
+    """
+    Check that the metadata is correct when CHAIDVectors are created from
+    floats
+    """
+    arr = np.array([1.0, 2.0, NAN])
+    vector = CHAID.CHAIDVector(arr)
+
+    assert np.array_equal(vector.arr, np.array([0, 1, -1])), \
+        'The indices are correctly substituted'
+    assert vector.metadata == {0: 1.0, 1: 2.0, -1: '<missing>'}, \
+        'The metadata is formed correctly'
+
+
+def test_chaid_vector_with_dtype_object():
     """
     Check that the metadata is correct when CHAIDVectors are created from
     objects
@@ -49,8 +85,24 @@ def test_chaid_vector_converts_ints_when_dtype_is_object():
     arr = np.array([1, 2], dtype="object")
     vector = CHAID.CHAIDVector(arr)
 
-    assert np.array_equal(vector.arr, np.array([0.0, 1.0])), 'The indices are correctly substituted'
-    assert vector.metadata == {0.0: 1, 1.0: 2, -1.0: '<missing>'}, 'The metadata is formed correctly'
+    assert np.array_equal(vector.arr, np.array([0, 1])), \
+        'The indices are correctly substituted'
+    assert vector.metadata == {0: 1, 1: 2}, \
+        'The metadata is formed correctly'
+
+
+def test_chaid_vector_with_dtype_object_and_nans():
+    """
+    Check that the metadata is correct when CHAIDVectors are created from
+    objects
+    """
+    arr = np.array([1, 2, NAN], dtype="object")
+    vector = CHAID.CHAIDVector(arr)
+
+    assert np.array_equal(vector.arr, np.array([0, 1, -1])), \
+        'The indices are correctly substituted'
+    assert vector.metadata == {0: 1, 1: 2, -1: '<missing>'}, \
+        'The metadata is formed correctly'
 
 
 class TestDeepCopy(TestCase):
