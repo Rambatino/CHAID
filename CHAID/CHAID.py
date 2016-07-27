@@ -66,11 +66,11 @@ class CHAIDVector(object):
         return iter(self._arr)
 
     def __getitem__(self, key):
-        return CHAIDVector(self._arr[key], metadata=self.metadata)
+        return CHAIDVector(self._arr[key], metadata=self.metadata, substitute=False)
 
     def __setitem__(self, key, value):
         self._arr[key] = value
-        return CHAIDVector(np.array(self._arr), metadata=self.metadata)
+        return CHAIDVector(np.array(self._arr), metadata=self.metadata, substitute=False)
 
     def deep_copy(self):
         """
