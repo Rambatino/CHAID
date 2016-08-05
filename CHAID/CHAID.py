@@ -264,9 +264,8 @@ class CHAID(object):
 
     def rules(self):
         """
-        Determines the highest frequency of
-        categorical dependent variable in the
-        terminal node where that row fell
+        Calculates the stopping rules that give rise
+        to a particular node
         """
         rules = pd.Series()
         rules.name = 'node'
