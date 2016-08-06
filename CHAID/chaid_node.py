@@ -1,4 +1,5 @@
 import numpy as np
+from chaid_split import CHAIDSplit
 
 class CHAIDNode(object):
     """
