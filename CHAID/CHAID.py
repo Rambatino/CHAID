@@ -264,15 +264,18 @@ class CHAID(object):
 
     def rules(self):
         """
-        Calculates the stopping rules that give rise
-        to a particular node
+        Calculates the row criteria that give rise
+        to a particular terminal node
         """
         rules = pd.Series()
-        rules.name = 'node'
         for node in self:
             if node.is_terminal:
                 sliced_arr = self.independent_set[node.indices]
                 unique_set = np.vstack({ tuple(row) for row in sliced_arr })
-                if len(unique_set[0, :]) == 1: unique_set = unique_set[:, 0]
-                rules = rules.append(pd.Series([node.node_id] * len(unique_set), index=unique_set))
+                index = pd.MultiIndex.from_arrays(np.transpose(unique_set))
+                if rules.empty:
+                    rules = pd.Series(node.node_id, index=index)
+                else:
+                    rules = rules.append(pd.Series(node.node_id, index=index))
+        rules.name = 'node'
         return rules
