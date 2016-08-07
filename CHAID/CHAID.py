@@ -10,6 +10,7 @@ from treelib import Tree
 from chaid_vector import CHAIDVector
 from chaid_node import CHAIDNode
 from chaid_split import CHAIDSplit
+from chaid_rules import CHAIDRules
 from mapping_dict import MappingDict
 import pandas as pd
 
@@ -250,7 +251,7 @@ class CHAID(object):
         pred = np.zeros(self.data_size)
         for node in self:
             if node.is_terminal:
-                pred[node.indices] = max(node.members, key=node.members.get)
+                pred[node.indices] = node.predict()
         return pred
 
     def risk(self):
@@ -262,20 +263,18 @@ class CHAID(object):
         observed = self.observed.arr
         return 1 - float((model_predictions == observed).sum()) / self.data_size
 
-    def rules(self):
+    def accuracy(self, ndarr, arr, positive_set=[]):
         """
-        Calculates the row criteria that give rise
-        to a particular terminal node
+        Calculates the accuracy of predicting the
+        dependent variable when applying the same
+        stopping rules
         """
-        rules = pd.Series()
-        for node in self:
-            if node.is_terminal:
-                sliced_arr = self.independent_set[node.indices]
-                unique_set = np.vstack({ tuple(row) for row in sliced_arr })
-                index = pd.MultiIndex.from_arrays(np.transpose(unique_set))
-                if rules.empty:
-                    rules = pd.Series(node.node_id, index=index)
-                else:
-                    rules = rules.append(pd.Series(node.node_id, index=index))
-        rules.name = 'node'
-        return rules
+        rules = CHAIDRules(self).rules()
+        rules.index.names = [0]
+        index = pd.MultiIndex.from_arrays(np.transpose(ndarr))
+        series = pd.Series(arr, index=index, name='dep')
+        join = rules.join(series)
+        prediction = join['prediction'] == positive_set
+        ordered_dep = join['dep'] == positive_set
+        true_set = (prediction == ordered_dep).sum()
+        return true_set / float(len(arr))

@@ -71,6 +71,7 @@ class CHAIDNode(object):
             dep_v = self.dep_v
             metadata = dep_v.metadata
             self._members = {}
+
             for member in metadata.values():
                 self._members[member] = 0
 
@@ -78,3 +79,7 @@ class CHAIDNode(object):
             self._members.update((metadata[k], v) for k, v in counts)
 
         return self._members
+
+    @property
+    def predict(self):
+        return max(self.members, key=self.members.get)

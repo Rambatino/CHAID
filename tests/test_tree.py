@@ -125,7 +125,7 @@ def test_p_and_chi_values():
     assert round(split.p, 4) == 0.0472
 
 
-def test_rules_when_single_numerical_independent_variable():
+def test_accuracy_when_same_data():
     """
     Check whether it correctly determines the unique independent
     variables for each node
@@ -136,103 +136,31 @@ def test_rules_when_single_numerical_independent_variable():
         [1], [2], [3], [4], [1], [2], [3], [1], [2], [3]
     ])
 
-    tree = CHAID.CHAID(ndarr=independent_set, arr=np.array([]))
+    dependent_set = np.array([
+        1, 2, 2, 1, 2, 1, 2, 1, 2, 1,
+        2, 2, 1, 1, 2, 1, 2, 1, 1, 2
+    ])
+
+    tree = CHAID.CHAID(ndarr=independent_set, arr=dependent_set)
 
     indices_1 = np.array([0,  2,  4,  6, 10, 14, 17, 1,  5,  7, 11, 15, 18])
-    terminal_node_1 = CHAID.CHAIDNode(node_id=2, is_terminal=True, indices=indices_1)
+
+    terminal_node_1 = CHAID.CHAIDNode(
+        node_id=2, is_terminal=True, indices=indices_1,
+        dep_v=CHAID.CHAIDVector(dependent_set[indices_1])
+    )
 
     indices_2   = np.array([ 3,  8, 12, 16, 19, 9, 13])
-    terminal_node_2 = CHAID.CHAIDNode(node_id=3, is_terminal=True, indices=indices_2)
+    terminal_node_2 = CHAID.CHAIDNode(
+        node_id=3, is_terminal=True, indices=indices_2,
+        dep_v=CHAID.CHAIDVector(dependent_set[indices_2])
+    )
 
     tree.tree_store = [terminal_node_1, terminal_node_2]
 
-    assert (tree.rules() == pd.Series([2, 2, 3, 3], index=[1, 2, 3, 4])).all()
-    assert tree.rules().name == 'node'
+    accuracy = tree.accuracy(ndarr=independent_set, arr=dependent_set, positive_set=[1])
 
-
-def test_rules_when_single_object_independent_variable():
-    """
-    Check whether it correctly determines the unique independent
-    variables for each node
-    """
-
-    independent_set = np.array([
-        ['a'], ['b'], ['c'], ['a'], ['b'], ['c'], ['d'], ['e'], ['f']
-    ])
-
-    tree = CHAID.CHAID(ndarr=independent_set, arr=np.array([]))
-    indices_1 = np.array([0, 3])
-    terminal_node_1 = CHAID.CHAIDNode(node_id=2, is_terminal=True, indices=indices_1)
-
-    indices_2   = np.array([1, 2, 4, 5, 6])
-    terminal_node_2 = CHAID.CHAIDNode(node_id=3, is_terminal=True, indices=indices_2)
-
-    indices_3   = np.array([7, 8])
-    terminal_node_3 = CHAID.CHAIDNode(node_id=4, is_terminal=True, indices=indices_3)
-
-    tree.tree_store = [terminal_node_1, terminal_node_2, terminal_node_3]
-
-    expected = pd.Series([2, 3, 3, 3, 4, 4], index=['a', 'b', 'c', 'd', 'e', 'f'])
-
-    assert (tree.rules() == expected).all()
-    assert tree.rules().name == 'node'
-
-
-def test_rules_when_multiple_numerical_independent_variables():
-    """
-    Check whether it correctly determines the unique independent
-    variables for each node
-    """
-
-    independent_set = np.array([
-        [1, 0], [2, 1], [1, 0], [3, 1], [1, 0], [2, 1], [1, 0], [2, 1], [3, 1], [4, 0]
-    ])
-
-    tree = CHAID.CHAID(ndarr=independent_set, arr=np.array([]))
-    indices_1 = np.array([0, 2, 4, 6, 9])
-    terminal_node_1 = CHAID.CHAIDNode(node_id=2, is_terminal=True, indices=indices_1)
-    indices_2 = np.array([1, 3, 5, 7, 8])
-    terminal_node_2 = CHAID.CHAIDNode(node_id=3, is_terminal=True, indices=indices_2)
-
-    tree.tree_store = [terminal_node_1, terminal_node_2]
-
-    index = pd.MultiIndex.from_arrays(np.array([[1, 4, 3, 2], [0, 0, 1, 1]]))
-    expected = pd.Series([2, 2, 3, 3], index=index)
-
-    assert (tree.rules() == expected).all()
-    assert tree.rules().name == 'node'
-
-
-def test_rules_when_multiple_mixed_object_independent_variables():
-    """
-    Check whether it correctly determines the unique independent
-    variables for each node
-    """
-
-    independent_set = np.array([
-        [1, 0, 'a'], [2, 1, 'b'], [1, 0, 'a'], [3, 1, 'c'], [1, 0, 'a'],
-        [2, 1, 'b'], [1, 0, 'a'], [2, 1, 'b'], [3, 1, 'c'], [4, 0, 'a']
-    ])
-
-    tree = CHAID.CHAID(ndarr=independent_set, arr=np.array([]))
-    indices_1 = np.array([0, 2, 4, 6, 9])
-    terminal_node_1 = CHAID.CHAIDNode(node_id=2, is_terminal=True, indices=indices_1)
-
-
-    indices_2 = np.array([1, 5, 7])
-    terminal_node_2 = CHAID.CHAIDNode(node_id=3, is_terminal=True, indices=indices_2)
-
-
-    indices_3 = np.array([3, 8])
-    terminal_node_3 = CHAID.CHAIDNode(node_id=4, is_terminal=True, indices=indices_3)
-
-    tree.tree_store = [terminal_node_1, terminal_node_2, terminal_node_3]
-
-    index = pd.MultiIndex.from_arrays(np.array([[1, 4, 2, 3], [0, 0, 1, 1], ['a', 'a', 'b', 'c']]))
-    expected = pd.Series([2, 2, 3, 4], index=index)
-
-    assert (tree.rules() == expected).all()
-    assert tree.rules().name == 'node'
+    assert accuracy == float(11)/20
 
 
 class TestTreeGenerated(TestCase):
