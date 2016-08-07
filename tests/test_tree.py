@@ -158,9 +158,11 @@ def test_accuracy_when_same_data():
 
     tree.tree_store = [terminal_node_1, terminal_node_2]
 
-    accuracy = tree.accuracy(ndarr=independent_set, arr=dependent_set, positive_set=[1])
+    accuracy_1 = tree.accuracy(ndarr=independent_set, arr=dependent_set)
+    accuracy_2 = tree.accuracy(ndarr=independent_set, arr=dependent_set)
 
-    assert accuracy == float(11)/20
+    assert accuracy_1 == float(11)/20
+    assert accuracy_2 == float(11)/20
 
 
 class TestTreeGenerated(TestCase):

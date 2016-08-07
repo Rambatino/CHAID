@@ -263,7 +263,7 @@ class CHAID(object):
         observed = self.observed.arr
         return 1 - float((model_predictions == observed).sum()) / self.data_size
 
-    def accuracy(self, ndarr, arr, positive_set=[]):
+    def accuracy(self, ndarr, arr):
         """
         Calculates the accuracy of predicting the
         dependent variable when applying the same
@@ -274,7 +274,7 @@ class CHAID(object):
         index = pd.MultiIndex.from_arrays(np.transpose(ndarr))
         series = pd.Series(arr, index=index, name='dep')
         join = rules.join(series)
-        prediction = join['prediction'] == positive_set
-        ordered_dep = join['dep'] == positive_set
+        prediction = join['prediction'] == arr[0]
+        ordered_dep = join['dep'] == arr[0]
         true_set = (prediction == ordered_dep).sum()
         return true_set / float(len(arr))
