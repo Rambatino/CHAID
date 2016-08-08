@@ -5,7 +5,7 @@ from unittest import TestCase
 import numpy as np
 from numpy import nan
 from setup_tests import list_ordered_equal, CHAID, CHAIDRules
-
+import pandas as pd
 
 
 def test_rules_when_single_numerical_independent_variable():
@@ -34,8 +34,8 @@ def test_rules_when_single_numerical_independent_variable():
 
     tree.tree_store = [terminal_node_1, terminal_node_2]
 
-    assert (CHAIDRules(tree).rules() == pd.Series([2, 2, 3, 3], index=[1, 2, 3, 4])).all()
-    assert CHAIDRules(tree).rules().name == 'node'
+    assert (CHAID.CHAIDRules(tree).rules() == pd.Series([2, 2, 3, 3], index=[1, 2, 3, 4])).all()
+    assert CHAID.CHAIDRules(tree).rules().name == 'node'
 
 
 def test_rules_when_single_object_independent_variable():
@@ -65,8 +65,8 @@ def test_rules_when_single_object_independent_variable():
 
     expected = pd.Series([2, 3, 3, 3, 4, 4], index=['a', 'b', 'c', 'd', 'e', 'f'])
 
-    assert (CHAIDRules(tree).rules() == expected).all()
-    assert CHAIDRules(tree).rules().name == 'node'
+    assert (CHAID.CHAIDRules(tree).rules() == expected).all()
+    assert CHAID.CHAIDRules(tree).rules().name == 'node'
 
 
 def test_rules_when_multiple_numerical_independent_variables():
@@ -92,8 +92,8 @@ def test_rules_when_multiple_numerical_independent_variables():
     index = pd.MultiIndex.from_arrays(np.array([[1, 4, 3, 2], [0, 0, 1, 1]]))
     expected = pd.Series([2, 2, 3, 3], index=index)
 
-    assert (CHAIDRules(tree).rules() == expected).all()
-    assert CHAIDRules(tree).rules().name == 'node'
+    assert (CHAID.CHAIDRules(tree).rules() == expected).all()
+    assert CHAID.CHAIDRules(tree).rules().name == 'node'
 
 
 def test_rules_when_multiple_mixed_object_independent_variables():
@@ -126,5 +126,5 @@ def test_rules_when_multiple_mixed_object_independent_variables():
     index = pd.MultiIndex.from_arrays(np.array([[1, 4, 2, 3], [0, 0, 1, 1], ['a', 'a', 'b', 'c']]))
     expected = pd.Series([2, 2, 3, 4], index=index)
 
-    assert (CHAIDRules(tree).rules() == expected).all()
-    assert CHAIDRules(tree).rules().name == 'node'
+    assert (CHAID.CHAIDRules(tree).rules() == expected).all()
+    assert CHAID.CHAIDRules(tree).rules().name == 'node'

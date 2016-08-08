@@ -274,7 +274,5 @@ class CHAID(object):
         index = pd.MultiIndex.from_arrays(np.transpose(ndarr))
         series = pd.Series(arr, index=index, name='dep')
         join = rules.join(series)
-        prediction = join['prediction'] == arr[0]
-        ordered_dep = join['dep'] == arr[0]
-        true_set = (prediction == ordered_dep).sum()
+        true_set = (join['prediction'] == join['dep']).sum()
         return true_set / float(len(arr))
