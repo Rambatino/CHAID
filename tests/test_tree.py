@@ -3,7 +3,7 @@ Testing module for the class CHAID
 """
 from unittest import TestCase
 import numpy as np
-from setup_tests import list_ordered_equal, list_unordered_equal, CHAID, ROOT_FOLDER
+from setup_tests import list_ordered_equal, list_unordered_equal, CHAID, ROOT_FOLDER, CHAIDNode
 import pandas as pd
 
 def test_best_split_unique_values():
@@ -123,6 +123,47 @@ def test_p_and_chi_values():
     )
     assert round(split.chi, 4) == 3.9375
     assert round(split.p, 4) == 0.0472
+
+
+def test_accuracy_when_same_data():
+    """
+    Check whether it correctly determines the unique independent
+    variables for each node
+    """
+
+    independent_set = np.array([
+        [1], [2], [1], [3], [1], [2], [1], [2], [3], [4],
+        [1], [2], [3], [4], [1], [2], [3], [1], [2], [3]
+    ])
+
+    dependent_set = np.array([
+        1, 2, 2, 1, 2, 1, 2, 1, 2, 1,
+        2, 2, 1, 1, 2, 1, 2, 1, 1, 2
+    ])
+
+    tree = CHAID.CHAID(ndarr=independent_set, arr=dependent_set)
+
+    indices_1 = np.array([0,  2,  4,  6, 10, 14, 17, 1,  5,  7, 11, 15, 18])
+
+    terminal_node_1 = CHAID.CHAIDNode(
+        node_id=2, is_terminal=True, indices=indices_1,
+        dep_v=CHAID.CHAIDVector(dependent_set[indices_1])
+    )
+
+    indices_2   = np.array([ 3,  8, 12, 16, 19, 9, 13])
+    terminal_node_2 = CHAID.CHAIDNode(
+        node_id=3, is_terminal=True, indices=indices_2,
+        dep_v=CHAID.CHAIDVector(dependent_set[indices_2])
+    )
+
+    tree.tree_store = [terminal_node_1, terminal_node_2]
+
+    accuracy_1 = tree.accuracy(ndarr=independent_set, arr=dependent_set)
+    accuracy_2 = tree.accuracy(ndarr=independent_set, arr=dependent_set)
+
+    assert accuracy_1 == float(11)/20
+    assert accuracy_2 == float(11)/20
+
 
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """

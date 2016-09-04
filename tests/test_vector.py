@@ -4,7 +4,7 @@ Testing module for the class CHAIDVector
 from unittest import TestCase
 import numpy as np
 from numpy import nan
-from setup_tests import list_ordered_equal, CHAID
+from setup_tests import list_ordered_equal, CHAID, CHAIDVector
 
 NAN = float('nan')
 

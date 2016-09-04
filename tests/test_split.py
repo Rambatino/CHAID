@@ -2,7 +2,7 @@
 Testing module for the class CHAIDSplit
 """
 
-from setup_tests import CHAID
+from setup_tests import CHAID, CHAIDSplit
 
 
 def test_column_name_mappings():

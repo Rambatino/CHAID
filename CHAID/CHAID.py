@@ -5,254 +5,14 @@ Inference Detection (CHAID) decision tree.
 import itertools as it
 import collections as cl
 import numpy as np
-import math
 from scipy import stats
 from treelib import Tree
-
-
-class CHAIDVector(object):
-    """
-    A numpy array with metadata
-
-    Parameters
-    ----------
-    arr : iterable object
-        The numpy array
-    metadata : dict
-        The substitutions of the vector
-    missing_id : string
-        An identifier for the missing value to be associated
-    substitute : bool
-        Whether the objects in the given array need to be substitued for
-        integers
-    """
-    def __init__(self, arr=None, metadata=None,
-                 missing_id='<missing>', substitute=True):
-        self._metadata = dict(metadata or {})
-        self._arr = np.array(arr)
-        self._missing_id = missing_id
-        if substitute:
-            self.substitute_values(arr)
-
-    def substitute_values(self, vect):
-        """
-        Internal method to substitute integers into the vector, and construct
-        metadata to convert back to the original vector.
-
-        np.nan is always given -1, all other objects are given integers in
-        order of apperence.
-
-        Parameters
-        ----------
-        vect : np.array
-            the vector in which to substitute values in
-
-        """
-        unique = np.unique(vect)
-        unique = [
-            x for x in unique if not isinstance(x, float) or not math.isnan(x)
-        ]
-
-        arr = np.zeros(len(vect), dtype=int) - 1
-        for new_id, value in enumerate(unique):
-            arr[vect == value] = new_id
-            self._metadata[new_id] = value
-        self._arr = arr
-
-        if -1 in arr:
-            self._metadata[-1] = self._missing_id
-
-    def __iter__(self):
-        return iter(self._arr)
-
-    def __getitem__(self, key):
-        return CHAIDVector(self._arr[key], metadata=self.metadata, substitute=False)
-
-    def __setitem__(self, key, value):
-        self._arr[key] = value
-        return CHAIDVector(np.array(self._arr), metadata=self.metadata, substitute=False)
-
-    def deep_copy(self):
-        """
-        Returns a deep copy.
-        """
-        return CHAIDVector(self._arr, metadata=self.metadata,
-                           missing_id=self._missing_id, substitute=False)
-
-    @property
-    def arr(self):
-        """
-        Provides access to the internal numpy array
-        """
-        return self._arr
-
-    @arr.setter
-    def arr(self, value):
-        """
-        Allows writing to the internal numpy array
-        """
-        self._arr = value
-
-    @property
-    def metadata(self):
-        """
-        Provides access to the internal metadata e.g. when a string has been
-        replaced with a float, this will provide a mapping back to the original
-        string
-        """
-        return self._metadata
-
-
-class CHAIDNode(object):
-    """
-    A node in the CHAID tree
-
-    Parameters
-    ----------
-    choices : array-like
-        Contains a list of the splits that gave rise to that node
-    split_variable : number or string
-        A value indicating what independent variable the node derived from
-    chi : float
-        The chi-squared score for the split
-    p : float
-        The p-value for the split
-    indices : array-like or None
-        The row index that ended up in the node (only occurs in terminal nodes)
-    node_id : float
-        A float representing the id of the node
-    parent : float or None
-        The node_id of the parent of that node
-    dep_v : array-like
-        The dependent variable set
-    is_terminal : boolean
-        Whether the node is terminal
-    """
-    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False):
-        indices = [] if indices is None else indices
-        self.choices = list(choices or [])
-        self.split = split or CHAIDSplit(None, None, None, None)
-        self.indices = indices
-        self.node_id = node_id
-        self.parent = parent
-        self.dep_v = dep_v
-        self._members = None
-        self.is_terminal = is_terminal
-
-    def __hash__(self):
-        return hash(self.__dict__)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        else:
-            return False
-
-    def __repr__(self):
-        format_str = '({0.choices}, {0.members}, {0.split})'
-        return format_str.format(self)
-
-    def __lt__(self, other):
-        return self.node_id < other.node_id
-
-    @property
-    def chi(self):
-        return self.split.chi
-
-    @property
-    def p(self):
-        return self.split.p
-
-    @property
-    def split_variable(self):
-        return self.split.column
-
-    @property
-    def members(self):
-        if self._members is None:
-            dep_v = self.dep_v
-            metadata = dep_v.metadata
-            self._members = {}
-            for member in metadata.values():
-                self._members[member] = 0
-
-            counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
-            self._members.update((metadata[k], v) for k, v in counts)
-
-        return self._members
-
-
-class CHAIDSplit(object):
-    """
-    A potential split for a node in to produce children
-
-    Parameters
-    ----------
-    column : float
-        The key of where the split is occuring relative to the input data
-    splits : array-like
-        The grouped variables
-    split_map : array-like
-        The name of the grouped variables
-    chi : float
-        The chi-square value of that split
-    p : float
-        The p value of that split
-    """
-    def __init__(self, column, splits, chi, p):
-        splits = splits or []
-        self.surrogates = []
-        self.column_id = column
-        self.split_name = None
-        self.splits = list(splits)
-        self.split_map = [None] * len(self.splits)
-        self.chi = chi
-        self.p = p
-
-    def sub_split_values(self, sub):
-        """ Substiutes the splits with other values into the split_map """
-        for i, arr in enumerate(self.splits):
-            self.split_map[i] = [sub.get(x, x) for x in arr]
-        for split in self.surrogates:
-            split.sub_split_values(sub)
-
-    def name_columns(self, sub):
-        """ Substiutes the split column index with a human readable string """
-        if self.column_id is not None and len(sub) > self.column_id:
-            self.split_name = sub[self.column_id]
-        for split in self.surrogates:
-            split.name_columns(sub)
-
-    def __repr__(self):
-        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'
-        if not self.valid():
-            return '<Invalid Chaid Split>'
-        return format_str.format(self)
-
-    @property
-    def column(self):
-        if not self.valid():
-            return None
-        return self.split_name or str(self.column_id)
-
-    @property
-    def groupings(self):
-        if not self.valid():
-            return "[]"
-        if all(x is None for x in self.split_map):
-            return str(self.splits)
-        return str(self.split_map)
-
-    def valid(self):
-        return self.column_id is not None
-
-
-class MappingDict(dict):
-    """ a dict with a default value when no key present """
-    def __missing__(self, key):
-        value = self[key] = [key]
-        return value
-
+from chaid_vector import CHAIDVector
+from chaid_node import CHAIDNode
+from chaid_split import CHAIDSplit
+from chaid_rules import CHAIDRules
+from mapping_dict import MappingDict
+import pandas as pd
 
 class CHAID(object):
     """
@@ -291,6 +51,7 @@ class CHAID(object):
         self.tree_store = None
         self.observed = CHAIDVector(arr)
         self.split_threshold = split_threshold
+        self.independent_set = ndarr
 
     def build_tree(self):
         """ Build chaid tree """
@@ -305,10 +66,10 @@ class CHAID(object):
 
         Parameters
         ----------
-        df :  pandas.DataFrame
+        df : pandas.DataFrame
             the dataframe with the dependent and independent variables in which
             to slice from
-        i_variables :  array-like
+        i_variables : array-like
             list of the column names for the independent variables
         d_variable : string
             the name of the dependent variable in the dataframe
@@ -490,7 +251,7 @@ class CHAID(object):
         pred = np.zeros(self.data_size)
         for node in self:
             if node.is_terminal:
-                pred[node.indices] = max(node.members, key=node.members.get)
+                pred[node.indices] = node.predict()
         return pred
 
     def risk(self):
@@ -501,3 +262,17 @@ class CHAID(object):
         model_predictions = self.model_predictions()
         observed = self.observed.arr
         return 1 - float((model_predictions == observed).sum()) / self.data_size
+
+    def accuracy(self, ndarr, arr):
+        """
+        Calculates the accuracy of predicting the
+        dependent variable when applying the same
+        stopping rules
+        """
+        rules = CHAIDRules(self).rules()
+        rules.index.names = [0]
+        index = pd.MultiIndex.from_arrays(np.transpose(ndarr))
+        series = pd.Series(arr, index=index, name='dep')
+        join = rules.join(series)
+        true_set = (join['prediction'] == join['dep']).sum()
+        return true_set / float(len(arr))

@@ -11,7 +11,11 @@ ROOT_FOLDER = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '/.
 sys.path.append(ROOT_FOLDER)
 
 import CHAID
-
+import CHAID.chaid_vector as CHAIDVector
+import CHAID.chaid_node as CHAIDNode
+import CHAID.chaid_split as CHAIDSplit
+import CHAID.chaid_rules as CHAIDRules
+import CHAID.mapping_dict as MappingDict
 
 def list_unordered_equal(list_a, list_b):
     """ Compares the unordered contents of two nd lists"""
