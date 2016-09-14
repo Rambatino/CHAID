@@ -189,7 +189,6 @@ class TestComplexStructures(TestCase):
         #
         # split = tree.generate_best_split(
         #     tree.vectorised_array,
-        #     tree.observed,
-        None
+        #     tree.observed
         # )
         assert True

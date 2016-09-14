@@ -278,7 +278,7 @@ class CHAID(object):
     split_titles : array-like
         array of names for the independent variables in the data
     """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None, split_threshold=0):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None, split_threshold=0, weights=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_sample = min_sample
@@ -290,6 +290,7 @@ class CHAID(object):
         self.node_count = 0
         self.tree_store = None
         self.observed = CHAIDVector(arr)
+        self.weights = weights
         self.split_threshold = split_threshold
 
     def build_tree(self):
@@ -337,7 +338,9 @@ class CHAID(object):
             self.node_count += 1
             return self.tree_store
 
-        split = self.generate_best_split(ind, dep)
+        wt = None
+        if self.weights is not None: wt = self.weights[rows]
+        split = self.generate_best_split(ind, dep, wt)
 
         split.name_columns(self.split_titles)
 
@@ -366,37 +369,63 @@ class CHAID(object):
                 self.node_count += 1
         return self.tree_store
 
-    def generate_best_split(self, ind, dep):
+    def generate_best_split(self, ind, dep, wt):
         """ internal method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
         relative_split_threshold = 1 - self.split_threshold
+
         for i, index in enumerate(ind):
             index = index.deep_copy()
             unique = set(index.arr)
 
             mappings = MappingDict()
-            frequencies = {}
+            freq = {}
+            wt_freq = {}
             for col in unique:
                 counts = np.unique(dep.arr[index.arr == col], return_counts=True)
-                frequencies[col] = cl.defaultdict(int)
-                frequencies[col].update(np.transpose(counts))
+                freq[col] = cl.defaultdict(int)
+                wt_freq[col] = cl.defaultdict(int)
+                freq[col].update(np.transpose(counts))
+                if wt is not None:
+                    for dep_v in set(dep.arr):
+                        wt_freq[col][dep_v] = wt[(index.arr == col) * (dep.arr == dep_v)].sum()
 
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
                 sub_data_columns = [('combinations', object), ('chi', float), ('p', float)]
                 sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
-                    col1_freq = frequencies[comb[0]]
-                    col2_freq = frequencies[comb[1]]
+                    col1_freq = freq[comb[0]]
+                    col2_freq = freq[comb[1]]
 
                     keys = set(col1_freq.keys()).union(col2_freq.keys())
 
-                    cr_table = [
+                    n_ij = np.array([
                         [col1_freq.get(k, 0) for k in keys],
                         [col2_freq.get(k, 0) for k in keys]
-                    ]
+                    ])
 
-                    chi = stats.chi2_contingency(np.array(cr_table), correction=False)
+                    if wt is not None:
+                        col1_wt_freq = wt_freq[comb[0]]
+                        col2_wt_freq = wt_freq[comb[1]]
+
+                        m_ij = w_ij = n_ij / np.array([
+                            [col1_wt_freq.get(k, 0) for k in keys],
+                            [col2_wt_freq.get(k, 0) for k in keys]
+                        ])
+
+                        alpha, beta, eps = (1, 1, 1)
+                        while eps > 0.000001:
+                            alpha = alpha * np.vstack(n_ij.sum(axis=1) / m_ij.sum(axis=1))
+                            beta = n_ij.sum(axis=0) / (alpha * w_ij).sum(axis=0)
+                            eps = np.max(np.absolute(w_ij * alpha * beta - m_ij))
+                            m_ij = w_ij * alpha * beta
+                        n_ij = m_ij
+
+                    exp = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
+                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
+                    chi = stats.chisquare(n_ij, f_exp=exp, ddof=n_ij.size - 1 - dof, axis=None)
+
                     sub_data[j] = (comb, chi[0], chi[1])
 
                 choice, chi, highest_p_split = max(sub_data, key=lambda x: (x[2], x[1]))
@@ -431,9 +460,9 @@ class CHAID(object):
                 index[index.arr == choice[1]] = choice[0]
                 unique.remove(choice[1])
 
-                for val, count in frequencies[choice[1]].items():
-                    frequencies[choice[0]][val] += count
-                del frequencies[choice[1]]
+                for val, count in freq[choice[1]].items():
+                    freq[choice[0]][val] += count
+                del freq[choice[1]]
 
         if split.valid():
             split.sub_split_values(ind[split.column_id].metadata)
