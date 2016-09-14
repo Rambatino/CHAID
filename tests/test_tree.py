@@ -18,7 +18,8 @@ def test_best_split_unique_values():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed
+        tree.observed,
+        None
     )
     assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
@@ -40,7 +41,8 @@ def test_spliting_identical_values():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed
+        tree.observed,
+        None
     )
     assert list_ordered_equal(ndarr, orig_ndarr), \
         'Calling chaid should have no side affects for original numpy arrays'
@@ -62,7 +64,8 @@ def test_best_split_with_combination():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed
+        tree.observed,
+        None
     )
 
     assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
@@ -87,7 +90,8 @@ class TestSurrogate(TestCase):
 
         split = tree.generate_best_split(
             tree.vectorised_array,
-            tree.observed
+            tree.observed,
+            None
         )
 
         assert split.column_id == 1, 'The best split should be on column 1'
@@ -102,7 +106,8 @@ class TestSurrogate(TestCase):
 
         split = tree.generate_best_split(
             tree.vectorised_array,
-            tree.observed
+            tree.observed,
+            None
         )
 
         assert split.p < split.surrogates[0].p, 'The best split should be the minimum p by default'
@@ -119,10 +124,31 @@ def test_p_and_chi_values():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed
+        tree.observed,
+        None
     )
     assert round(split.chi, 4) == 3.9375
     assert round(split.p, 4) == 0.0472
+
+def test_p_and_chi_values_when_weighting_applied():
+    """
+    Check chi and p value when weights supplied
+    """
+    gender = np.array([0,0,0,1,0,0,1,1,0,0,1])
+    income = np.array([0,0,1,0,2,0,1,2,1,0,1])
+
+    weighting = np.array([0.9,0.8,0.9,1.1,1.2,0.8,1.3,0.2,0.5,0.7,1.1])
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.CHAID(ndarr, income, alpha_merge=0.9, weights=weighting)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed,
+        weighting
+    )
+    assert round(split.chi, 4) == 1.7871
+    assert round(split.p, 4) == 0.4092
 
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """
@@ -163,6 +189,7 @@ class TestComplexStructures(TestCase):
         #
         # split = tree.generate_best_split(
         #     tree.vectorised_array,
-        #     tree.observed
+        #     tree.observed,
+        None
         # )
         assert True
