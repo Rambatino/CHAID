@@ -18,8 +18,7 @@ def test_best_split_unique_values():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed,
-        None
+        tree.observed
     )
     assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
@@ -41,8 +40,7 @@ def test_spliting_identical_values():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed,
-        None
+        tree.observed
     )
     assert list_ordered_equal(ndarr, orig_ndarr), \
         'Calling chaid should have no side affects for original numpy arrays'
@@ -64,8 +62,7 @@ def test_best_split_with_combination():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed,
-        None
+        tree.observed
     )
 
     assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
@@ -124,8 +121,7 @@ def test_p_and_chi_values():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed,
-        None
+        tree.observed
     )
     assert round(split.chi, 4) == 3.9375
     assert round(split.p, 4) == 0.0472

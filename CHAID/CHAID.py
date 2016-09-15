@@ -338,8 +338,7 @@ class CHAID(object):
             self.node_count += 1
             return self.tree_store
 
-        wt = None
-        if self.weights is not None: wt = self.weights[rows]
+        wt = (self.weights[rows] if self.weights else None)
         split = self.generate_best_split(ind, dep, wt)
 
         split.name_columns(self.split_titles)
@@ -369,7 +368,7 @@ class CHAID(object):
                 self.node_count += 1
         return self.tree_store
 
-    def generate_best_split(self, ind, dep, wt):
+    def generate_best_split(self, ind, dep, wt=None):
         """ internal method to generate the best split """
         split = CHAIDSplit(None, None, None, 1)
         relative_split_threshold = 1 - self.split_threshold
@@ -384,9 +383,9 @@ class CHAID(object):
             for col in unique:
                 counts = np.unique(dep.arr[index.arr == col], return_counts=True)
                 freq[col] = cl.defaultdict(int)
-                wt_freq[col] = cl.defaultdict(int)
                 freq[col].update(np.transpose(counts))
                 if wt is not None:
+                    wt_freq[col] = cl.defaultdict(int)
                     for dep_v in set(dep.arr):
                         wt_freq[col][dep_v] = wt[(index.arr == col) * (dep.arr == dep_v)].sum()
 
