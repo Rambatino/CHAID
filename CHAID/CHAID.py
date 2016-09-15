@@ -299,7 +299,7 @@ class CHAID(object):
         self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed)
 
     @staticmethod
-    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0):
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0, weight=None):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
@@ -325,7 +325,8 @@ class CHAID(object):
         ind_df = df[i_variables]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
-        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold)
+        weights = df[weight] if weight else None
+        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -338,7 +339,7 @@ class CHAID(object):
             self.node_count += 1
             return self.tree_store
 
-        wt = (self.weights[rows] if self.weights else None)
+        wt = (self.weights[rows] if self.weights is not None else None)
         split = self.generate_best_split(ind, dep, wt)
 
         split.name_columns(self.split_titles)
