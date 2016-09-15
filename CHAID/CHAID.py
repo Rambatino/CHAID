@@ -131,7 +131,7 @@ class CHAIDNode(object):
     def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
-        self.split = split or CHAIDSplit(None, None, None, None)
+        self.split = split or CHAIDSplit(None, None, None, 1, 0)
         self.indices = indices
         self.node_id = node_id
         self.parent = parent
@@ -198,8 +198,10 @@ class CHAIDSplit(object):
         The chi-square value of that split
     p : float
         The p value of that split
+    dof : int
+        The degrees of freedom as a result of this split
     """
-    def __init__(self, column, splits, chi, p):
+    def __init__(self, column, splits, chi, p, dof):
         splits = splits or []
         self.surrogates = []
         self.column_id = column
@@ -208,6 +210,7 @@ class CHAIDSplit(object):
         self.split_map = [None] * len(self.splits)
         self.chi = chi
         self.p = p
+        self._dof = dof
 
     def sub_split_values(self, sub):
         """ Substiutes the splits with other values into the split_map """
@@ -224,7 +227,8 @@ class CHAIDSplit(object):
             split.name_columns(sub)
 
     def __repr__(self):
-        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'
+        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings}'\
+                     ', dof={0.dof})'
         if not self.valid():
             return '<Invalid Chaid Split>'
         return format_str.format(self)
@@ -242,6 +246,10 @@ class CHAIDSplit(object):
         if all(x is None for x in self.split_map):
             return str(self.splits)
         return str(self.split_map)
+
+    @property
+    def dof(self):
+        return self._dof
 
     def valid(self):
         return self.column_id is not None
@@ -368,8 +376,11 @@ class CHAID(object):
 
     def generate_best_split(self, ind, dep):
         """ internal method to generate the best split """
-        split = CHAIDSplit(None, None, None, 1)
+        split = CHAIDSplit(None, None, None, 1, 0)
         relative_split_threshold = 1 - self.split_threshold
+        all_dep = set(dep.arr)
+        # dot operator is expensive, so cache the lookup of the chi2 function
+        chi2 = stats.chi2_contingency
         for i, index in enumerate(ind):
             index = index.deep_copy()
             unique = set(index.arr)
@@ -383,7 +394,7 @@ class CHAID(object):
 
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
-                sub_data_columns = [('combinations', object), ('chi', float), ('p', float)]
+                sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
                 sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
                     col1_freq = frequencies[comb[0]]
@@ -396,16 +407,20 @@ class CHAID(object):
                         [col2_freq.get(k, 0) for k in keys]
                     ]
 
-                    chi = stats.chi2_contingency(np.array(cr_table), correction=False)
-                    sub_data[j] = (comb, chi[0], chi[1])
+                    ret = chi2(np.array(cr_table), correction=False)
+                    sub_data[j] = (comb, ret[1], ret[0])
 
-                choice, chi, highest_p_split = max(sub_data, key=lambda x: (x[2], x[1]))
+                choice, highest_p_join, _ = max(sub_data, key=lambda x: (x[1], x[2]))
 
-                if highest_p_split < self.alpha_merge:
+                if highest_p_join < self.alpha_merge:
+                    cr_table = [
+                        [freq[dep_val] for dep_val in all_dep] for freq in frequencies.values()
+                    ]
+                    chi, p_split, dof, _ = chi2(cr_table, correction=False)
                     responses = [mappings[x] for x in unique]
-                    temp_split = CHAIDSplit(i, responses, chi, highest_p_split)
+                    temp_split = CHAIDSplit(i, responses, chi, p_split, dof)
 
-                    better_split = highest_p_split < split.p or (highest_p_split == split.p and chi > split.chi)
+                    better_split = p_split < split.p or (p_split == split.p and chi > split.chi)
 
                     if not split.valid() or better_split:
                         split, temp_split = temp_split, split
