@@ -414,7 +414,9 @@ class CHAID(object):
                         [col2_freq.get(k, 0) for k in keys]
                     ])
 
-                    if wt is not None:
+                    if wt is None:
+                        m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
+                    else:
                         col1_wt_freq = wt_freq[comb[0]]
                         col2_wt_freq = wt_freq[comb[1]]
 
@@ -422,31 +424,33 @@ class CHAID(object):
                             [col1_wt_freq.get(k, 0) for k in keys],
                             [col2_wt_freq.get(k, 0) for k in keys]
                         ])
-                        n_ij = self.weighted_case(n_ij, m_ij)
+                        m_ij = self.weighted_case(n_ij, m_ij)
 
-                    exp = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
                     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                    ret = st_chi(n_ij, f_exp=exp, ddof=n_ij.size - 1 - dof, axis=None)
+                    ret = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
 
                     sub_data[j] = (comb, ret[1], ret[0])
 
-                choice, highest_p_join, _ = max(sub_data, key=lambda x: (x[1], x[2]))
+                choice, highest_p_join, chi_join = max(sub_data, key=lambda x: (x[1], x[2]))
 
-                # check to see if they already been fully merged
                 if highest_p_join < self.alpha_merge:
-                    n_ij = np.array([
-                        [f[dep_val] for dep_val in all_dep] for f in freq.values()
-                    ])
-
-                    if wt is not None:
-                        m_ij = n_ij / np.array([
-                            [f[dep_val] for dep_val in all_dep] for f in wt_freq.values()
+                    if len(freq.keys()) == 2 or len(wt_freq.keys()) == 2: # have actual p-value
+                        dof, chi, p_split = 1, chi_join, highest_p_join
+                    else:
+                        n_ij = np.array([
+                            [f[dep_val] for dep_val in all_dep] for f in freq.values()
                         ])
-                        n_ij = self.weighted_case(n_ij, m_ij)
 
-                    exp = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
-                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                    chi, p_split = st_chi(n_ij, f_exp=exp, ddof=n_ij.size - 1 - dof, axis=None)
+                        if wt is None:
+                            m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
+                        else:
+                            m_ij = n_ij / np.array([
+                                [f[dep_val] for dep_val in all_dep] for f in wt_freq.values()
+                            ])
+                            m_ij = self.weighted_case(n_ij, m_ij)
+
+                        dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
+                        chi, p_split = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
 
                     responses = [mappings[x] for x in unique]
                     temp_split = CHAIDSplit(i, responses, chi, p_split, dof)
@@ -481,16 +485,23 @@ class CHAID(object):
                     freq[choice[0]][val] += count
                 del freq[choice[1]]
 
+                if wt is not None:
+                    for val, total in wt_freq[choice[1]].items():
+                        wt_freq[choice[0]][val] += total
+                    del wt_freq[choice[1]]
+
         if split.valid():
             split.sub_split_values(ind[split.column_id].metadata)
         return split
 
     def weighted_case(self, n_ij, m_ij):
         w_ij = m_ij
+        n_ij_col_sum = n_ij.sum(axis=1)
+        n_ij_row_sum = n_ij.sum(axis=0)
         alpha, beta, eps = (1, 1, 1)
-        while eps > 0.000001:
-            alpha = alpha * np.vstack(n_ij.sum(axis=1) / m_ij.sum(axis=1))
-            beta = n_ij.sum(axis=0) / (alpha * w_ij).sum(axis=0)
+        while eps > 0.0000001:
+            alpha = alpha * np.vstack(n_ij_col_sum / m_ij.sum(axis=1))
+            beta = n_ij_row_sum / (alpha * w_ij).sum(axis=0)
             eps = np.max(np.absolute(w_ij * alpha * beta - m_ij))
             m_ij = w_ij * alpha * beta
         return m_ij

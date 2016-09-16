@@ -143,8 +143,8 @@ def test_p_and_chi_values_when_weighting_applied():
         tree.observed,
         weighting
     )
-    assert round(split.chi, 4) == 1.7871
-    assert round(split.p, 4) == 0.4092
+    assert round(split.chi, 4) == 2.4067
+    assert round(split.p, 4) == 0.3002
 
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """

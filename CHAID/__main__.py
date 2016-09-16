@@ -11,6 +11,7 @@ def main():
     parser.add_argument('file')
     parser.add_argument('dependent_variable', nargs=1)
     parser.add_argument('independent_variables', nargs='+')
+    parser.add_argument('--weights', type=str, help='Name of weight column')
 
     parser.add_argument('--max-depth', type=int, help='Max depth of generated '
                         'tree')
@@ -35,6 +36,8 @@ def main():
         config['alpha_merge'] = nspace.alpha_merge
     if nspace.min_samples:
         config['min_sample'] = nspace.min_samples
+    if nspace.weights:
+        config['weight'] = nspace.weights
     tree = CHAID.from_pandas_df(data, nspace.independent_variables,
                                 nspace.dependent_variable[0], **config)
 
