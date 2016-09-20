@@ -128,7 +128,7 @@ class CHAIDNode(object):
     is_terminal : boolean
         Whether the node is terminal
     """
-    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False):
+    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False, weights=None):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
         self.split = split or CHAIDSplit(None, None, None, 1, 0)
@@ -138,6 +138,7 @@ class CHAIDNode(object):
         self.dep_v = dep_v
         self._members = None
         self.is_terminal = is_terminal
+        self.weights = weights
 
     def __hash__(self):
         return hash(self.__dict__)
@@ -176,7 +177,13 @@ class CHAIDNode(object):
             for member in metadata.values():
                 self._members[member] = 0
 
-            counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
+            if self.weights is None:
+                counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
+            else:
+                counts = np.array([
+                    [i, self.weights[dep_v.arr == i].sum()] for i in set(dep_v.arr)
+                ])
+
             self._members.update((metadata[k], v) for k, v in counts)
 
         return self._members
@@ -299,12 +306,14 @@ class CHAID(object):
         self.tree_store = None
         self.observed = CHAIDVector(arr)
         self.weights = weights
+        if weights is not None: self.weights = (weights + 10e-5).round()
         self.split_threshold = split_threshold
 
     def build_tree(self):
         """ Build chaid tree """
         self.tree_store = []
-        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed)
+        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed,
+                  wt=self.weights)
 
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0, weight=None):
@@ -331,29 +340,30 @@ class CHAID(object):
             contain (default 30)
         """
         ind_df = df[i_variables]
-        ind_values = ind_df.values
-        dep_values = df[d_variable].values
-        weights = df[weight] if weight else None
+        mask = (ind_df.values < -5000).sum(axis=1) == len(ind_df.values[0, :])
+        ind_df = ind_df
+        ind_values = ind_df.values[~mask]
+        dep_values = df[d_variable].values[~mask]
+        weights = df[weight][~mask].astype(float) if weight else None
         return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
 
-    def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
+    def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
         depth = depth + 1
 
         if self.max_depth < depth:
             terminal_node = CHAIDNode(choices=parent_decisions, node_id=self.node_count,
-                                      parent=parent, indices=rows, dep_v=dep, is_terminal=True)
+                                      parent=parent, indices=rows, dep_v=dep, is_terminal=True, weights=wt)
             self.tree_store.append(terminal_node)
             self.node_count += 1
             return self.tree_store
 
-        wt = (self.weights[rows] if self.weights is not None else None)
         split = self.generate_best_split(ind, dep, wt)
 
         split.name_columns(self.split_titles)
 
         node = CHAIDNode(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
-                         parent=parent, split=split)
+                         parent=parent, split=split, weights=wt)
 
         self.tree_store.append(node)
         parent = self.node_count
@@ -368,11 +378,12 @@ class CHAID(object):
             dep_slice = dep[correct_rows]
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
+            weight_slice = (self.weights[correct_rows] if self.weights is not None else None)
             if self.min_sample < len(dep_slice.arr):
-                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
+                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index], wt=weight_slice)
             else:
                 terminal_node = CHAIDNode(choices=split.split_map[index], node_id=self.node_count,
-                                          parent=parent, indices=row_slice, dep_v=dep_slice, is_terminal=True)
+                                          parent=parent, indices=row_slice, dep_v=dep_slice, is_terminal=True, weights=weight_slice)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
@@ -424,6 +435,7 @@ class CHAID(object):
                             [col1_wt_freq.get(k, 0) for k in keys],
                             [col2_wt_freq.get(k, 0) for k in keys]
                         ])
+
                         m_ij = self.weighted_case(n_ij, m_ij)
 
                     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
@@ -437,16 +449,16 @@ class CHAID(object):
                     if len(freq.keys()) == 2 or len(wt_freq.keys()) == 2: # have actual p-value
                         dof, chi, p_split = 1, chi_join, highest_p_join
                     else:
-                        n_ij = np.array([
-                            [f[dep_val] for dep_val in all_dep] for f in freq.values()
-                        ])
-
                         if wt is None:
+                            n_ij = np.array([
+                                [f[dep_val] for dep_val in all_dep] for f in freq.values()
+                            ])
                             m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
                         else:
-                            m_ij = n_ij / np.array([
+                            n_ij = np.array([
                                 [f[dep_val] for dep_val in all_dep] for f in wt_freq.values()
                             ])
+                            m_ij = n_ij / n_ij
                             m_ij = self.weighted_case(n_ij, m_ij)
 
                         dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
@@ -499,7 +511,7 @@ class CHAID(object):
         n_ij_col_sum = n_ij.sum(axis=1)
         n_ij_row_sum = n_ij.sum(axis=0)
         alpha, beta, eps = (1, 1, 1)
-        while eps > 0.0000001:
+        while eps > 10e-6:
             alpha = alpha * np.vstack(n_ij_col_sum / m_ij.sum(axis=1))
             beta = n_ij_row_sum / (alpha * w_ij).sum(axis=0)
             eps = np.max(np.absolute(w_ij * alpha * beta - m_ij))

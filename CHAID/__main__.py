@@ -1,7 +1,8 @@
 import argparse
 import pandas as pd
 from .CHAID import CHAID
-
+import savReaderWriter as spss
+import numpy as np
 
 def main():
     """Entry point when module is run from command line"""
@@ -27,7 +28,12 @@ def main():
                        'the majority of respondents in that node selected')
     nspace = parser.parse_args()
 
-    data = pd.read_csv(nspace.file)
+    # data = pd.read_csv(nspace.file)
+
+    raw_data = spss.SavReader(nspace.file, returnHeader = True, rawMode=True) # This is fast
+    raw_data_list = list(raw_data) # this is slow
+    data = pd.DataFrame(raw_data_list) # this is slow
+    data = data.rename(columns=data.loc[0]).iloc[1:]
 
     config = {}
     if nspace.max_depth:
