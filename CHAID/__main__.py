@@ -30,9 +30,9 @@ def main():
 
     # data = pd.read_csv(nspace.file)
 
-    raw_data = spss.SavReader(nspace.file, returnHeader = True, rawMode=True) # This is fast
-    raw_data_list = list(raw_data) # this is slow
-    data = pd.DataFrame(raw_data_list) # this is slow
+    raw_data = spss.SavReader(nspace.file, returnHeader = True, rawMode=True)
+    raw_data_list = list(raw_data)
+    data = pd.DataFrame(raw_data_list)
     data = data.rename(columns=data.loc[0]).iloc[1:]
 
     config = {}

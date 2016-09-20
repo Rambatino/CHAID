@@ -306,7 +306,6 @@ class CHAID(object):
         self.tree_store = None
         self.observed = CHAIDVector(arr)
         self.weights = weights
-        if weights is not None: self.weights = (weights + 10e-5).round()
         self.split_threshold = split_threshold
 
     def build_tree(self):
@@ -340,11 +339,10 @@ class CHAID(object):
             contain (default 30)
         """
         ind_df = df[i_variables]
-        mask = (ind_df.values < -5000).sum(axis=1) == len(ind_df.values[0, :])
         ind_df = ind_df
-        ind_values = ind_df.values[~mask]
-        dep_values = df[d_variable].values[~mask]
-        weights = df[weight][~mask].astype(float) if weight else None
+        ind_values = ind_df.values
+        dep_values = df[d_variable].values
+        weights = df[weight] if weight else None
         return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
 
     def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
