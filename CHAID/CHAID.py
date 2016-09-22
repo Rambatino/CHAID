@@ -342,7 +342,7 @@ class CHAID(object):
         ind_df = ind_df
         ind_values = ind_df.values
         dep_values = df[d_variable].values
-        weights = df[weight] if weight else None
+        weights = df[weight] if weight is not None else None
         return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
 
     def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
@@ -413,21 +413,28 @@ class CHAID(object):
                 sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
                 sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
-                    col1_freq = freq[comb[0]]
-                    col2_freq = freq[comb[1]]
-
-                    keys = set(col1_freq.keys()).union(col2_freq.keys())
-
-                    n_ij = np.array([
-                        [col1_freq.get(k, 0) for k in keys],
-                        [col2_freq.get(k, 0) for k in keys]
-                    ])
-
                     if wt is None:
+                        col1_freq = freq[comb[0]]
+                        col2_freq = freq[comb[1]]
+
+                        keys = set(col1_freq.keys()).union(col2_freq.keys())
+
+                        n_ij = np.array([
+                            [col1_freq.get(k, 0) for k in keys],
+                            [col2_freq.get(k, 0) for k in keys]
+                        ])
+
                         m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
                     else:
                         col1_wt_freq = wt_freq[comb[0]]
                         col2_wt_freq = wt_freq[comb[1]]
+
+                        keys = set(col1_wt_freq.keys()).union(col2_wt_freq.keys())
+
+                        n_ij = np.array([
+                            [col1_wt_freq.get(k, 0) for k in keys],
+                            [col2_wt_freq.get(k, 0) for k in keys]
+                        ])
 
                         m_ij = n_ij / np.array([
                             [col1_wt_freq.get(k, 0) for k in keys],
@@ -444,23 +451,20 @@ class CHAID(object):
                 choice, highest_p_join, chi_join = max(sub_data, key=lambda x: (x[1], x[2]))
 
                 if highest_p_join < self.alpha_merge:
-                    if len(freq.keys()) == 2 or len(wt_freq.keys()) == 2: # have actual p-value
-                        dof, chi, p_split = 1, chi_join, highest_p_join
+                    if wt is None:
+                        n_ij = np.array([
+                            [f[dep_val] for dep_val in all_dep] for f in freq.values()
+                        ])
+                        m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
                     else:
-                        if wt is None:
-                            n_ij = np.array([
-                                [f[dep_val] for dep_val in all_dep] for f in freq.values()
-                            ])
-                            m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
-                        else:
-                            n_ij = np.array([
-                                [f[dep_val] for dep_val in all_dep] for f in wt_freq.values()
-                            ])
-                            m_ij = n_ij / n_ij
-                            m_ij = self.weighted_case(n_ij, m_ij)
+                        n_ij = np.array([
+                            [f[dep_val] for dep_val in all_dep] for f in wt_freq.values()
+                        ])
+                        m_ij = n_ij / n_ij
+                        m_ij = self.weighted_case(n_ij, m_ij)
 
-                        dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                        chi, p_split = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
+                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
+                    chi, p_split = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
 
                     responses = [mappings[x] for x in unique]
                     temp_split = CHAIDSplit(i, responses, chi, p_split, dof)
