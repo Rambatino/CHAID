@@ -131,7 +131,7 @@ class CHAIDNode(object):
     def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False, weights=None):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
-        self.split = split or CHAIDSplit(None, None, None, 1, 0)
+        self.split = split or CHAIDSplit(None, None, None, None, 0)
         self.indices = indices
         self.node_id = node_id
         self.parent = parent
@@ -388,7 +388,7 @@ class CHAID(object):
 
     def generate_best_split(self, ind, dep, wt=None):
         """ internal method to generate the best split """
-        split = CHAIDSplit(None, None, None, 1, 0)
+        split = CHAIDSplit(None, None, None, None, 0)
         relative_split_threshold = 1 - self.split_threshold
         st_chi = stats.chisquare
         all_dep = set(dep.arr)
