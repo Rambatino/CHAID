@@ -128,16 +128,17 @@ class CHAIDNode(object):
     is_terminal : boolean
         Whether the node is terminal
     """
-    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False):
+    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False, weights=None):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
-        self.split = split or CHAIDSplit(None, None, None, None)
+        self.split = split or CHAIDSplit(None, None, None, None, 0)
         self.indices = indices
         self.node_id = node_id
         self.parent = parent
         self.dep_v = dep_v
         self._members = None
         self.is_terminal = is_terminal
+        self.weights = weights
 
     def __hash__(self):
         return hash(self.__dict__)
@@ -176,7 +177,13 @@ class CHAIDNode(object):
             for member in metadata.values():
                 self._members[member] = 0
 
-            counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
+            if self.weights is None:
+                counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
+            else:
+                counts = np.array([
+                    [i, self.weights[dep_v.arr == i].sum()] for i in set(dep_v.arr)
+                ])
+
             self._members.update((metadata[k], v) for k, v in counts)
 
         return self._members
@@ -198,8 +205,10 @@ class CHAIDSplit(object):
         The chi-square value of that split
     p : float
         The p value of that split
+    dof : int
+        The degrees of freedom as a result of this split
     """
-    def __init__(self, column, splits, chi, p):
+    def __init__(self, column, splits, chi, p, dof):
         splits = splits or []
         self.surrogates = []
         self.column_id = column
@@ -208,6 +217,7 @@ class CHAIDSplit(object):
         self.split_map = [None] * len(self.splits)
         self.chi = chi
         self.p = p
+        self._dof = dof
 
     def sub_split_values(self, sub):
         """ Substiutes the splits with other values into the split_map """
@@ -224,7 +234,8 @@ class CHAIDSplit(object):
             split.name_columns(sub)
 
     def __repr__(self):
-        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'
+        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'\
+                     ', dof={0.dof})'
         if not self.valid():
             return '<Invalid Chaid Split>'
         return format_str.format(self)
@@ -242,6 +253,10 @@ class CHAIDSplit(object):
         if all(x is None for x in self.split_map):
             return str(self.splits)
         return str(self.split_map)
+
+    @property
+    def dof(self):
+        return self._dof
 
     def valid(self):
         return self.column_id is not None
@@ -278,7 +293,7 @@ class CHAID(object):
     split_titles : array-like
         array of names for the independent variables in the data
     """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None, split_threshold=0):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None, split_threshold=0, weights=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_sample = min_sample
@@ -290,15 +305,17 @@ class CHAID(object):
         self.node_count = 0
         self.tree_store = None
         self.observed = CHAIDVector(arr)
+        self.weights = weights
         self.split_threshold = split_threshold
 
     def build_tree(self):
         """ Build chaid tree """
         self.tree_store = []
-        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed)
+        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed,
+                  wt=self.weights)
 
     @staticmethod
-    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0):
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0, weight=None):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
@@ -322,27 +339,29 @@ class CHAID(object):
             contain (default 30)
         """
         ind_df = df[i_variables]
+        ind_df = ind_df
         ind_values = ind_df.values
         dep_values = df[d_variable].values
-        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold)
+        weights = df[weight] if weight is not None else None
+        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
 
-    def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
+    def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
         depth = depth + 1
 
         if self.max_depth < depth:
             terminal_node = CHAIDNode(choices=parent_decisions, node_id=self.node_count,
-                                      parent=parent, indices=rows, dep_v=dep, is_terminal=True)
+                                      parent=parent, indices=rows, dep_v=dep, is_terminal=True, weights=wt)
             self.tree_store.append(terminal_node)
             self.node_count += 1
             return self.tree_store
 
-        split = self.generate_best_split(ind, dep)
+        split = self.generate_best_split(ind, dep, wt)
 
         split.name_columns(self.split_titles)
 
         node = CHAIDNode(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
-                         parent=parent, split=split)
+                         parent=parent, split=split, weights=wt)
 
         self.tree_store.append(node)
         parent = self.node_count
@@ -357,55 +376,100 @@ class CHAID(object):
             dep_slice = dep[correct_rows]
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
+            weight_slice = (self.weights[correct_rows] if self.weights is not None else None)
             if self.min_sample < len(dep_slice.arr):
-                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index])
+                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index], wt=weight_slice)
             else:
                 terminal_node = CHAIDNode(choices=split.split_map[index], node_id=self.node_count,
-                                          parent=parent, indices=row_slice, dep_v=dep_slice, is_terminal=True)
+                                          parent=parent, indices=row_slice, dep_v=dep_slice, is_terminal=True, weights=weight_slice)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
 
-    def generate_best_split(self, ind, dep):
+    def generate_best_split(self, ind, dep, wt=None):
         """ internal method to generate the best split """
-        split = CHAIDSplit(None, None, None, 1)
+        split = CHAIDSplit(None, None, None, None, 0)
         relative_split_threshold = 1 - self.split_threshold
+        st_chi = stats.chisquare
+        all_dep = set(dep.arr)
         for i, index in enumerate(ind):
             index = index.deep_copy()
             unique = set(index.arr)
 
             mappings = MappingDict()
-            frequencies = {}
+            freq = {}
+            wt_freq = {}
             for col in unique:
                 counts = np.unique(dep.arr[index.arr == col], return_counts=True)
-                frequencies[col] = cl.defaultdict(int)
-                frequencies[col].update(np.transpose(counts))
+                freq[col] = cl.defaultdict(int)
+                freq[col].update(np.transpose(counts))
+                if wt is not None:
+                    wt_freq[col] = cl.defaultdict(int)
+                    for dep_v in set(dep.arr):
+                        wt_freq[col][dep_v] = wt[(index.arr == col) * (dep.arr == dep_v)].sum()
 
             while len(unique) > 1:
                 size = int((len(unique) * (len(unique) - 1)) / 2)
-                sub_data_columns = [('combinations', object), ('chi', float), ('p', float)]
+                sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
                 sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
                 for j, comb in enumerate(it.combinations(unique, 2)):
-                    col1_freq = frequencies[comb[0]]
-                    col2_freq = frequencies[comb[1]]
+                    if wt is None:
+                        col1_freq = freq[comb[0]]
+                        col2_freq = freq[comb[1]]
 
-                    keys = set(col1_freq.keys()).union(col2_freq.keys())
+                        keys = set(col1_freq.keys()).union(col2_freq.keys())
 
-                    cr_table = [
-                        [col1_freq.get(k, 0) for k in keys],
-                        [col2_freq.get(k, 0) for k in keys]
-                    ]
+                        n_ij = np.array([
+                            [col1_freq.get(k, 0) for k in keys],
+                            [col2_freq.get(k, 0) for k in keys]
+                        ])
 
-                    chi = stats.chi2_contingency(np.array(cr_table), correction=False)
-                    sub_data[j] = (comb, chi[0], chi[1])
+                        m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
+                    else:
+                        col1_wt_freq = wt_freq[comb[0]]
+                        col2_wt_freq = wt_freq[comb[1]]
 
-                choice, chi, highest_p_split = max(sub_data, key=lambda x: (x[2], x[1]))
+                        keys = set(col1_wt_freq.keys()).union(col2_wt_freq.keys())
 
-                if highest_p_split < self.alpha_merge:
+                        n_ij = np.array([
+                            [col1_wt_freq.get(k, 0) for k in keys],
+                            [col2_wt_freq.get(k, 0) for k in keys]
+                        ])
+
+                        m_ij = n_ij / np.array([
+                            [col1_wt_freq.get(k, 0) for k in keys],
+                            [col2_wt_freq.get(k, 0) for k in keys]
+                        ])
+
+                        m_ij = self.weighted_case(n_ij, m_ij)
+
+                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
+                    ret = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
+
+                    sub_data[j] = (comb, ret[1], ret[0])
+
+                choice, highest_p_join, chi_join = max(sub_data, key=lambda x: (x[1], x[2]))
+
+                if highest_p_join < self.alpha_merge:
+                    if wt is None:
+                        n_ij = np.array([
+                            [f[dep_val] for dep_val in all_dep] for f in freq.values()
+                        ])
+                        m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
+                    else:
+                        n_ij = np.array([
+                            [f[dep_val] for dep_val in all_dep] for f in wt_freq.values()
+                        ])
+                        m_ij = n_ij / n_ij
+                        m_ij = self.weighted_case(n_ij, m_ij)
+
+                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
+                    chi, p_split = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
+
                     responses = [mappings[x] for x in unique]
-                    temp_split = CHAIDSplit(i, responses, chi, highest_p_split)
+                    temp_split = CHAIDSplit(i, responses, chi, p_split, dof)
 
-                    better_split = highest_p_split < split.p or (highest_p_split == split.p and chi > split.chi)
+                    better_split = p_split < split.p or (p_split == split.p and chi > split.chi)
 
                     if not split.valid() or better_split:
                         split, temp_split = temp_split, split
@@ -431,13 +495,30 @@ class CHAID(object):
                 index[index.arr == choice[1]] = choice[0]
                 unique.remove(choice[1])
 
-                for val, count in frequencies[choice[1]].items():
-                    frequencies[choice[0]][val] += count
-                del frequencies[choice[1]]
+                for val, count in freq[choice[1]].items():
+                    freq[choice[0]][val] += count
+                del freq[choice[1]]
+
+                if wt is not None:
+                    for val, total in wt_freq[choice[1]].items():
+                        wt_freq[choice[0]][val] += total
+                    del wt_freq[choice[1]]
 
         if split.valid():
             split.sub_split_values(ind[split.column_id].metadata)
         return split
+
+    def weighted_case(self, n_ij, m_ij):
+        w_ij = m_ij
+        n_ij_col_sum = n_ij.sum(axis=1)
+        n_ij_row_sum = n_ij.sum(axis=0)
+        alpha, beta, eps = (1, 1, 1)
+        while eps > 10e-6:
+            alpha = alpha * np.vstack(n_ij_col_sum / m_ij.sum(axis=1))
+            beta = n_ij_row_sum / (alpha * w_ij).sum(axis=0)
+            eps = np.max(np.absolute(w_ij * alpha * beta - m_ij))
+            m_ij = w_ij * alpha * beta
+        return m_ij
 
     def to_tree(self):
         """ returns a TreeLib tree """

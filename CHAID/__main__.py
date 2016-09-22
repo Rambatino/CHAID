@@ -1,7 +1,8 @@
 import argparse
 import pandas as pd
 from .CHAID import CHAID
-
+import savReaderWriter as spss
+import numpy as np
 
 def main():
     """Entry point when module is run from command line"""
@@ -11,6 +12,7 @@ def main():
     parser.add_argument('file')
     parser.add_argument('dependent_variable', nargs=1)
     parser.add_argument('independent_variables', nargs='+')
+    parser.add_argument('--weights', type=str, help='Name of weight column')
 
     parser.add_argument('--max-depth', type=int, help='Max depth of generated '
                         'tree')
@@ -26,7 +28,12 @@ def main():
                        'the majority of respondents in that node selected')
     nspace = parser.parse_args()
 
-    data = pd.read_csv(nspace.file)
+    # data = pd.read_csv(nspace.file)
+
+    raw_data = spss.SavReader(nspace.file, returnHeader = True, rawMode=True)
+    raw_data_list = list(raw_data)
+    data = pd.DataFrame(raw_data_list)
+    data = data.rename(columns=data.loc[0]).iloc[1:]
 
     config = {}
     if nspace.max_depth:
@@ -35,6 +42,8 @@ def main():
         config['alpha_merge'] = nspace.alpha_merge
     if nspace.min_samples:
         config['min_sample'] = nspace.min_samples
+    if nspace.weights:
+        config['weight'] = nspace.weights
     tree = CHAID.from_pandas_df(data, nspace.independent_variables,
                                 nspace.dependent_variable[0], **config)
 

@@ -87,7 +87,8 @@ class TestSurrogate(TestCase):
 
         split = tree.generate_best_split(
             tree.vectorised_array,
-            tree.observed
+            tree.observed,
+            None
         )
 
         assert split.column_id == 1, 'The best split should be on column 1'
@@ -102,7 +103,8 @@ class TestSurrogate(TestCase):
 
         split = tree.generate_best_split(
             tree.vectorised_array,
-            tree.observed
+            tree.observed,
+            None
         )
 
         assert split.p < split.surrogates[0].p, 'The best split should be the minimum p by default'
@@ -123,6 +125,47 @@ def test_p_and_chi_values():
     )
     assert round(split.chi, 4) == 3.9375
     assert round(split.p, 4) == 0.0472
+
+def test_p_and_chi_values_when_weighting_applied():
+    """
+    Check chi and p value when weights supplied
+    """
+    gender = np.array([0,0,0,1,0,0,1,1,0,0,1])
+    income = np.array([0,0,1,0,2,0,1,2,1,0,1])
+
+    weighting = np.array([0.9,0.8,0.9,1.1,1.2,0.8,1.3,0.2,0.5,0.7,1.1])
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.CHAID(ndarr, income, alpha_merge=0.9, weights=weighting)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed,
+        weighting
+    )
+
+    assert round(split.chi, 4) == 1.6179
+    assert round(split.p, 4) == 0.4453
+
+def test_correct_dof():
+    """
+    Check the degrees of freedom is correct
+    """
+    gender = np.array([0,0,0,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2])
+    income = np.array([0,0,1,0,2,0,1,2,1,0,1,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.CHAID(ndarr, income, alpha_merge=0.9)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed
+    )
+
+    assert split.dof == (len(set(gender)) - 1) * (len(set(income)) - 1)
+    assert round(split.chi, 4) == 7.5948
+    assert round(split.p, 4) == 0.1076
 
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """
