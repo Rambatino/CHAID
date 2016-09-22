@@ -164,8 +164,28 @@ def test_correct_dof():
     )
 
     assert split.dof == (len(set(gender)) - 1) * (len(set(income)) - 1)
-    assert round(split.chi, 4) == 7.5948
-    assert round(split.p, 4) == 0.1076
+
+def test_zero_subbed_weighted_ndarry():
+    """
+    Test how the split works when 0 independent categorical variable chooses a dependent categorical variable for the weighted case.
+    In this instance, a very small float is assigned to the 0 value
+    """
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+    weighting = np.array(([0.9] * int(len(gender) / 2.0)) + ([1.9] * int(len(gender) / 2.0)))
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.CHAID(ndarr, income, alpha_merge=0.9, weights=weighting)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed,
+        weighting
+    )
+
+    assert round(split.chi, 4) == 14.5103
+    assert round(split.p, 4) == 0.0007
 
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """

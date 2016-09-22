@@ -436,10 +436,10 @@ class CHAID(object):
                             [col2_wt_freq.get(k, 0) for k in keys]
                         ])
 
-                        m_ij = n_ij / np.array([
-                            [col1_wt_freq.get(k, 0) for k in keys],
-                            [col2_wt_freq.get(k, 0) for k in keys]
-                        ])
+                        m_ij = n_ij / n_ij
+
+                        nan_mask = np.isnan(m_ij)
+                        m_ij[nan_mask] = 0.000001 # otherwise it breaks the chi-squared test
 
                         m_ij = self.weighted_case(n_ij, m_ij)
 
@@ -449,6 +449,7 @@ class CHAID(object):
                     sub_data[j] = (comb, ret[1], ret[0])
 
                 choice, highest_p_join, chi_join = max(sub_data, key=lambda x: (x[1], x[2]))
+
 
                 if highest_p_join < self.alpha_merge:
                     if wt is None:
@@ -461,6 +462,10 @@ class CHAID(object):
                             [f[dep_val] for dep_val in all_dep] for f in wt_freq.values()
                         ])
                         m_ij = n_ij / n_ij
+
+                        nan_mask = np.isnan(m_ij)
+                        m_ij[nan_mask] = 0.000001
+
                         m_ij = self.weighted_case(n_ij, m_ij)
 
                     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
