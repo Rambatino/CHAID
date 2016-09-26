@@ -1,3 +1,3 @@
 from .CHAID import CHAID, CHAIDSplit, CHAIDNode, CHAIDVector
 
-__version__ = "0.3.4"
+__version__ = "1.0.1"
