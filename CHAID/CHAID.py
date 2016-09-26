@@ -347,7 +347,7 @@ class CHAID(object):
 
     def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
-        depth = depth + 1
+        depth += 1
 
         if self.max_depth < depth:
             terminal_node = CHAIDNode(choices=parent_decisions, node_id=self.node_count,
@@ -376,7 +376,7 @@ class CHAID(object):
             dep_slice = dep[correct_rows]
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
-            weight_slice = (self.weights[correct_rows] if self.weights is not None else None)
+            weight_slice = (wt[correct_rows] if wt is not None else None)
             if self.min_sample < len(dep_slice.arr):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index], wt=weight_slice)
             else:
