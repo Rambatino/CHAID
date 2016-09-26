@@ -229,3 +229,21 @@ class TestComplexStructures(TestCase):
         #     tree.observed
         # )
         assert True
+
+class TestBugFixes(TestCase):
+    """ Specific tests for bug fixes """
+    def setUp(self):
+        """ Setup test data for bug fixes """
+        self.arr = np.array(([1] * 15) + ([2] * 15))
+        self.wt = np.array(([1.0] * 15) + ([1.2] * 15))
+        self.ndarr = np.array(([2, 3] * 20) + ([2, 5] * 20) + ([3, 4] * 19) + [2, 3]).reshape(30, 4)
+
+    def test_incorrect_weighted_counts(self):
+        """
+        Fix bug wherby the weights was using the class weights
+        and not the sliced weights in node()
+        """
+        tree = CHAID.CHAID(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_sample=2)
+        tree.build_tree()
+        assert tree.tree_store[3].members == {1: 0, 2: 1.2}
+        assert tree.tree_store[5].members == {1: 5.0, 2: 6.0}
