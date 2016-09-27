@@ -1,275 +1,15 @@
-"""
-This package provides a python implementation of the Chi-Squared Automatic
-Inference Detection (CHAID) decision tree.
-"""
 import itertools as it
 import collections as cl
 import numpy as np
-import math
+import pandas as pd
 from scipy import stats
-from treelib import Tree
+from treelib import Tree as TreeLibTree
+from .mapping_dict import MappingDict
+from .node import Node
+from .split import Split
+from .column import Column
 
-
-class CHAIDVector(object):
-    """
-    A numpy array with metadata
-
-    Parameters
-    ----------
-    arr : iterable object
-        The numpy array
-    metadata : dict
-        The substitutions of the vector
-    missing_id : string
-        An identifier for the missing value to be associated
-    substitute : bool
-        Whether the objects in the given array need to be substitued for
-        integers
-    """
-    def __init__(self, arr=None, metadata=None,
-                 missing_id='<missing>', substitute=True):
-        self._metadata = dict(metadata or {})
-        self._arr = np.array(arr)
-        self._missing_id = missing_id
-        if substitute:
-            self.substitute_values(arr)
-
-    def substitute_values(self, vect):
-        """
-        Internal method to substitute integers into the vector, and construct
-        metadata to convert back to the original vector.
-
-        np.nan is always given -1, all other objects are given integers in
-        order of apperence.
-
-        Parameters
-        ----------
-        vect : np.array
-            the vector in which to substitute values in
-
-        """
-        unique = np.unique(vect)
-        unique = [
-            x for x in unique if not isinstance(x, float) or not math.isnan(x)
-        ]
-
-        arr = np.zeros(len(vect), dtype=int) - 1
-        for new_id, value in enumerate(unique):
-            arr[vect == value] = new_id
-            self._metadata[new_id] = value
-        self._arr = arr
-
-        if -1 in arr:
-            self._metadata[-1] = self._missing_id
-
-    def __iter__(self):
-        return iter(self._arr)
-
-    def __getitem__(self, key):
-        return CHAIDVector(self._arr[key], metadata=self.metadata, substitute=False)
-
-    def __setitem__(self, key, value):
-        self._arr[key] = value
-        return CHAIDVector(np.array(self._arr), metadata=self.metadata, substitute=False)
-
-    def deep_copy(self):
-        """
-        Returns a deep copy.
-        """
-        return CHAIDVector(self._arr, metadata=self.metadata,
-                           missing_id=self._missing_id, substitute=False)
-
-    @property
-    def arr(self):
-        """
-        Provides access to the internal numpy array
-        """
-        return self._arr
-
-    @arr.setter
-    def arr(self, value):
-        """
-        Allows writing to the internal numpy array
-        """
-        self._arr = value
-
-    @property
-    def metadata(self):
-        """
-        Provides access to the internal metadata e.g. when a string has been
-        replaced with a float, this will provide a mapping back to the original
-        string
-        """
-        return self._metadata
-
-
-class CHAIDNode(object):
-    """
-    A node in the CHAID tree
-
-    Parameters
-    ----------
-    choices : array-like
-        Contains a list of the splits that gave rise to that node
-    split_variable : number or string
-        A value indicating what independent variable the node derived from
-    chi : float
-        The chi-squared score for the split
-    p : float
-        The p-value for the split
-    indices : array-like or None
-        The row index that ended up in the node (only occurs in terminal nodes)
-    node_id : float
-        A float representing the id of the node
-    parent : float or None
-        The node_id of the parent of that node
-    dep_v : array-like
-        The dependent variable set
-    is_terminal : boolean
-        Whether the node is terminal
-    """
-    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False, weights=None):
-        indices = [] if indices is None else indices
-        self.choices = list(choices or [])
-        self.split = split or CHAIDSplit(None, None, None, None, 0)
-        self.indices = indices
-        self.node_id = node_id
-        self.parent = parent
-        self.dep_v = dep_v
-        self._members = None
-        self.is_terminal = is_terminal
-        self.weights = weights
-
-    def __hash__(self):
-        return hash(self.__dict__)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        else:
-            return False
-
-    def __repr__(self):
-        format_str = '({0.choices}, {0.members}, {0.split})'
-        return format_str.format(self)
-
-    def __lt__(self, other):
-        return self.node_id < other.node_id
-
-    @property
-    def chi(self):
-        return self.split.chi
-
-    @property
-    def p(self):
-        return self.split.p
-
-    @property
-    def split_variable(self):
-        return self.split.column
-
-    @property
-    def members(self):
-        if self._members is None:
-            dep_v = self.dep_v
-            metadata = dep_v.metadata
-            self._members = {}
-            for member in metadata.values():
-                self._members[member] = 0
-
-            if self.weights is None:
-                counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
-            else:
-                counts = np.array([
-                    [i, self.weights[dep_v.arr == i].sum()] for i in set(dep_v.arr)
-                ])
-
-            self._members.update((metadata[k], v) for k, v in counts)
-
-        return self._members
-
-
-class CHAIDSplit(object):
-    """
-    A potential split for a node in to produce children
-
-    Parameters
-    ----------
-    column : float
-        The key of where the split is occuring relative to the input data
-    splits : array-like
-        The grouped variables
-    split_map : array-like
-        The name of the grouped variables
-    chi : float
-        The chi-square value of that split
-    p : float
-        The p value of that split
-    dof : int
-        The degrees of freedom as a result of this split
-    """
-    def __init__(self, column, splits, chi, p, dof):
-        splits = splits or []
-        self.surrogates = []
-        self.column_id = column
-        self.split_name = None
-        self.splits = list(splits)
-        self.split_map = [None] * len(self.splits)
-        self.chi = chi
-        self.p = p
-        self._dof = dof
-
-    def sub_split_values(self, sub):
-        """ Substiutes the splits with other values into the split_map """
-        for i, arr in enumerate(self.splits):
-            self.split_map[i] = [sub.get(x, x) for x in arr]
-        for split in self.surrogates:
-            split.sub_split_values(sub)
-
-    def name_columns(self, sub):
-        """ Substiutes the split column index with a human readable string """
-        if self.column_id is not None and len(sub) > self.column_id:
-            self.split_name = sub[self.column_id]
-        for split in self.surrogates:
-            split.name_columns(sub)
-
-    def __repr__(self):
-        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'\
-                     ', dof={0.dof})'
-        if not self.valid():
-            return '<Invalid Chaid Split>'
-        return format_str.format(self)
-
-    @property
-    def column(self):
-        if not self.valid():
-            return None
-        return self.split_name or str(self.column_id)
-
-    @property
-    def groupings(self):
-        if not self.valid():
-            return "[]"
-        if all(x is None for x in self.split_map):
-            return str(self.splits)
-        return str(self.split_map)
-
-    @property
-    def dof(self):
-        return self._dof
-
-    def valid(self):
-        return self.column_id is not None
-
-
-class MappingDict(dict):
-    """ a dict with a default value when no key present """
-    def __missing__(self, key):
-        value = self[key] = [key]
-        return value
-
-
-class CHAID(object):
+class Tree(object):
     """
     Create a CHAID object which contains all the information of the tree
 
@@ -300,11 +40,11 @@ class CHAID(object):
         self.split_titles = split_titles or []
         self.vectorised_array = []
         for ind in range(0, ndarr.shape[1]):
-            self.vectorised_array.append(CHAIDVector(ndarr[:, ind]))
+            self.vectorised_array.append(Column(ndarr[:, ind]))
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = None
-        self.observed = CHAIDVector(arr)
+        self.observed = Column(arr)
         self.weights = weights
         self.split_threshold = split_threshold
 
@@ -343,14 +83,14 @@ class CHAID(object):
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
-        return CHAID(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
+        return Tree(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
 
     def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
         depth += 1
 
         if self.max_depth < depth:
-            terminal_node = CHAIDNode(choices=parent_decisions, node_id=self.node_count,
+            terminal_node = Node(choices=parent_decisions, node_id=self.node_count,
                                       parent=parent, indices=rows, dep_v=dep, is_terminal=True, weights=wt)
             self.tree_store.append(terminal_node)
             self.node_count += 1
@@ -360,7 +100,7 @@ class CHAID(object):
 
         split.name_columns(self.split_titles)
 
-        node = CHAIDNode(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
+        node = Node(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
                          parent=parent, split=split, weights=wt)
 
         self.tree_store.append(node)
@@ -380,7 +120,7 @@ class CHAID(object):
             if self.min_sample < len(dep_slice.arr):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index], wt=weight_slice)
             else:
-                terminal_node = CHAIDNode(choices=split.split_map[index], node_id=self.node_count,
+                terminal_node = Node(choices=split.split_map[index], node_id=self.node_count,
                                           parent=parent, indices=row_slice, dep_v=dep_slice, is_terminal=True, weights=weight_slice)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
@@ -388,7 +128,7 @@ class CHAID(object):
 
     def generate_best_split(self, ind, dep, wt=None):
         """ internal method to generate the best split """
-        split = CHAIDSplit(None, None, None, None, 0)
+        split = Split(None, None, None, None, 0)
         relative_split_threshold = 1 - self.split_threshold
         st_chi = stats.chisquare
         all_dep = set(dep.arr)
@@ -472,7 +212,7 @@ class CHAID(object):
                     chi, p_split = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
 
                     responses = [mappings[x] for x in unique]
-                    temp_split = CHAIDSplit(i, responses, chi, p_split, dof)
+                    temp_split = Split(i, responses, chi, p_split, dof)
 
                     better_split = p_split < split.p or (p_split == split.p and chi > split.chi)
 
@@ -527,7 +267,7 @@ class CHAID(object):
 
     def to_tree(self):
         """ returns a TreeLib tree """
-        tree = Tree()
+        tree = TreeLibTree()
         for node in self:
             tree.create_node(node, node.node_id, parent=node.parent)
         return tree

@@ -1,8 +1,11 @@
+"""
+This package provides a python implementation of the Chi-Squared Automatic
+Inference Detection (CHAID) decision tree.
+"""
 import argparse
-import pandas as pd
-from .CHAID import CHAID
 import savReaderWriter as spss
-import numpy as np
+from .tree import Tree
+import pandas as pd
 
 def main():
     """Entry point when module is run from command line"""
@@ -44,7 +47,7 @@ def main():
         config['min_sample'] = nspace.min_samples
     if nspace.weights:
         config['weight'] = nspace.weights
-    tree = CHAID.from_pandas_df(data, nspace.independent_variables,
+    tree = Tree.from_pandas_df(data, nspace.independent_variables,
                                 nspace.dependent_variable[0], **config)
 
     if nspace.classify:

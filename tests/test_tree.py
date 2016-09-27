@@ -14,7 +14,7 @@ def test_best_split_unique_values():
     orig_arr = arr.copy()
     ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
     orig_ndarr = ndarr.copy()
-    tree = CHAID.CHAID(ndarr, arr)
+    tree = CHAID.Tree(ndarr, arr)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -36,7 +36,7 @@ def test_spliting_identical_values():
     orig_arr = arr.copy()
     ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
     orig_ndarr = ndarr.copy()
-    tree = CHAID.CHAID(ndarr, arr)
+    tree = CHAID.Tree(ndarr, arr)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -58,7 +58,7 @@ def test_best_split_with_combination():
     orig_arr = arr.copy()
     ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5) + ([3, 2, 3] * 5)).reshape(15, 3)
     orig_ndarr = ndarr.copy()
-    tree = CHAID.CHAID(ndarr, arr)
+    tree = CHAID.Tree(ndarr, arr)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -83,7 +83,7 @@ class TestSurrogate(TestCase):
         """
         Test passing in data, in which a surrogate split exists
         """
-        tree = CHAID.CHAID(self.ndarr, self.arr, split_threshold=0.9)
+        tree = CHAID.Tree(self.ndarr, self.arr, split_threshold=0.9)
 
         split = tree.generate_best_split(
             tree.vectorised_array,
@@ -99,7 +99,7 @@ class TestSurrogate(TestCase):
         """
         Test that chaid selects min p split
         """
-        tree = CHAID.CHAID(self.ndarr, self.arr, split_threshold=0.9)
+        tree = CHAID.Tree(self.ndarr, self.arr, split_threshold=0.9)
 
         split = tree.generate_best_split(
             tree.vectorised_array,
@@ -117,7 +117,7 @@ def test_p_and_chi_values():
     arr = np.array(([1] * 3) + ([2] * 4))
     ndarr = np.array(([1] * 4) + ([2] * 3)).reshape(7, 1)
 
-    tree = CHAID.CHAID(ndarr, arr, split_threshold=0.9)
+    tree = CHAID.Tree(ndarr, arr, split_threshold=0.9)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -136,7 +136,7 @@ def test_p_and_chi_values_when_weighting_applied():
     weighting = np.array([0.9,0.8,0.9,1.1,1.2,0.8,1.3,0.2,0.5,0.7,1.1])
     ndarr = np.transpose(np.vstack([gender]))
 
-    tree = CHAID.CHAID(ndarr, income, alpha_merge=0.9, weights=weighting)
+    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, weights=weighting)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -156,7 +156,7 @@ def test_correct_dof():
 
     ndarr = np.transpose(np.vstack([gender]))
 
-    tree = CHAID.CHAID(ndarr, income, alpha_merge=0.9)
+    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -176,7 +176,7 @@ def test_zero_subbed_weighted_ndarry():
 
     ndarr = np.transpose(np.vstack([gender]))
 
-    tree = CHAID.CHAID(ndarr, income, alpha_merge=0.9, weights=weighting)
+    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, weights=weighting)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -193,7 +193,7 @@ class TestTreeGenerated(TestCase):
         """ Set up for tree generation tests """
         arr = np.array(([1] * 5) + ([2] * 5))
         ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
-        self.tree = CHAID.CHAID(ndarr, arr)
+        self.tree = CHAID.Tree(ndarr, arr)
 
     def test_iter(self):
         """ Test the calls to __iter__() populate the tree """
@@ -222,7 +222,7 @@ class TestComplexStructures(TestCase):
         # ndarr = self.df[['col_17', 'col_27']].values
         # arr = self.df['dep'].values
         #
-        # tree = CHAID.CHAID(ndarr, arr, split_threshold=0.9)
+        # tree = CHAID.Tree(ndarr, arr, split_threshold=0.9)
         #
         # split = tree.generate_best_split(
         #     tree.vectorised_array,
@@ -243,7 +243,7 @@ class TestBugFixes(TestCase):
         Fix bug wherby the weights was using the class weights
         and not the sliced weights in node()
         """
-        tree = CHAID.CHAID(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_sample=2)
+        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_sample=2)
         tree.build_tree()
         assert tree.tree_store[3].members == {1: 0, 2: 1.2}
         assert tree.tree_store[5].members == {1: 5.0, 2: 6.0}
