@@ -43,8 +43,8 @@ def main():
         config['max_depth'] = nspace.max_depth
     if nspace.alpha_merge:
         config['alpha_merge'] = nspace.alpha_merge
-    if nspace.min_samples:
-        config['min_sample'] = nspace.min_samples
+    if nspace.min_parent_node_size:
+        config['min_parent_node_size'] = nspace.min_parent_node_sizes
     if nspace.weights:
         config['weight'] = nspace.weights
     tree = Tree.from_pandas_df(data, nspace.independent_variables,

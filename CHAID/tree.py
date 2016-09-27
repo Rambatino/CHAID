@@ -27,16 +27,16 @@ class Tree(object):
     max_depth : float
         the threshold value for the maximum number of levels after the root
         node in the tree (default 2)
-    min_sample : float
+    min_parent_node_size : float
         the threshold value of the number of respondents that the node must
         contain (default 30)
     split_titles : array-like
         array of names for the independent variables in the data
     """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_sample=30, split_titles=None, split_threshold=0, weights=None):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30, split_titles=None, split_threshold=0, weights=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
-        self.min_sample = min_sample
+        self.min_parent_node_size = min_parent_node_size
         self.split_titles = split_titles or []
         self.vectorised_array = []
         for ind in range(0, ndarr.shape[1]):
@@ -55,7 +55,7 @@ class Tree(object):
                   wt=self.weights)
 
     @staticmethod
-    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_sample=30, split_threshold=0, weight=None):
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_parent_node_size=30, split_threshold=0, weight=None):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
@@ -74,7 +74,7 @@ class Tree(object):
         max_depth : float
             the threshold value for the maximum number of levels after the root
             node in the tree (default 2)
-        min_sample : float
+        min_parent_node_size : float
             the threshold value of the number of respondents that the node must
             contain (default 30)
         """
@@ -83,7 +83,7 @@ class Tree(object):
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
-        return Tree(ind_values, dep_values, alpha_merge, max_depth, min_sample, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
+        return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
 
     def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -117,7 +117,7 @@ class Tree(object):
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
             weight_slice = (wt[correct_rows] if wt is not None else None)
-            if self.min_sample < len(dep_slice.arr):
+            if self.min_parent_node_size < len(dep_slice.arr):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index], wt=weight_slice)
             else:
                 terminal_node = Node(choices=split.split_map[index], node_id=self.node_count,

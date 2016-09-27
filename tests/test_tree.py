@@ -243,7 +243,7 @@ class TestBugFixes(TestCase):
         Fix bug wherby the weights was using the class weights
         and not the sliced weights in node()
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_sample=2)
+        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_parent_node_size=2)
         tree.build_tree()
         assert tree.tree_store[3].members == {1: 0, 2: 1.2}
         assert tree.tree_store[5].members == {1: 5.0, 2: 6.0}
