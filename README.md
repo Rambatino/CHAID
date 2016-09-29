@@ -28,13 +28,14 @@ Creating a Tree
 
 ``` python
 
-import CHAID from CHAID
+from CHAID import Tree
 
 pandas_data_frame = ...
 independent_variable_columns = ['a', 'b', 'c']
-dep_variable = ['d']
-CHAID.from_pandas_df(df, independent_variable_columns, dep_variable)
+dep_variable = 'd'
+Tree.from_pandas_df(df, independent_variable_columns, dep_variable)
 ```
+
 Running from the Command Line
 -----------------------------
 
@@ -64,3 +65,21 @@ CHAID uses [`pytest`](https://pypi.python.org/pypi/pytest) for its unit testing.
 ``` bash
 py.test
 ```
+
+Caveats
+-------
+
+* Unlike SPSS, this library doesn't modify the data internally. This means that weight variables aren't rounded as they are in SPSS.
+* Every row is valid, even if all values are NaN or undefined. This is different to SPSS where in the weighted case it will strip out all rows if all the independent variables are NaN
+* All columns are currently treated as nominal
+
+
+Upcoming Features
+-------
+
+* Splitting Rules (under development)
+* Accuracy Estimation using Machine Learning techniques on the data
+* Addition of new parameter 'min_child_node_size' similarly to SPSS
+* Allow both ordinal and nominal columns (under development)
+* Allow continuous dependent variable which uses the F-test
+* Binning of continuous independent variables
