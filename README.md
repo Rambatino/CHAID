@@ -42,7 +42,7 @@ Running from the Command Line
 You can play around with the repo by cloning and running this from the command line:
 
 ```
-python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-samples 2 --alpha-merge 0.05
+python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05
 ```
 
 It calls the `print_tree()` method, which prints the tree to terminal:

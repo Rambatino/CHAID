@@ -19,8 +19,8 @@ def main():
 
     parser.add_argument('--max-depth', type=int, help='Max depth of generated '
                         'tree')
-    parser.add_argument('--min-samples', type=int, help='Minimum number of '
-                        'samples required to split node')
+    parser.add_argument('--min-parent-node-size', type=int, help='Minimum number of '
+                        'samples required to split the parent node')
     parser.add_argument('--alpha-merge', type=float, help='Alpha Merge')
     group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument('--classify', action='store_true', help='Add column to'
@@ -44,7 +44,7 @@ def main():
     if nspace.alpha_merge:
         config['alpha_merge'] = nspace.alpha_merge
     if nspace.min_parent_node_size:
-        config['min_parent_node_size'] = nspace.min_parent_node_sizes
+        config['min_parent_node_size'] = nspace.min_parent_node_size
     if nspace.weights:
         config['weight'] = nspace.weights
     tree = Tree.from_pandas_df(data, nspace.independent_variables,
