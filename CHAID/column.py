@@ -1,5 +1,7 @@
 import numpy as np
 import math
+from itertools import combinations
+from .mapping_dict import MappingDict
 
 class Column(object):
     """
@@ -22,8 +24,67 @@ class Column(object):
         self._metadata = dict(metadata or {})
         self._arr = np.array(arr)
         self._missing_id = missing_id
+        self._groupings = MappingDict()
+
+    def __iter__(self):
+        return iter(self._arr)
+
+    def __getitem__(self, key):
+        raise NotImplementedError
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError
+
+    def possible_groupings(self):
+        raise NotImplementedError
+
+    def combine(self, x, y):
+        raise NotImplementedError
+
+    def deep_copy(self):
+        """
+        Returns a deep copy.
+        """
+        raise NotImplementedError
+
+    @property
+    def arr(self):
+        """
+        Provides access to the internal numpy array
+        """
+        return self._arr
+
+    @arr.setter
+    def arr(self, value):
+        """
+        Allows writing to the internal numpy array
+        """
+        self._arr = value
+
+    @property
+    def metadata(self):
+        """
+        Provides access to the internal metadata e.g. when a string has been
+        replaced with a float, this will provide a mapping back to the original
+        string
+        """
+        return self._metadata
+
+class NominalColumn(Column):
+    def __init__(self, arr=None, metadata=None,
+                 missing_id='<missing>', substitute=True):
+        super(self.__class__, self).__init__(arr, metadata, missing_id)
         if substitute:
             self.substitute_values(arr)
+        for x in np.unique(self._arr):
+            self._groupings[x] = [x]
+
+    def deep_copy(self):
+        """
+        Returns a deep copy.
+        """
+        return NominalColumn(self._arr, metadata=self.metadata,
+                             missing_id=self._missing_id, substitute=False)
 
     def substitute_values(self, vect):
         """
@@ -53,42 +114,20 @@ class Column(object):
         if -1 in arr:
             self._metadata[-1] = self._missing_id
 
-    def __iter__(self):
-        return iter(self._arr)
-
     def __getitem__(self, key):
-        return Column(self._arr[key], metadata=self.metadata, substitute=False)
+        return NominalColumn(self._arr[key], metadata=self.metadata, substitute=False)
 
     def __setitem__(self, key, value):
         self._arr[key] = value
-        return Column(np.array(self._arr), metadata=self.metadata, substitute=False)
+        return NominalColumn(np.array(self._arr), metadata=self.metadata, substitute=False)
 
-    def deep_copy(self):
-        """
-        Returns a deep copy.
-        """
-        return Column(self._arr, metadata=self.metadata,
-                           missing_id=self._missing_id, substitute=False)
+    def groups(self):
+        return list(self._groupings.values())
 
-    @property
-    def arr(self):
-        """
-        Provides access to the internal numpy array
-        """
-        return self._arr
+    def possible_groupings(self):
+        return enumerate(combinations(self._groupings.keys(), 2))
 
-    @arr.setter
-    def arr(self, value):
-        """
-        Allows writing to the internal numpy array
-        """
-        self._arr = value
-
-    @property
-    def metadata(self):
-        """
-        Provides access to the internal metadata e.g. when a string has been
-        replaced with a float, this will provide a mapping back to the original
-        string
-        """
-        return self._metadata
+    def group(self, x, y):
+        self._groupings[x] += self._groupings[y]
+        del self._groupings[y]
+        self._arr[self._arr == y] = x

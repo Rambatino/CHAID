@@ -1,13 +1,11 @@
-import itertools as it
 import collections as cl
 import numpy as np
 import pandas as pd
 from scipy import stats
 from treelib import Tree as TreeLibTree
-from .mapping_dict import MappingDict
 from .node import Node
 from .split import Split
-from .column import Column
+from .column import NominalColumn
 
 class Tree(object):
     """
@@ -40,11 +38,11 @@ class Tree(object):
         self.split_titles = split_titles or []
         self.vectorised_array = []
         for ind in range(0, ndarr.shape[1]):
-            self.vectorised_array.append(Column(ndarr[:, ind]))
+            self.vectorised_array.append(NominalColumn(ndarr[:, ind]))
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = None
-        self.observed = Column(arr)
+        self.observed = NominalColumn(arr)
         self.weights = weights
         self.split_threshold = split_threshold
 
@@ -136,7 +134,6 @@ class Tree(object):
             index = index.deep_copy()
             unique = set(index.arr)
 
-            mappings = MappingDict()
             freq = {}
             wt_freq = {}
             for col in unique:
@@ -148,11 +145,13 @@ class Tree(object):
                     for dep_v in set(dep.arr):
                         wt_freq[col][dep_v] = wt[(index.arr == col) * (dep.arr == dep_v)].sum()
 
-            while len(unique) > 1:
-                size = int((len(unique) * (len(unique) - 1)) / 2)
+            while next(index.possible_groupings(), None) is not None :
+                groupings = list(index.possible_groupings())
+                size = len(groupings)
+
                 sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
                 sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
-                for j, comb in enumerate(it.combinations(unique, 2)):
+                for j, comb in groupings:
                     if wt is None:
                         col1_freq = freq[comb[0]]
                         col2_freq = freq[comb[1]]
@@ -211,8 +210,7 @@ class Tree(object):
                     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
                     chi, p_split = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
 
-                    responses = [mappings[x] for x in unique]
-                    temp_split = Split(i, responses, chi, p_split, dof)
+                    temp_split = Split(i, index.groups(), chi, p_split, dof)
 
                     better_split = p_split < split.p or (p_split == split.p and chi > split.chi)
 
@@ -231,14 +229,7 @@ class Tree(object):
 
                     break
 
-                if choice[1] in mappings:
-                    mappings[choice[0]] += mappings[choice[1]]
-                    del mappings[choice[1]]
-                else:
-                    mappings[choice[0]] += [choice[1]]
-
-                index[index.arr == choice[1]] = choice[0]
-                unique.remove(choice[1])
+                index.group(choice[0], choice[1])
 
                 for val, count in freq[choice[1]].items():
                     freq[choice[0]][val] += count
