@@ -7,6 +7,32 @@ from .node import Node
 from .split import Split
 from .column import NominalColumn
 
+
+def chisquare(n_ij, weighted):
+    if weighted:
+        m_ij = n_ij / n_ij
+
+        nan_mask = np.isnan(m_ij)
+        m_ij[nan_mask] = 0.000001 # otherwise it breaks the chi-squared test
+
+        w_ij = m_ij
+        n_ij_col_sum = n_ij.sum(axis=1)
+        n_ij_row_sum = n_ij.sum(axis=0)
+        alpha, beta, eps = (1, 1, 1)
+        while eps > 10e-6:
+            alpha = alpha * np.vstack(n_ij_col_sum / m_ij.sum(axis=1))
+            beta = n_ij_row_sum / (alpha * w_ij).sum(axis=0)
+            eps = np.max(np.absolute(w_ij * alpha * beta - m_ij))
+            m_ij = w_ij * alpha * beta
+
+    else:
+        m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
+
+    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
+    chi, p_val = stats.chisquare(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
+
+    return (chi, p_val, dof)
+
 class Tree(object):
     """
     Create a CHAID object which contains all the information of the tree
@@ -128,22 +154,21 @@ class Tree(object):
         """ internal method to generate the best split """
         split = Split(None, None, None, None, 0)
         relative_split_threshold = 1 - self.split_threshold
-        st_chi = stats.chisquare
         all_dep = set(dep.arr)
         for i, index in enumerate(ind):
             index = index.deep_copy()
             unique = set(index.arr)
 
             freq = {}
-            wt_freq = {}
             for col in unique:
                 counts = np.unique(dep.arr[index.arr == col], return_counts=True)
-                freq[col] = cl.defaultdict(int)
-                freq[col].update(np.transpose(counts))
-                if wt is not None:
-                    wt_freq[col] = cl.defaultdict(int)
+                if wt is None:
+                    freq[col] = cl.defaultdict(int)
+                    freq[col].update(np.transpose(counts))
+                else:
+                    freq[col] = cl.defaultdict(int)
                     for dep_v in set(dep.arr):
-                        wt_freq[col][dep_v] = wt[(index.arr == col) * (dep.arr == dep_v)].sum()
+                        freq[col][dep_v] = wt[(index.arr == col) * (dep.arr == dep_v)].sum()
 
             while next(index.possible_groupings(), None) is not None :
                 groupings = list(index.possible_groupings())
@@ -152,63 +177,29 @@ class Tree(object):
                 sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
                 sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
                 for j, comb in groupings:
-                    if wt is None:
-                        col1_freq = freq[comb[0]]
-                        col2_freq = freq[comb[1]]
+                    col1_freq = freq[comb[0]]
+                    col2_freq = freq[comb[1]]
 
-                        keys = set(col1_freq.keys()).union(col2_freq.keys())
+                    keys = set(col1_freq.keys()).union(col2_freq.keys())
 
-                        n_ij = np.array([
-                            [col1_freq.get(k, 0) for k in keys],
-                            [col2_freq.get(k, 0) for k in keys]
-                        ])
+                    n_ij = np.array([
+                        [col1_freq.get(k, 0) for k in keys],
+                        [col2_freq.get(k, 0) for k in keys]
+                    ])
 
-                        m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
-                    else:
-                        col1_wt_freq = wt_freq[comb[0]]
-                        col2_wt_freq = wt_freq[comb[1]]
+                    chi, p_split, dof = chisquare(n_ij, wt is not None)
 
-                        keys = set(col1_wt_freq.keys()).union(col2_wt_freq.keys())
-
-                        n_ij = np.array([
-                            [col1_wt_freq.get(k, 0) for k in keys],
-                            [col2_wt_freq.get(k, 0) for k in keys]
-                        ])
-
-                        m_ij = n_ij / n_ij
-
-                        nan_mask = np.isnan(m_ij)
-                        m_ij[nan_mask] = 0.000001 # otherwise it breaks the chi-squared test
-
-                        m_ij = self.weighted_case(n_ij, m_ij)
-
-                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                    ret = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
-
-                    sub_data[j] = (comb, ret[1], ret[0])
+                    sub_data[j] = (comb, p_split, chi)
 
                 choice, highest_p_join, chi_join = max(sub_data, key=lambda x: (x[1], x[2]))
 
-
                 if highest_p_join < self.alpha_merge:
-                    if wt is None:
-                        n_ij = np.array([
-                            [f[dep_val] for dep_val in all_dep] for f in freq.values()
-                        ])
-                        m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
-                    else:
-                        n_ij = np.array([
-                            [f[dep_val] for dep_val in all_dep] for f in wt_freq.values()
-                        ])
-                        m_ij = n_ij / n_ij
-
-                        nan_mask = np.isnan(m_ij)
-                        m_ij[nan_mask] = 0.000001
-
-                        m_ij = self.weighted_case(n_ij, m_ij)
+                    n_ij = np.array([
+                        [f[dep_val] for dep_val in all_dep] for f in freq.values()
+                    ])
 
                     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                    chi, p_split = st_chi(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
+                    chi, p_split, dof = chisquare(n_ij, wt is not None)
 
                     temp_split = Split(i, index.groups(), chi, p_split, dof)
 
@@ -235,26 +226,10 @@ class Tree(object):
                     freq[choice[0]][val] += count
                 del freq[choice[1]]
 
-                if wt is not None:
-                    for val, total in wt_freq[choice[1]].items():
-                        wt_freq[choice[0]][val] += total
-                    del wt_freq[choice[1]]
-
         if split.valid():
             split.sub_split_values(ind[split.column_id].metadata)
         return split
 
-    def weighted_case(self, n_ij, m_ij):
-        w_ij = m_ij
-        n_ij_col_sum = n_ij.sum(axis=1)
-        n_ij_row_sum = n_ij.sum(axis=0)
-        alpha, beta, eps = (1, 1, 1)
-        while eps > 10e-6:
-            alpha = alpha * np.vstack(n_ij_col_sum / m_ij.sum(axis=1))
-            beta = n_ij_row_sum / (alpha * w_ij).sum(axis=0)
-            eps = np.max(np.absolute(w_ij * alpha * beta - m_ij))
-            m_ij = w_ij * alpha * beta
-        return m_ij
 
     def to_tree(self):
         """ returns a TreeLib tree """
