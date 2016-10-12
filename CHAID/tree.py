@@ -207,7 +207,6 @@ class Tree(object):
                 sufficient_split = highest_p_join < self.alpha_merge and all(
                     sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()
                 )
-
                 if sufficient_split and len(freq.values()) > 1:
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
