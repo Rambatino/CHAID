@@ -1,6 +1,5 @@
 import collections as cl
 import numpy as np
-import pandas as pd
 from scipy import stats
 from treelib import Tree as TreeLibTree
 from .node import Node
@@ -125,7 +124,7 @@ class Tree(object):
         split.name_columns(self.split_titles)
 
         node = Node(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
-                         parent=parent, split=split, weights=wt)
+                    parent=parent, split=split, weights=wt)
 
         self.tree_store.append(node)
         parent = self.node_count
