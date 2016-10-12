@@ -212,7 +212,7 @@ class Tree(object):
 
                     temp_split = Split(i, index.groups(), chi, p_split, dof)
 
-                    better_split = p_split < split.p or (p_split == split.p and chi > split.chi)
+                    better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.chi)
 
                     if not split.valid() or better_split:
                         split, temp_split = temp_split, split
