@@ -72,7 +72,7 @@ class Tree(object):
         variable_types = variable_types or ['nominal'] * ndarr.shape[1]
         for ind, col_type in enumerate(variable_types):
             if col_type == 'ordinal':
-                col = OrdinalColumn(ndarr[:, ind])
+                col = OrdinalColumn(ndarr[:, ind].astype(np.dtype(int)))
             elif col_type == 'nominal':
                 col = NominalColumn(ndarr[:, ind])
             else:
@@ -174,20 +174,22 @@ class Tree(object):
         """ internal method to generate the best split """
         split = Split(None, None, None, None, 0)
         relative_split_threshold = 1 - self.split_threshold
-        all_dep = set(dep.arr)
+        all_dep = np.unique(dep.arr)
         for i, dep_var in enumerate(ind):
             dep_var = dep_var.deep_copy()
-            unique = set(dep_var.arr)
+            unique = np.unique(dep_var.arr)
 
             freq = {}
-            for col in unique:
-                counts = np.unique(dep.arr[dep_var.arr == col], return_counts=True)
-                if wt is None:
+            if wt is None:
+                for col in unique:
+                    counts = np.unique(np.compress(dep_var.arr == col, dep.arr), return_counts=True)
                     freq[col] = cl.defaultdict(int)
                     freq[col].update(np.transpose(counts))
-                else:
+            else:
+                for col in unique:
+                    counts = np.unique(np.compress(dep_var.arr == col, dep.arr), return_counts=True)
                     freq[col] = cl.defaultdict(int)
-                    for dep_v in set(dep.arr):
+                    for dep_v in all_dep:
                         freq[col][dep_v] = wt[(dep_var.arr == col) * (dep.arr == dep_v)].sum()
 
             while next(dep_var.possible_groupings(), None) is not None:
