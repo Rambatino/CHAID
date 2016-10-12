@@ -4,7 +4,7 @@ from scipy import stats
 from treelib import Tree as TreeLibTree
 from .node import Node
 from .split import Split
-from .column import NominalColumn
+from .column import NominalColumn, OrdinalColumn
 
 
 def chisquare(n_ij, weighted):
@@ -95,7 +95,7 @@ class Tree(object):
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2,
                        min_parent_node_size=30, min_child_node_size=0, split_threshold=0,
-                       weight=None):
+                       weight=None, variable_types=None):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
@@ -119,12 +119,12 @@ class Tree(object):
             contain (default 30)
         """
         ind_df = df[i_variables]
-        ind_df = ind_df
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
         return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
-                    min_child_node_size, list(ind_df.columns.values), split_threshold, weights)
+                    min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
+                    variable_types)
 
     def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -175,28 +175,30 @@ class Tree(object):
         split = Split(None, None, None, None, 0)
         relative_split_threshold = 1 - self.split_threshold
         all_dep = set(dep.arr)
-        for i, index in enumerate(ind):
-            index = index.deep_copy()
-            unique = set(index.arr)
+        for i, dep_var in enumerate(ind):
+            dep_var = dep_var.deep_copy()
+            unique = set(dep_var.arr)
 
             freq = {}
             for col in unique:
-                counts = np.unique(dep.arr[index.arr == col], return_counts=True)
+                counts = np.unique(dep.arr[dep_var.arr == col], return_counts=True)
                 if wt is None:
                     freq[col] = cl.defaultdict(int)
                     freq[col].update(np.transpose(counts))
                 else:
                     freq[col] = cl.defaultdict(int)
                     for dep_v in set(dep.arr):
-                        freq[col][dep_v] = wt[(index.arr == col) * (dep.arr == dep_v)].sum()
+                        freq[col][dep_v] = wt[(dep_var.arr == col) * (dep.arr == dep_v)].sum()
 
-            while next(index.possible_groupings(), None) is not None:
-                groupings = list(index.possible_groupings())
+            while next(dep_var.possible_groupings(), None) is not None:
+                groupings = list(dep_var.possible_groupings())
                 size = len(groupings)
 
                 sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
-                sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
-                for j, comb in groupings:
+                choice = None
+                highest_p_join = None
+                split_chi = None
+                for comb in groupings:
                     col1_freq = freq[comb[0]]
                     col2_freq = freq[comb[1]]
 
@@ -209,9 +211,8 @@ class Tree(object):
 
                     chi, p_split, dof = chisquare(n_ij, wt is not None)
 
-                    sub_data[j] = (comb, p_split, chi)
-
-                choice, highest_p_join, chi_join = max(sub_data, key=lambda x: (x[1], x[2]))
+                    if choice is None or p_split > highest_p_join or (p_split == highest_p_join and chi > split_chi):
+                        choice, highest_p_join, split_chi = comb, p_split, chi
 
                 sufficient_split = highest_p_join < self.alpha_merge and all(
                     sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()
@@ -224,7 +225,7 @@ class Tree(object):
                     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
                     chi, p_split, dof = chisquare(n_ij, wt is not None)
 
-                    temp_split = Split(i, index.groups(), chi, p_split, dof)
+                    temp_split = Split(i, dep_var.groups(), chi, p_split, dof)
 
                     better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.chi)
 
@@ -243,7 +244,7 @@ class Tree(object):
 
                     break
 
-                index.group(choice[0], choice[1])
+                dep_var.group(choice[0], choice[1])
 
                 for val, count in freq[choice[1]].items():
                     freq[choice[0]][val] += count

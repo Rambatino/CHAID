@@ -129,7 +129,7 @@ class NominalColumn(Column):
         return list(self._groupings.values())
 
     def possible_groupings(self):
-        return enumerate(combinations(self._groupings.keys(), 2))
+        return combinations(self._groupings.keys(), 2)
 
     def group(self, x, y):
         self._groupings[x] += self._groupings[y]
@@ -165,7 +165,7 @@ class OrdinalColumn(Column):
         range_labels = sorted(list(self._groupings.keys()))
         canditates = zip(range_labels[0:], range_labels[1:])
         adjacent = lambda x, y: (max(self._groupings[x]) + 1) == min(self._groupings[y])
-        return enumerate((x, y) for x,y in canditates if adjacent(x, y))
+        return ((x, y) for x,y in canditates if adjacent(x, y))
 
     def group(self, x, y):
         self._groupings[x] += self._groupings[y]
