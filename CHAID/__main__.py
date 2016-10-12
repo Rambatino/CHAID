@@ -6,6 +6,7 @@ import argparse
 import savReaderWriter as spss
 from .tree import Tree
 import pandas as pd
+import numpy as np
 
 def main():
     """Entry point when module is run from command line"""
@@ -14,7 +15,14 @@ def main():
                                      ' csv/sav file.')
     parser.add_argument('file')
     parser.add_argument('dependent_variable', nargs=1)
-    parser.add_argument('independent_variables', nargs='+')
+
+    var = parser.add_argument_group('Independent Variable Specification')
+    var.add_argument('nominal_variables', nargs='*', help='The names of '
+                     'independent variables to use that have no intrinsic '
+                     'order to them')
+    var.add_argument('--ordinal-variables', type=str, nargs='*',
+                     help='The names of independent variables to use that '
+                     'have an intrinsic order but a finite amount of states')
     parser.add_argument('--weights', type=str, help='Name of weight column')
 
     parser.add_argument('--max-depth', type=int, help='Max depth of generated '
@@ -29,16 +37,20 @@ def main():
                        ' input with the node id of the node that that '
                        'respondent has been placed into')
     group.add_argument('--predict', action='store_true', help='Add column to '
-                       'input with the value of the  dependent varaible that '
+                       'input with the value of the  dependent variable that '
                        'the majority of respondents in that node selected')
     nspace = parser.parse_args()
 
-    data = pd.read_csv(nspace.file)
-
-    # raw_data = spss.SavReader(nspace.file, returnHeader = True, rawMode=True)
-    # raw_data_list = list(raw_data)
-    # data = pd.DataFrame(raw_data_list)
-    # data = data.rename(columns=data.loc[0]).iloc[1:]
+    if nspace.file[-4:] == '.csv':
+        data = pd.read_csv(nspace.file)
+    elif nspace.file[-4:] == '.sav':
+        raw_data = spss.SavReader(nspace.file, returnHeader=True)
+        raw_data_list = list(raw_data)
+        data = pd.DataFrame(raw_data_list)
+        data = data.rename(columns=data.loc[0]).iloc[1:]
+    else:
+        print('Uknown file type')
+        exit(1)
 
     config = {}
     if nspace.max_depth:
@@ -51,8 +63,17 @@ def main():
         config['min_child_node_size'] = nspace.min_child_node_size
     if nspace.weights:
         config['weight'] = nspace.weights
-    tree = Tree.from_pandas_df(data, nspace.independent_variables,
-                                nspace.dependent_variable[0], **config)
+
+    ordinal = nspace.ordinal_variables or []
+    nominal = nspace.nominal_variables or []
+    independent_variables = nominal + ordinal
+    types = ['nominal'] * len(nominal) + ['ordinal'] * len(ordinal)
+    if len(independent_variables) == 0:
+        print('Need to provide at least one independent variable')
+        exit(1)
+    tree = Tree.from_pandas_df(data, independent_variables,
+                               nspace.dependent_variable[0],
+                               variable_types=types, **config)
 
     if nspace.classify:
         predictions = pd.Series(tree.node_predictions())
