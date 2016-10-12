@@ -61,15 +61,24 @@ class Tree(object):
         array of names for the independent variables in the data
     """
     def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
-                 min_child_node_size=0, split_titles=None, split_threshold=0, weights=None):
+                 min_child_node_size=0, split_titles=None, split_threshold=0, weights=None,
+                 variable_types=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_parent_node_size = min_parent_node_size
         self.min_child_node_size = min_child_node_size
         self.split_titles = split_titles or []
         self.vectorised_array = []
-        for ind in range(0, ndarr.shape[1]):
-            self.vectorised_array.append(NominalColumn(ndarr[:, ind]))
+        variable_types = variable_types or ['nominal'] * ndarr.shape[1]
+        for ind, col_type in enumerate(variable_types):
+            if col_type == 'ordinal':
+                col = OrdinalColumn(ndarr[:, ind])
+            elif col_type == 'nominal':
+                col = NominalColumn(ndarr[:, ind])
+            else:
+                raise NotImplementedError('Unknown type ' + col_type)
+            self.vectorised_array.append(col)
+
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = None

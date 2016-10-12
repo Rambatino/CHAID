@@ -135,3 +135,39 @@ class NominalColumn(Column):
         self._groupings[x] += self._groupings[y]
         del self._groupings[y]
         self._arr[self._arr == y] = x
+
+class OrdinalColumn(Column):
+    def __init__(self, arr=None, metadata=None,
+                 missing_id='<missing>', substitute=True):
+        super(self.__class__, self).__init__(arr, metadata, missing_id)
+
+        for x in np.unique(self._arr):
+            self._groupings[x] = [x]
+
+    def deep_copy(self):
+        """
+        Returns a deep copy.
+        """
+        return OrdinalColumn(self._arr, metadata=self.metadata,
+                             missing_id=self._missing_id, substitute=False)
+
+    def __getitem__(self, key):
+        return OrdinalColumn(self._arr[key], metadata=self.metadata, substitute=False)
+
+    def __setitem__(self, key, value):
+        self._arr[key] = value
+        return OrdinalColumn(np.array(self._arr), metadata=self.metadata, substitute=False)
+
+    def groups(self):
+        return list(self._groupings.values())
+
+    def possible_groupings(self):
+        range_labels = sorted(list(self._groupings.keys()))
+        canditates = zip(range_labels[0:], range_labels[1:])
+        adjacent = lambda x, y: (max(self._groupings[x]) + 1) == min(self._groupings[y])
+        return enumerate((x, y) for x,y in canditates if adjacent(x, y))
+
+    def group(self, x, y):
+        self._groupings[x] += self._groupings[y]
+        del self._groupings[y]
+        self._arr[self._arr == y] = x
