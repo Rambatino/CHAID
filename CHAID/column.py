@@ -138,7 +138,7 @@ class NominalColumn(Column):
 
 class OrdinalColumn(Column):
     def __init__(self, arr=None, metadata=None,
-                 missing_id='<missing>', substitute=True):
+                 missing_id='<missing>'):
         super(self.__class__, self).__init__(arr, metadata, missing_id)
 
         for x in np.unique(self._arr):
@@ -149,14 +149,14 @@ class OrdinalColumn(Column):
         Returns a deep copy.
         """
         return OrdinalColumn(self._arr, metadata=self.metadata,
-                             missing_id=self._missing_id, substitute=False)
+                             missing_id=self._missing_id)
 
     def __getitem__(self, key):
-        return OrdinalColumn(self._arr[key], metadata=self.metadata, substitute=False)
+        return OrdinalColumn(self._arr[key], metadata=self.metadata)
 
     def __setitem__(self, key, value):
         self._arr[key] = value
-        return OrdinalColumn(np.array(self._arr), metadata=self.metadata, substitute=False)
+        return OrdinalColumn(np.array(self._arr), metadata=self.metadata)
 
     def groups(self):
         return list(self._groupings.values())
