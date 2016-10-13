@@ -122,6 +122,8 @@ class Tree(object):
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
+        if isinstance(variable_types, dict):
+            variable_types = [variable_types[col] for col in i_variables]
         return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
                     min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
                     variable_types)
