@@ -175,32 +175,29 @@ class Tree(object):
         split = Split(None, None, None, None, 0)
         relative_split_threshold = 1 - self.split_threshold
         all_dep = np.unique(dep.arr)
-        for i, dep_var in enumerate(ind):
-            dep_var = dep_var.deep_copy()
-            unique = np.unique(dep_var.arr)
+        for i, ind_var in enumerate(ind):
+            ind_var = ind_var.deep_copy()
+            unique = np.unique(ind_var.arr)
 
             freq = {}
             if wt is None:
                 for col in unique:
-                    counts = np.unique(np.compress(dep_var.arr == col, dep.arr), return_counts=True)
+                    counts = np.unique(np.compress(ind_var.arr == col, dep.arr), return_counts=True)
                     freq[col] = cl.defaultdict(int)
                     freq[col].update(np.transpose(counts))
             else:
                 for col in unique:
-                    counts = np.unique(np.compress(dep_var.arr == col, dep.arr), return_counts=True)
+                    counts = np.unique(np.compress(ind_var.arr == col, dep.arr), return_counts=True)
                     freq[col] = cl.defaultdict(int)
                     for dep_v in all_dep:
-                        freq[col][dep_v] = wt[(dep_var.arr == col) * (dep.arr == dep_v)].sum()
+                        freq[col][dep_v] = wt[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
 
-            while next(dep_var.possible_groupings(), None) is not None:
-                groupings = list(dep_var.possible_groupings())
-                size = len(groupings)
-
+            while next(ind_var.possible_groupings(), None) is not None:
                 sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
                 choice = None
                 highest_p_join = None
                 split_chi = None
-                for comb in groupings:
+                for comb in ind_var.possible_groupings():
                     col1_freq = freq[comb[0]]
                     col2_freq = freq[comb[1]]
 
@@ -227,7 +224,7 @@ class Tree(object):
                     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
                     chi, p_split, dof = chisquare(n_ij, wt is not None)
 
-                    temp_split = Split(i, dep_var.groups(), chi, p_split, dof)
+                    temp_split = Split(i, ind_var.groups(), chi, p_split, dof)
 
                     better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.chi)
 
@@ -246,7 +243,7 @@ class Tree(object):
 
                     break
 
-                dep_var.group(choice[0], choice[1])
+                ind_var.group(choice[0], choice[1])
 
                 for val, count in freq[choice[1]].items():
                     freq[choice[0]][val] += count
