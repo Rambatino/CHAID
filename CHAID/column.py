@@ -123,7 +123,7 @@ class NominalColumn(Column):
 
     def __setitem__(self, key, value):
         self._arr[key] = value
-        return NominalColumn(np.array(self._arr), metadata=self.metadata, substitute=False)
+        return self
 
     def groups(self):
         return list(self._groupings.values())
@@ -142,7 +142,8 @@ class OrdinalColumn(Column):
         super(self.__class__, self).__init__(arr, metadata, missing_id)
 
         for x in np.unique(self._arr):
-            self._groupings[x] = [x]
+            self._groupings[x] = [x, x]
+        self._possible_groups = None
 
     def deep_copy(self):
         """
@@ -156,18 +157,29 @@ class OrdinalColumn(Column):
 
     def __setitem__(self, key, value):
         self._arr[key] = value
-        return OrdinalColumn(np.array(self._arr), metadata=self.metadata)
+        return self
 
     def groups(self):
         return list(self._groupings.values())
 
     def possible_groupings(self):
-        range_labels = sorted(list(self._groupings.keys()))
-        canditates = zip(range_labels[0:], range_labels[1:])
-        adjacent = lambda x, y: (max(self._groupings[x]) + 1) == min(self._groupings[y])
-        return ((x, y) for x,y in canditates if adjacent(x, y))
+        if self._possible_groups is None:
+            ranges = sorted(self._groupings.items())
+            candidates = zip(ranges[0:], ranges[1:])
+            self._possible_groups = [
+                (k1, k2) for (k1, minmax1), (k2, minmax2) in candidates
+                if (minmax1[1] + 1) == minmax2[0]
+            ]
+        return self._possible_groups.__iter__()
 
     def group(self, x, y):
-        self._groupings[x] += self._groupings[y]
+        self._possible_groups = None
+        x_max = self._groupings[x][1]
+        y_min = self._groupings[y][0]
+        if y_min > x_max:
+            self._groupings[x][1] = self._groupings[y][1]
+        else:
+            self._groupings[x][0] = y_min
+
         del self._groupings[y]
         self._arr[self._arr == y] = x
