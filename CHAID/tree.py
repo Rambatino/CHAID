@@ -136,13 +136,13 @@ class Tree(object):
         parent = self.node_count
         self.node_count += 1
 
-        child_sets = [
-            wt[np.in1d(ind[split.column_id].arr, choices)].sum() if wt is not None else len(dep[np.in1d(ind[split.column_id].arr, choices)].arr)
-            for _, choices in enumerate(split.splits)
-        ]
         sufficient_children = all(
-            node_size >= self.min_child_node_size
-            for node_size in child_sets
+            (
+                wt[np.in1d(ind[split.column_id].arr, choices)].sum()
+                if wt is not None else
+                len(dep[np.in1d(ind[split.column_id].arr, choices)].arr)
+            ) >= self.min_child_node_size
+            for _, choices in enumerate(split.splits)
         ) if self.min_child_node_size else True
 
         if not split.valid() or not sufficient_children:
