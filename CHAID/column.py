@@ -145,7 +145,7 @@ class OrdinalColumn(Column):
             self._arr, self.orig_type =  self.substitute_values(self._arr)
 
         for x in np.unique(self._arr):
-            self._groupings[x] = [x, x + 1]
+            self._groupings[x] = [x, x + 1, False]
         self._nan = np.array([np.nan]).astype(int)[0]
         self._possible_groups = None
 
@@ -178,7 +178,8 @@ class OrdinalColumn(Column):
     def groups(self):
         vals = self._groupings.values()
         return [
-            [x for x in range(minmax[0], minmax[1])] for minmax in vals
+            [x for x in range(minmax[0], minmax[1])] + ([self._nan] if minmax[2] else [])
+            for minmax in vals
         ]
 
     def possible_groupings(self):
@@ -197,14 +198,17 @@ class OrdinalColumn(Column):
 
     def group(self, x, y):
         self._possible_groups = None
-        x = int(x)
-        y = int(y)
-        x_max = self._groupings[x][1]
-        y_min = self._groupings[y][0]
-        if y_min >= x_max:
-            self._groupings[x][1] = self._groupings[y][1]
+        if y != self._nan:
+            x = int(x)
+            y = int(y)
+            x_max = self._groupings[x][1]
+            y_min = self._groupings[y][0]
+            if y_min >= x_max:
+                self._groupings[x][1] = self._groupings[y][1]
+            else:
+                self._groupings[x][0] = y_min
         else:
-            self._groupings[x][0] = y_min
+            self._groupings[x][2] = True
 
         del self._groupings[y]
         self._arr[self._arr == y] = x

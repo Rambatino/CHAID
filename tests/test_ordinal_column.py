@@ -83,7 +83,7 @@ class TestOrdinalGroupingWithNAN(TestCase):
         assert list_unordered_equal(actual_groups, groups), 'With NaNs, before any groups are identified, actual groupings are incorrectly reported'
 
     def test_groups_after_grouping(self):
-        """ Ensure a copy actually happens when deep_copy is called """
+        """ Ensure possible groups are only adjacent numbers after identifing some groups """
         self.col.group(3.0, 4.0)
         self.col.group(3.0, 2.0)
 
@@ -95,4 +95,20 @@ class TestOrdinalGroupingWithNAN(TestCase):
 
         groups = [ [self.col.metadata[i] for i in group] for group in self.col.groups()]
         actual_groups = [[1.0], [2.0, 3.0, 4.0], [5.0], [10.0], ['<missing>']]
-        assert list_unordered_equal(actual_groups, groups), 'With NaNs, before any groups are identified, actual groupings are incorrectly reported'
+        assert list_unordered_equal(actual_groups, groups), 'With NaNs, with groups identified, actual groupings are incorrectly reported'
+
+    def test_groups_after_grouping_with_nan(self):
+        """ Ensure possible groups are only adjacent numbers after identifing some groups containing nans"""
+        self.col.group(3.0, 4.0)
+        self.col.group(3.0, 2.0)
+        self.col.group(3.0, self.col._nan)
+
+        groupings = [ (self.col.metadata[x], self.col.metadata[y]) for x, y in self.col.possible_groupings()]
+        possible_groupings = [
+            (1.0, 3.0), (3.0, 5.0)
+        ]
+        assert list_unordered_equal(possible_groupings, groupings), 'With NaNs, with groups containing nan identified, possible grouping incorrectly identified.'
+
+        groups = [ [self.col.metadata[i] for i in group] for group in self.col.groups()]
+        actual_groups = [[1.0], [2.0, 3.0, 4.0, '<missing>'], [5.0], [10.0]]
+        assert list_unordered_equal(actual_groups, groups), 'With NaNs, with groups containing nan identified, actual groupings are incorrectly reported'
