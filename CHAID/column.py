@@ -138,11 +138,17 @@ class NominalColumn(Column):
 
 class OrdinalColumn(Column):
     def __init__(self, arr=None, metadata=None,
-                 missing_id='<missing>'):
+                 missing_id='<missing>', orig_type=None):
         super(self.__class__, self).__init__(arr, metadata, missing_id)
 
+        if orig_type is None:
+            self.orig_type = self._arr.dtype.type
+            self._arr = self._arr.astype(np.dtype(int))
+        else:
+            self.orig_type = orig_type
+
         for x in np.unique(self._arr):
-            self._groupings[x] = [x, x]
+            self._groupings[x] = [x, x + 1]
         self._possible_groups = None
 
     def deep_copy(self):
@@ -150,30 +156,36 @@ class OrdinalColumn(Column):
         Returns a deep copy.
         """
         return OrdinalColumn(self._arr, metadata=self.metadata,
-                             missing_id=self._missing_id)
+                             missing_id=self._missing_id, orig_type=self.orig_type)
 
     def __getitem__(self, key):
-        return OrdinalColumn(self._arr[key], metadata=self.metadata)
+        return OrdinalColumn(self._arr[key], metadata=self.metadata,
+                             missing_id=self._missing_id, orig_type=self.orig_type)
 
     def __setitem__(self, key, value):
         self._arr[key] = value
         return self
 
     def groups(self):
-        return list(self._groupings.values())
+        groups = [
+            [self.orig_type(x) for x in range(min, max)] for min, max in self._groupings.values()
+        ]
+        return groups
 
     def possible_groupings(self):
         if self._possible_groups is None:
             ranges = sorted(self._groupings.items())
             candidates = zip(ranges[0:], ranges[1:])
             self._possible_groups = [
-                (k1, k2) for (k1, minmax1), (k2, minmax2) in candidates
-                if (minmax1[1] + 1) == minmax2[0]
+                (self.orig_type(k1), self.orig_type(k2)) for (k1, minmax1), (k2, minmax2) in candidates
+                if (minmax1[1]) == minmax2[0]
             ]
         return self._possible_groups.__iter__()
 
     def group(self, x, y):
         self._possible_groups = None
+        x = int(x)
+        y = int(y)
         x_max = self._groupings[x][1]
         y_min = self._groupings[y][0]
         if y_min > x_max:

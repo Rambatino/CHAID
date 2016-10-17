@@ -72,7 +72,7 @@ class Tree(object):
         variable_types = variable_types or ['nominal'] * ndarr.shape[1]
         for ind, col_type in enumerate(variable_types):
             if col_type == 'ordinal':
-                col = OrdinalColumn(ndarr[:, ind].astype(np.dtype(int)))
+                col = OrdinalColumn(ndarr[:, ind])
             elif col_type == 'nominal':
                 col = NominalColumn(ndarr[:, ind])
             else:
