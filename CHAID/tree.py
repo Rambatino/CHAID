@@ -195,7 +195,6 @@ class Tree(object):
                         freq[col][dep_v] = wt[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
 
             while next(ind_var.possible_groupings(), None) is not None:
-                sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
                 choice = None
                 highest_p_join = None
                 split_chi = None
@@ -230,7 +229,7 @@ class Tree(object):
 
                     better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.chi)
 
-                    if not split.valid() or better_split:
+                    if better_split:
                         split, temp_split = temp_split, split
 
                     chi_threshold = relative_split_threshold * split.chi
