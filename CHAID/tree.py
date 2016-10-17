@@ -56,10 +56,12 @@ class Tree(object):
     split_titles : array-like
         array of names for the independent variables in the data
     """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30, split_titles=None, split_threshold=0, weights=None):
+    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
+                 min_child_node_size=None, split_titles=None, split_threshold=0, weights=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_parent_node_size = min_parent_node_size
+        self.min_child_node_size = min_child_node_size
         self.split_titles = split_titles or []
         self.vectorised_array = []
         for ind in range(0, ndarr.shape[1]):
@@ -78,7 +80,9 @@ class Tree(object):
                   wt=self.weights)
 
     @staticmethod
-    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2, min_parent_node_size=30, split_threshold=0, weight=None):
+    def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2,
+                       min_parent_node_size=30, min_child_node_size=30, split_threshold=0,
+                       weight=None):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
@@ -106,7 +110,8 @@ class Tree(object):
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
-        return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size, split_titles=list(ind_df.columns.values), split_threshold=split_threshold, weights=weights)
+        return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
+                    min_child_node_size, list(ind_df.columns.values), split_threshold, weights)
 
     def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -114,7 +119,8 @@ class Tree(object):
 
         if self.max_depth < depth:
             terminal_node = Node(choices=parent_decisions, node_id=self.node_count,
-                                      parent=parent, indices=rows, dep_v=dep, is_terminal=True, weights=wt)
+                                 parent=parent, indices=rows, dep_v=dep, is_terminal=True,
+                                 weights=wt)
             self.tree_store.append(terminal_node)
             self.node_count += 1
             return self.tree_store
@@ -130,7 +136,16 @@ class Tree(object):
         parent = self.node_count
         self.node_count += 1
 
-        if not split.valid():
+        child_sets = [
+            wt[np.in1d(ind[split.column_id].arr, choices)].sum() if wt is not None else len(dep[np.in1d(ind[split.column_id].arr, choices)].arr)
+            for _, choices in enumerate(split.splits)
+        ]
+        sufficient_children = all(
+            node_size >= self.min_child_node_size
+            for node_size in child_sets
+        ) if self.min_child_node_size else True
+
+        if not split.valid() or not sufficient_children:
             node.is_terminal = True
             return self.tree_store
 
@@ -139,12 +154,14 @@ class Tree(object):
             dep_slice = dep[correct_rows]
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
-            weight_slice = (wt[correct_rows] if wt is not None else None)
+            weight_slice = wt[correct_rows] if wt is not None else None
             if self.min_parent_node_size < len(dep_slice.arr):
-                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent, parent_decisions=split.split_map[index], wt=weight_slice)
+                self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent,
+                          parent_decisions=split.split_map[index], wt=weight_slice)
             else:
                 terminal_node = Node(choices=split.split_map[index], node_id=self.node_count,
-                                          parent=parent, indices=row_slice, dep_v=dep_slice, is_terminal=True, weights=weight_slice)
+                                     parent=parent, indices=row_slice, dep_v=dep_slice,
+                                     is_terminal=True, weights=weight_slice)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
