@@ -247,3 +247,47 @@ class TestBugFixes(TestCase):
         tree.build_tree()
         assert tree.tree_store[3].members == {1: 0, 2: 1.2}
         assert tree.tree_store[5].members == {1: 5.0, 2: 6.0}
+
+class TestStoppingRules(TestCase):
+    """ Testing that stopping rules are being applied correctly """
+    def setUp(self):
+        """ Setup test data for bug fixes """
+        self.arr = np.array(([1] * 15) + ([2] * 15))
+        self.wt = np.array(([1.0] * 15) + ([1.2] * 15))
+        self.ndarr = np.array(([2, 3] * 20) + ([2, 5] * 20) + ([3, 4] * 19) + [2, 3]).reshape(30, 4)
+
+    def test_min_child_node_size_does_stop_for_unweighted_case(self):
+        """
+        Check that minumun child node size causes the tree to
+        terminate correctly
+        """
+        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11)
+        tree.build_tree()
+        assert len(tree.tree_store) == 1
+
+    def test_min_child_node_size_does_not_stop_for_unweighted_case(self):
+        """
+        Check that minumun child node size causes the tree to
+        terminate correctly
+        """
+        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=10)
+        tree.build_tree()
+        assert len(tree.tree_store) == 4
+
+    def test_min_child_node_size_does_stop_for_weighted_case(self):
+        """
+        Check that minumun child node size causes the tree to
+        terminate correctly
+        """
+        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=10.7)
+        tree.build_tree()
+        assert len(tree.tree_store) == 4
+
+    def test_min_child_node_size_does_not_stop_for_weighted_case(self):
+        """
+        Check that minumun child node size causes the tree to
+        terminate correctly
+        """
+        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=11.5)
+        tree.build_tree()
+        assert len(tree.tree_store) == 3

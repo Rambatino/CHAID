@@ -1,5 +1,5 @@
 """
-Testing module for the class Column
+Testing module for the class NominalColumn
 """
 from unittest import TestCase
 import numpy as np
@@ -11,11 +11,11 @@ NAN = float('nan')
 
 def test_chaid_vector_converts_strings():
     """
-    Check that the metadata is correct when Columns are created from
+    Check that the metadata is correct when NominalColumns are created from
     strings
     """
     arr = np.array(['2', '4'])
-    vector = CHAID.Column(arr)
+    vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1])), \
         'The indices are correctly substituted'
@@ -25,10 +25,10 @@ def test_chaid_vector_converts_strings():
 
 def test_chaid_vector_with_ints():
     """
-    Check that the metadata is correct when Columns are created from ints
+    Check that the metadata is correct when NominalColumns are created from ints
     """
     arr = np.array([1, 2])
-    vector = CHAID.Column(arr)
+    vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1])), \
         'The indices are correctly substituted'
@@ -38,10 +38,10 @@ def test_chaid_vector_with_ints():
 
 def test_chaid_vector_with_ints_and_nan():
     """
-    Check that the metadata is correct when Columns are created from ints
+    Check that the metadata is correct when NominalColumns are created from ints
     """
     arr = np.array([1, 2, NAN])
-    vector = CHAID.Column(arr)
+    vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1, -1])), \
         'The indices are correctly substituted'
@@ -51,11 +51,11 @@ def test_chaid_vector_with_ints_and_nan():
 
 def test_chaid_vector_with_floats():
     """
-    Check that the metadata is correct when Columns are created from
+    Check that the metadata is correct when NominalColumns are created from
     floats
     """
     arr = np.array([1.0, 2.0])
-    vector = CHAID.Column(arr)
+    vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1])), \
         'The indices are correctly substituted'
@@ -65,11 +65,11 @@ def test_chaid_vector_with_floats():
 
 def test_chaid_vector_with_floats_and_nan():
     """
-    Check that the metadata is correct when Columns are created from
+    Check that the metadata is correct when NominalColumns are created from
     floats
     """
     arr = np.array([1.0, 2.0, NAN])
-    vector = CHAID.Column(arr)
+    vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1, -1])), \
         'The indices are correctly substituted'
@@ -79,11 +79,11 @@ def test_chaid_vector_with_floats_and_nan():
 
 def test_chaid_vector_with_dtype_object():
     """
-    Check that the metadata is correct when Columns are created from
+    Check that the metadata is correct when NominalColumns are created from
     objects
     """
     arr = np.array([1, 2], dtype="object")
-    vector = CHAID.Column(arr)
+    vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1])), \
         'The indices are correctly substituted'
@@ -93,11 +93,11 @@ def test_chaid_vector_with_dtype_object():
 
 def test_chaid_vector_with_dtype_object_and_nans():
     """
-    Check that the metadata is correct when Columns are created from
+    Check that the metadata is correct when NominalColumns are created from
     objects
     """
     arr = np.array([1, 2, NAN], dtype="object")
-    vector = CHAID.Column(arr)
+    vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1, -1])), \
         'The indices are correctly substituted'
@@ -111,7 +111,7 @@ class TestDeepCopy(TestCase):
         """ Setup for copy tests"""
         # Use string so numpy array dtype is object and may store references
         arr = np.array(['5.0', '10.0'])
-        self.orig = CHAID.Column(arr)
+        self.orig = CHAID.NominalColumn(arr)
         self.copy = self.orig.deep_copy()
 
     def test_deep_copy_does_copy(self):
