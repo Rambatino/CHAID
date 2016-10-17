@@ -43,8 +43,8 @@ Parameters
 * `opts: {}`:
   * `alpha_merge: Float (default = 0.05)`: If the respective test for a given pair of predictor categories is not statistically significant as defined by an `alpha_merge` value, the least significant predictor categories are merged and the splitting of the node is attempted with the newly formed categories
   * `max_depth: Integer (default = 2)`: The maximum depth of the tree
-  * `min_parent_node_size: Float (default = 30)`: The minimum number of respondents required for a split to occur on the parent node
-  * `min_child_node_size: Float (default = 0)`: All child nodes must have at least this number of respondents for a split to occur
+  * `min_parent_node_size: Float (default = 30)`: The minimum number of respondents required for a split to occur on a particular node
+  * `min_child_node_size: Float (default = 0)`: If the split of a node results in a child node whose node size is less than `min_child_node_size`, child nodes that have too few cases (as with this minimum) will merge with the most similar child node as measured by the largest of the p-values. However, if the resulting number of child nodes is 1, the node will not be split.
   * `split_threshold: Float (default = 0)`: The split threshold when bucketing root node surrogate splits
   * `weight: String (default = None)`: The name of the weight column
 

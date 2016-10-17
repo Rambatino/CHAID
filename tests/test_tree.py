@@ -290,4 +290,4 @@ class TestStoppingRules(TestCase):
         """
         tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=11.5)
         tree.build_tree()
-        assert len(tree.tree_store) == 1
+        assert len(tree.tree_store) == 3

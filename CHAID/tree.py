@@ -136,16 +136,7 @@ class Tree(object):
         parent = self.node_count
         self.node_count += 1
 
-        sufficient_children = all(
-            (
-                wt[np.in1d(ind[split.column_id].arr, choices)].sum()
-                if wt is not None else
-                len(dep[np.in1d(ind[split.column_id].arr, choices)].arr)
-            ) >= self.min_child_node_size
-            for _, choices in enumerate(split.splits)
-        )
-
-        if not split.valid() or not sufficient_children:
+        if not split.valid():
             node.is_terminal = True
             return self.tree_store
 
@@ -186,7 +177,7 @@ class Tree(object):
                     for dep_v in set(dep.arr):
                         freq[col][dep_v] = wt[(index.arr == col) * (dep.arr == dep_v)].sum()
 
-            while next(index.possible_groupings(), None) is not None :
+            while next(index.possible_groupings(), None) is not None:
                 groupings = list(index.possible_groupings())
                 size = len(groupings)
 
@@ -209,7 +200,11 @@ class Tree(object):
 
                 choice, highest_p_join, chi_join = max(sub_data, key=lambda x: (x[1], x[2]))
 
-                if highest_p_join < self.alpha_merge:
+                sufficient_split = highest_p_join < self.alpha_merge and all(
+                    [sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()]
+                )
+
+                if sufficient_split and len(freq.values()) > 1:
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
                     ])
