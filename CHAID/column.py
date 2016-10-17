@@ -144,7 +144,6 @@ class OrdinalColumn(Column):
         if substitute:
             self._arr, self.orig_type =  self.substitute_values(self._arr)
 
-
         for x in np.unique(self._arr):
             self._groupings[x] = [x, x + 1]
         self._nan = np.array([np.nan]).astype(int)[0]
@@ -190,7 +189,7 @@ class OrdinalColumn(Column):
                 (k1, k2) for (k1, minmax1), (k2, minmax2) in candidates
                 if minmax1[1] == minmax2[0]
             ]
-            if self._metadata.has_key(self._nan):
+            if  self._nan in self._arr:
                 self._possible_groups += list(
                     (key, self._nan) for key in self._groupings.keys() if key != self._nan
                 )
