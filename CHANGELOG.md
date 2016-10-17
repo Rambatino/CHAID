@@ -1,5 +1,10 @@
 <h2>__A python implementation of Chi-Squared Automatic Interaction Detection (CHAID)__
 
+###  2.1.0 (2016-08-17)
+
+- Added min child node size
+  ([54e805b](https://github.com/Rambatino/CHAID/commit/54e805b8d044c1aa2d3b2fbbc4b3395659170812))
+
 ###  2.0.0 (2016-08-27)
 
 - Refactored and renamed classes
