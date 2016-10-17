@@ -35,6 +35,18 @@ independent_variable_columns = ['a', 'b', 'c']
 dep_variable = 'd'
 Tree.from_pandas_df(df, independent_variable_columns, dep_variable)
 ```
+Parameters
+----------
+* `df`: Pandas DataFrame
+* `i_variables: Array<string>`: Independent variable column names
+* `d_variable: String`: Dependent variable column name
+* `opts: {}`:
+  * `alpha_merge: Float (default = 0.05)`: If the respective test for a given pair of predictor categories is not statistically significant as defined by an `alpha_merge` value, the least significant predictor categories are merged and the splitting of the node is attempted with the newly formed categories
+  * `max_depth: Integer (default = 2)`: The maximum depth of the tree
+  * `min_parent_node_size: Float (default = 30)`: The minimum number of respondents required for a split to occur on the parent node
+  * `min_child_node_size: Float (default = None)`: All child nodes must have at least this number of respondents for a split to occur
+  * `split_threshold: Float (default = 0)`: The split threshold when bucketing root node surrogate splits
+  * `weight: String (default = None)`: The name of the weight column
 
 Running from the Command Line
 -----------------------------
@@ -57,6 +69,9 @@ It calls the `print_tree()` method, which prints the tree to terminal:
     └── (['Q', 'S'], {0: 573, 1: 113}, <Invalid Chaid Split>)
 ```
 To get a LibTree object, call to_tree() on the CHAID instance
+Parameters
+----------
+Run `python -m CHAID -h` to see description of command line arguments
 
 Testing
 -------
@@ -79,7 +94,6 @@ Upcoming Features
 
 * Splitting Rules (under development)
 * Accuracy Estimation using Machine Learning techniques on the data
-* Addition of new parameter 'min_child_node_size' similarly to SPSS
 * Allow both ordinal and nominal columns (under development)
 * Allow continuous dependent variable which uses the F-test
 * Binning of continuous independent variables

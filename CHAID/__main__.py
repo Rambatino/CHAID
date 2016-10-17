@@ -11,7 +11,7 @@ def main():
     """Entry point when module is run from command line"""
 
     parser = argparse.ArgumentParser(description='Run the chaid algorithm on a'
-                                     ' csv file.')
+                                     ' csv/sav file.')
     parser.add_argument('file')
     parser.add_argument('dependent_variable', nargs=1)
     parser.add_argument('independent_variables', nargs='+')

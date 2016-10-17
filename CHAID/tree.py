@@ -81,7 +81,7 @@ class Tree(object):
 
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2,
-                       min_parent_node_size=30, min_child_node_size=30, split_threshold=0,
+                       min_parent_node_size=30, min_child_node_size=None, split_threshold=0,
                        weight=None):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
