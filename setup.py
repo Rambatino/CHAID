@@ -25,7 +25,7 @@ def get_version():
 
     if not match:
         raise Exception(
-            "Couldn't read version information from '%s'" % init_location
+            "Couldn't read version information from '{0}'".format(init_location)
         )
 
     return match.group('version')

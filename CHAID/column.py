@@ -71,6 +71,10 @@ class Column(object):
         return self._metadata
 
 class NominalColumn(Column):
+    """
+    A column containing numerical values that are unrelated to
+    one another (i.e. do not follow a progression)
+    """
     def __init__(self, arr=None, metadata=None,
                  missing_id='<missing>', substitute=True):
         super(self.__class__, self).__init__(arr, metadata, missing_id)

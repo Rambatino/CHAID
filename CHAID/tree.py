@@ -8,6 +8,10 @@ from .column import NominalColumn
 
 
 def chisquare(n_ij, weighted):
+    """
+    Calculates the chisquare for a matrix of ind_v x dep_v
+    for the unweighted and SPSS weighted case
+    """
     if weighted:
         m_ij = n_ij / n_ij
 
@@ -201,7 +205,7 @@ class Tree(object):
                 choice, highest_p_join, chi_join = max(sub_data, key=lambda x: (x[1], x[2]))
 
                 sufficient_split = highest_p_join < self.alpha_merge and all(
-                    [sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()]
+                    sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()
                 )
 
                 if sufficient_split and len(freq.values()) > 1:
