@@ -8,6 +8,7 @@ from .tree import Tree
 import pandas as pd
 import numpy as np
 
+
 def main():
     """Entry point when module is run from command line"""
 

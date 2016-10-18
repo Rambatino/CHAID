@@ -1,6 +1,7 @@
 from .split import Split
 import numpy as np
 
+
 class Node(object):
     """
     A node in the CHAID tree

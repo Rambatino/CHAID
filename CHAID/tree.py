@@ -16,7 +16,7 @@ def chisquare(n_ij, weighted):
         m_ij = n_ij / n_ij
 
         nan_mask = np.isnan(m_ij)
-        m_ij[nan_mask] = 0.000001 # otherwise it breaks the chi-squared test
+        m_ij[nan_mask] = 0.000001  # otherwise it breaks the chi-squared test
 
         w_ij = m_ij
         n_ij_col_sum = n_ij.sum(axis=1)
@@ -35,6 +35,7 @@ def chisquare(n_ij, weighted):
     chi, p_val = stats.chisquare(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
 
     return (chi, p_val, dof)
+
 
 class Tree(object):
     """
@@ -259,7 +260,6 @@ class Tree(object):
         if split.valid():
             split.sub_split_values(ind[split.column_id].metadata)
         return split
-
 
     def to_tree(self):
         """ returns a TreeLib tree """

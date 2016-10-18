@@ -3,6 +3,7 @@ from math import isnan
 from itertools import combinations
 from .mapping_dict import MappingDict
 
+
 class Column(object):
     """
     A numpy array with metadata
@@ -65,6 +66,7 @@ class Column(object):
         string
         """
         return self._metadata
+
 
 class NominalColumn(Column):
     """
