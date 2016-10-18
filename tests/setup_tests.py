@@ -19,9 +19,11 @@ def islist(a):
 def list_unordered_equal(list_a, list_b):
     """ Compares the unordered contents of two nd lists"""
     if islist(list_a) and islist(list_b):
-        list_a = sorted(list_a)
-        list_b = sorted(list_b)
-        return all(list_unordered_equal(*item) for item in zip(list_a, list_b))
+        list_a = [item_a for item_a in list_a]
+        list_b = [item_b for item_b in list_b]
+        list_a.sort()
+        list_b.sort()
+        return len(list_a) == len(list_b) and all(list_unordered_equal(*item) for item in zip(list_a, list_b))
     else:
         return list_a == list_b or (isnan(list_a) and isnan(list_b))
 
@@ -29,6 +31,8 @@ def list_unordered_equal(list_a, list_b):
 def list_ordered_equal(list_a, list_b):
     """ Compares the unordered contents of two nd lists"""
     if islist(list_a) and islist(list_b):
-        return all(list_ordered_equal(*item) for item in zip(list_a, list_b))
+        list_a = [item_a for item_a in list_a]
+        list_b = [item_b for item_b in list_b]
+        return len(list_a) == len(list_b) and all(list_ordered_equal(*item) for item in zip(list_a, list_b))
     else:
         return list_a == list_b or (isnan(list_a) and isnan(list_b))

@@ -24,7 +24,6 @@ class Column(object):
         self._metadata = dict(metadata or {})
         self._arr = np.array(arr)
         self._missing_id = missing_id
-        self._groupings = MappingDict()
 
     def __iter__(self):
         return iter(self._arr)
@@ -80,6 +79,8 @@ class NominalColumn(Column):
         super(self.__class__, self).__init__(arr, metadata, missing_id)
         if substitute:
             self.substitute_values(arr)
+
+        self._groupings = MappingDict()
         for x in np.unique(self._arr):
             self._groupings[x] = [x]
 
@@ -138,24 +139,31 @@ class NominalColumn(Column):
 
 class OrdinalColumn(Column):
     def __init__(self, arr=None, metadata=None,
-                 missing_id='<missing>', substitute=True):
+                 missing_id='<missing>', groupings=None, substitute=True):
         super(self.__class__, self).__init__(arr, metadata, missing_id)
 
         if substitute:
             self._arr, self.orig_type =  self.substitute_values(self._arr)
 
-        for x in np.unique(self._arr):
-            self._groupings[x] = [x, x + 1, False]
+        self._groupings = {}
+        if groupings is None:
+            for x in np.unique(self._arr):
+                self._groupings[x] = [x, x + 1, False]
+        else:
+            for x in np.unique(self._arr):
+                self._groupings[x] = list(groupings[x])
         self._nan = np.array([np.nan]).astype(int)[0]
         self._possible_groups = None
 
     def substitute_values(self, vect):
         if not np.issubdtype(vect.dtype, np.integer):
             uniq = np.unique(vect)
-            uniq_as_int = uniq.astype(float).astype(int)
+            uniq_floats = uniq.astype(float)
+            uniq_ints = uniq_floats.astype(int)
             nan = self._missing_id
             self._metadata = {
-                new : old if not isnan(float(old)) else nan for old, new in zip(uniq, uniq_as_int)
+                new : nan if isnan(as_float) else old
+                for old, as_float, new in zip(uniq, uniq_floats, uniq_ints)
             }
             self._arr = self._arr.astype(float)
         return self._arr.astype(int), self._arr.dtype.type
@@ -165,11 +173,13 @@ class OrdinalColumn(Column):
         Returns a deep copy.
         """
         return OrdinalColumn(self._arr, metadata=self.metadata,
-                             missing_id=self._missing_id, substitute=True)
+                             missing_id=self._missing_id, substitute=True,
+                             groupings=self._groupings)
 
     def __getitem__(self, key):
         return OrdinalColumn(self._arr[key], metadata=self.metadata,
-                             missing_id=self._missing_id, substitute=True)
+                             missing_id=self._missing_id, substitute=True,
+                             groupings=self._groupings)
 
     def __setitem__(self, key, value):
         self._arr[key] = value
@@ -190,7 +200,7 @@ class OrdinalColumn(Column):
                 (k1, k2) for (k1, minmax1), (k2, minmax2) in candidates
                 if minmax1[1] == minmax2[0]
             ]
-            if  self._nan in self._arr:
+            if self._nan in self._arr:
                 self._possible_groups += list(
                     (key, self._nan) for key in self._groupings.keys() if key != self._nan
                 )
@@ -207,6 +217,7 @@ class OrdinalColumn(Column):
                 self._groupings[x][1] = self._groupings[y][1]
             else:
                 self._groupings[x][0] = y_min
+            self._groupings[x][2] = self._groupings[x][2] or self._groupings[y][2]
         else:
             self._groupings[x][2] = True
 
