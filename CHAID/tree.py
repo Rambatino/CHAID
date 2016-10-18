@@ -59,6 +59,10 @@ class Tree(object):
         contain (default 30)
     split_titles : array-like
         array of names for the independent variables in the data
+    variable_types : array-like or dict
+        array of variable types, or dict of column names to variable types.
+        Supported variable types are the strings 'nominal' or 'ordinal' in
+        lower case
     """
     def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
                  min_child_node_size=0, split_titles=None, split_threshold=0, weights=None,
@@ -117,6 +121,10 @@ class Tree(object):
         min_parent_node_size : float
             the threshold value of the number of respondents that the node must
             contain (default 30)
+        variable_types : array-like or dict
+            array of variable types, or dict of column names to variable types.
+            Supported variable types are the strings 'nominal' or 'ordinal' in
+            lower case
         """
         ind_df = df[i_variables]
         ind_values = ind_df.values
@@ -195,10 +203,7 @@ class Tree(object):
                         freq[col][dep_v] = wt[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
 
             while next(ind_var.possible_groupings(), None) is not None:
-                sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
-                choice = None
-                highest_p_join = None
-                split_chi = None
+                choice, highest_p_join, split_chi = None, None, None
                 for comb in ind_var.possible_groupings():
                     col1_freq = freq[comb[0]]
                     col2_freq = freq[comb[1]]
@@ -230,7 +235,7 @@ class Tree(object):
 
                     better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.chi)
 
-                    if not split.valid() or better_split:
+                    if better_split:
                         split, temp_split = temp_split, split
 
                     chi_threshold = relative_split_threshold * split.chi

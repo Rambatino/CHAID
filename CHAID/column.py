@@ -37,9 +37,6 @@ class Column(object):
     def possible_groupings(self):
         raise NotImplementedError
 
-    def combine(self, x, y):
-        raise NotImplementedError
-
     def deep_copy(self):
         """
         Returns a deep copy.
@@ -137,13 +134,17 @@ class NominalColumn(Column):
         del self._groupings[y]
         self._arr[self._arr == y] = x
 
+
 class OrdinalColumn(Column):
+    """
+    A column containing integer values that have an order
+    """
     def __init__(self, arr=None, metadata=None,
                  missing_id='<missing>', groupings=None, substitute=True):
         super(self.__class__, self).__init__(arr, metadata, missing_id)
 
         if substitute:
-            self._arr, self.orig_type =  self.substitute_values(self._arr)
+            self._arr, self.orig_type = self.substitute_values(self._arr)
 
         self._groupings = {}
         if groupings is None:
@@ -162,7 +163,7 @@ class OrdinalColumn(Column):
             uniq_ints = uniq_floats.astype(int)
             nan = self._missing_id
             self._metadata = {
-                new : nan if isnan(as_float) else old
+                new: nan if isnan(as_float) else old
                 for old, as_float, new in zip(uniq, uniq_floats, uniq_ints)
             }
             self._arr = self._arr.astype(float)
@@ -201,9 +202,9 @@ class OrdinalColumn(Column):
                 if minmax1[1] == minmax2[0]
             ]
             if self._nan in self._arr:
-                self._possible_groups += list(
+                self._possible_groups += [
                     (key, self._nan) for key in self._groupings.keys() if key != self._nan
-                )
+                ]
         return self._possible_groups.__iter__()
 
     def group(self, x, y):

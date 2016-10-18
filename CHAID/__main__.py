@@ -49,7 +49,7 @@ def main():
         data = pd.DataFrame(raw_data_list)
         data = data.rename(columns=data.loc[0]).iloc[1:]
     else:
-        print('Uknown file type')
+        print('Unknown file type')
         exit(1)
 
     config = {}
