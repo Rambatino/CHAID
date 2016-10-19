@@ -54,7 +54,7 @@ setup(
     ],
     keywords='CHAID pandas numpy scipy statistics statistical analysis',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['numpy', 'scipy', 'pandas', 'treelib', 'pytest'],
+    install_requires=['cython', 'numpy', 'pandas', 'treelib', 'pytest', 'scipy'],
     extras_require={
         'dev': ['check-manifest'],
         'test': ['coverage'],

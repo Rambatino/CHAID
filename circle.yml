@@ -1,13 +1,7 @@
-machine:
-  post:
-    - pyenv global 2.6.8 2.7.10 3.3.3 3.4.3 3.5.0
 dependencies:
   override:
-    - pip2.7 install .
-    - pip3.3 install .
-    - pip3.4 install .
-    - pip3.5 install .
     - pip install tox tox-pyenv
+    - pyenv local 2.7.9 3.4.3 3.5.0
 test:
   override:
     - tox
