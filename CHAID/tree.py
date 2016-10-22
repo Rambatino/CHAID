@@ -61,7 +61,7 @@ class Tree(object):
         array of names for the independent variables in the data
     """
     def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
-                 min_child_node_size=None, split_titles=None, split_threshold=0, weights=None):
+                 min_child_node_size=0, split_titles=None, split_threshold=0, weights=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_parent_node_size = min_parent_node_size

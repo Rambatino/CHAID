@@ -1,6 +1,7 @@
 dependencies:
-  pre:
-    - pip install .
+  override:
+    - pip install tox tox-pyenv
+    - pyenv local 2.7.9 3.4.3 3.5.0
 test:
   override:
-    - python -m py.test tests
+    - tox

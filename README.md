@@ -1,7 +1,8 @@
+<img src="https://img.shields.io/pypi/v/CHAID.svg">
 <img src="https://img.shields.io/pypi/pyversions/pytest.svg">
 <img src="https://circleci.com/gh/Rambatino/CHAID.png?style=shield&circle-token=031aab51ad1dea4a698d02f02288887f06c1a9ef">
 [![Code Issues](https://www.quantifiedcode.com/api/v1/project/7400e498230e4df6b7aa00d4064c5f93/badge.svg)](https://www.quantifiedcode.com/app/project/7400e498230e4df6b7aa00d4064c5f93)
-
+[![Coverage Status](https://coveralls.io/repos/github/Rambatino/CHAID/badge.svg?branch=master)](https://coveralls.io/github/Rambatino/CHAID?branch=master)
 
 Chi-Squared Automatic Inference Detection
 =========================================
