@@ -4,7 +4,7 @@ from scipy import stats
 from treelib import Tree as TreeLibTree
 from .node import Node
 from .split import Split
-from .column import NominalColumn
+from .column import NominalColumn, OrdinalColumn
 
 
 def chisquare(n_ij, weighted):
@@ -16,7 +16,7 @@ def chisquare(n_ij, weighted):
         m_ij = n_ij / n_ij
 
         nan_mask = np.isnan(m_ij)
-        m_ij[nan_mask] = 0.000001 # otherwise it breaks the chi-squared test
+        m_ij[nan_mask] = 0.000001  # otherwise it breaks the chi-squared test
 
         w_ij = m_ij
         n_ij_col_sum = n_ij.sum(axis=1)
@@ -35,6 +35,7 @@ def chisquare(n_ij, weighted):
     chi, p_val = stats.chisquare(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
 
     return (chi, p_val, dof)
+
 
 class Tree(object):
     """
@@ -59,17 +60,30 @@ class Tree(object):
         contain (default 30)
     split_titles : array-like
         array of names for the independent variables in the data
+    variable_types : array-like or dict
+        array of variable types, or dict of column names to variable types.
+        Supported variable types are the strings 'nominal' or 'ordinal' in
+        lower case
     """
     def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
-                 min_child_node_size=0, split_titles=None, split_threshold=0, weights=None):
+                 min_child_node_size=0, split_titles=None, split_threshold=0, weights=None,
+                 variable_types=None):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_parent_node_size = min_parent_node_size
         self.min_child_node_size = min_child_node_size
         self.split_titles = split_titles or []
         self.vectorised_array = []
-        for ind in range(0, ndarr.shape[1]):
-            self.vectorised_array.append(NominalColumn(ndarr[:, ind]))
+        variable_types = variable_types or ['nominal'] * ndarr.shape[1]
+        for ind, col_type in enumerate(variable_types):
+            if col_type == 'ordinal':
+                col = OrdinalColumn(ndarr[:, ind])
+            elif col_type == 'nominal':
+                col = NominalColumn(ndarr[:, ind])
+            else:
+                raise NotImplementedError('Unknown type ' + col_type)
+            self.vectorised_array.append(col)
+
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = None
@@ -86,7 +100,7 @@ class Tree(object):
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2,
                        min_parent_node_size=30, min_child_node_size=0, split_threshold=0,
-                       weight=None):
+                       weight=None, variable_types=None):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
@@ -108,14 +122,20 @@ class Tree(object):
         min_parent_node_size : float
             the threshold value of the number of respondents that the node must
             contain (default 30)
+        variable_types : array-like or dict
+            array of variable types, or dict of column names to variable types.
+            Supported variable types are the strings 'nominal' or 'ordinal' in
+            lower case
         """
         ind_df = df[i_variables]
-        ind_df = ind_df
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
+        if isinstance(variable_types, dict):
+            variable_types = [variable_types[col] for col in i_variables]
         return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
-                    min_child_node_size, list(ind_df.columns.values), split_threshold, weights)
+                    min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
+                    variable_types)
 
     def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -165,29 +185,27 @@ class Tree(object):
         """ internal method to generate the best split """
         split = Split(None, None, None, None, 0)
         relative_split_threshold = 1 - self.split_threshold
-        all_dep = set(dep.arr)
-        for i, index in enumerate(ind):
-            index = index.deep_copy()
-            unique = set(index.arr)
+        all_dep = np.unique(dep.arr)
+        for i, ind_var in enumerate(ind):
+            ind_var = ind_var.deep_copy()
+            unique = np.unique(ind_var.arr)
 
             freq = {}
-            for col in unique:
-                counts = np.unique(dep.arr[index.arr == col], return_counts=True)
-                if wt is None:
+            if wt is None:
+                for col in unique:
+                    counts = np.unique(np.compress(ind_var.arr == col, dep.arr), return_counts=True)
                     freq[col] = cl.defaultdict(int)
                     freq[col].update(np.transpose(counts))
-                else:
+            else:
+                for col in unique:
+                    counts = np.unique(np.compress(ind_var.arr == col, dep.arr), return_counts=True)
                     freq[col] = cl.defaultdict(int)
-                    for dep_v in set(dep.arr):
-                        freq[col][dep_v] = wt[(index.arr == col) * (dep.arr == dep_v)].sum()
+                    for dep_v in all_dep:
+                        freq[col][dep_v] = wt[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
 
-            while next(index.possible_groupings(), None) is not None:
-                groupings = list(index.possible_groupings())
-                size = len(groupings)
-
-                sub_data_columns = [('combinations', object), ('p', float), ('chi', float)]
-                sub_data = np.array([(None, 0, 1)]*size, dtype=sub_data_columns, order='F')
-                for j, comb in groupings:
+            while next(ind_var.possible_groupings(), None) is not None:
+                choice, highest_p_join, split_chi = None, None, None
+                for comb in ind_var.possible_groupings():
                     col1_freq = freq[comb[0]]
                     col2_freq = freq[comb[1]]
 
@@ -200,14 +218,12 @@ class Tree(object):
 
                     chi, p_split, dof = chisquare(n_ij, wt is not None)
 
-                    sub_data[j] = (comb, p_split, chi)
-
-                choice, highest_p_join, chi_join = max(sub_data, key=lambda x: (x[1], x[2]))
+                    if choice is None or p_split > highest_p_join or (p_split == highest_p_join and chi > split_chi):
+                        choice, highest_p_join, split_chi = comb, p_split, chi
 
                 sufficient_split = highest_p_join < self.alpha_merge and all(
                     sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()
                 )
-
                 if sufficient_split and len(freq.values()) > 1:
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
@@ -216,11 +232,11 @@ class Tree(object):
                     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
                     chi, p_split, dof = chisquare(n_ij, wt is not None)
 
-                    temp_split = Split(i, index.groups(), chi, p_split, dof)
+                    temp_split = Split(i, ind_var.groups(), chi, p_split, dof)
 
                     better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.chi)
 
-                    if not split.valid() or better_split:
+                    if better_split:
                         split, temp_split = temp_split, split
 
                     chi_threshold = relative_split_threshold * split.chi
@@ -235,7 +251,7 @@ class Tree(object):
 
                     break
 
-                index.group(choice[0], choice[1])
+                ind_var.group(choice[0], choice[1])
 
                 for val, count in freq[choice[1]].items():
                     freq[choice[0]][val] += count
@@ -244,7 +260,6 @@ class Tree(object):
         if split.valid():
             split.sub_split_values(ind[split.column_id].metadata)
         return split
-
 
     def to_tree(self):
         """ returns a TreeLib tree """
