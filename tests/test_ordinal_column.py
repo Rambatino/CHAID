@@ -40,38 +40,38 @@ class TestOrdinalGrouping(TestCase):
     def test_possible_groups(self):
         """ Ensure possible groups are only adjacent numbers  """
         groupings = list(self.col.possible_groupings())
-        possible_groupings = [(1.0, 2.0), (2.0, 3.0), (3.0, 4.0), (4.0, 5.0)]
+        possible_groupings = [(1, 2), (2, 3), (3, 4), (4, 5)]
         assert list_unordered_equal(possible_groupings, groupings), 'Without NaNs, with groups are identified, possible grouping are incorrectly identified.'
 
         groups = list(self.col.groups())
-        actual_groups = [[1.0], [2.0], [3.0], [4.0], [5.0], [10.0]]
+        actual_groups = [[1], [2], [3], [4], [5], [10]]
         assert list_unordered_equal(actual_groups, groups), 'Without NaNs, before any groups are identified, actual groupings are incorrectly reported'
 
     def test_groups_after_grouping(self):
         """ Ensure a copy actually happens when deep_copy is called """
-        self.col.group(3.0, 4.0)
-        self.col.group(3.0, 2.0)
+        self.col.group(3, 4)
+        self.col.group(3, 2)
 
         groupings = list(self.col.possible_groupings())
-        possible_groupings = [(1.0, 3.0), (3.0, 5.0)]
+        possible_groupings = [(1, 3), (3, 5)]
         assert list_unordered_equal(possible_groupings, groupings), 'Without NaNs, with groups are identified, possible grouping are incorrectly identified.'
 
         groups = list(self.col.groups())
-        actual_groups = [[1.0], [2.0, 3.0, 4.0], [5.0], [10.0]]
+        actual_groups = [[1], [2, 3, 4], [5], [10]]
         assert list_unordered_equal(actual_groups, groups), 'Without NaNs, before any groups are identified, actual groupings are incorrectly reported'
 
     def test_groups_after_copy(self):
         """ Ensure a copy actually happens when deep_copy is called """
-        self.col.group(3.0, 4.0)
-        self.col.group(3.0, 2.0)
+        self.col.group(3, 4)
+        self.col.group(3, 2)
         col = self.col.deep_copy()
 
         groupings = list(col.possible_groupings())
-        possible_groupings = [(1.0, 3.0), (3.0, 5.0)]
+        possible_groupings = [(1, 3), (3, 5)]
         assert list_unordered_equal(possible_groupings, groupings), 'Without NaNs, with groups are identified, possible grouping are incorrectly identified.'
 
         groups = list(col.groups())
-        actual_groups = [[1.0], [2.0, 3.0, 4.0], [5.0], [10.0]]
+        actual_groups = [[1], [2, 3, 4], [5], [10]]
         assert list_unordered_equal(actual_groups, groups), 'Without NaNs, before any groups are identified, actual groupings are incorrectly reported'
 
 

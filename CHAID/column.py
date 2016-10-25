@@ -160,8 +160,8 @@ class OrdinalColumn(Column):
 
     def substitute_values(self, vect):
         if not np.issubdtype(vect.dtype, np.integer):
-            uniq = np.unique(vect)
-            uniq_floats = uniq.astype(float)
+            uniq = set(vect)
+            uniq_floats = np.array(list(uniq), dtype=float)
             uniq_ints = uniq_floats.astype(int)
             nan = self._missing_id
             self._metadata = {
