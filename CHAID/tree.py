@@ -192,6 +192,32 @@ class Tree(object):
                 pred[node.indices] = node.node_id
         return pred
 
+    def classification_rules(self, tree=None, node=None, stack=None):
+        if tree is None:
+            tree = self.to_tree()
+            node = tree.get_node(0)
+        stack = stack or []
+        stack.append(node)
+
+        if node.tag.is_terminal:
+            return [
+                {
+                    'node': node.identifier,
+                    'rules': [
+                        {
+                            # 'type': self.vectorised_array[x.tag.split.column_id].type,
+                            'variable': self.get_node(x.tag.parent).split_variable,
+                            'data': x.tag.choices
+                        } for x in stack[1:]
+                    ]
+                }
+            ]
+        else:
+            return np.array([
+                i for child in tree.children(node.identifier)
+                for i in self.classification_rules(tree, child, list(stack))
+            ])
+
     def model_predictions(self):
         """
         Determines the highest frequency of
