@@ -192,31 +192,28 @@ class Tree(object):
                 pred[node.indices] = node.node_id
         return pred
 
-    def classification_rules(self, tree=None, node=None, stack=None):
-        if tree is None:
-            tree = self.to_tree()
-            node = tree.get_node(0)
+    def classification_rules(self, node=None, stack=None):
+        if node is None:
+            return [self.classification_rules(t_node) for t_node in self if t_node.is_terminal]
+
         stack = stack or []
         stack.append(node)
 
-        if node.tag.is_terminal:
+        if node.parent is None:
             return [
                 {
-                    'node': node.identifier,
+                    'node': stack[0].node_id,
                     'rules': [
                         {
                             # 'type': self.vectorised_array[x.tag.split.column_id].type,
-                            'variable': self.get_node(x.tag.parent).split_variable,
-                            'data': x.tag.choices
-                        } for x in stack[1:]
+                            'variable': self.get_node(ancestor.parent).split_variable,
+                            'data': ancestor.choices
+                        } for ancestor in stack[:-1]
                     ]
                 }
             ]
         else:
-            return np.array([
-                i for child in tree.children(node.identifier)
-                for i in self.classification_rules(tree, child, list(stack))
-            ])
+            return self.classification_rules(self.get_node(node.parent), stack)
 
     def model_predictions(self):
         """
