@@ -41,6 +41,9 @@ def main():
     group.add_argument('--predict', action='store_true', help='Add column to '
                        'input with the value of the  dependent variable that '
                        'the majority of respondents in that node selected')
+    group.add_argument('--rules', action='store_true')
+
+
     nspace = parser.parse_args()
 
     if nspace.file[-4:] == '.csv':
@@ -90,6 +93,8 @@ def main():
         predictions.name = 'predicted'
         data = pd.concat([data, predictions], axis=1)
         print(data.to_csv())
+    elif nspace.rules:
+        print('\n'.join(str(x) for x in tree.classification_rules()))
     else:
         tree.print_tree()
 

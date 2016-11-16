@@ -194,7 +194,9 @@ class Tree(object):
 
     def classification_rules(self, node=None, stack=None):
         if node is None:
-            return [self.classification_rules(t_node) for t_node in self if t_node.is_terminal]
+            return [
+                rule for t_node in self for rule in self.classification_rules(t_node) if t_node.is_terminal
+            ]
 
         stack = stack or []
         stack.append(node)
