@@ -82,7 +82,7 @@ CHAID uses [`pytest`](https://pypi.python.org/pypi/pytest) for its unit testing.
 py.test
 ```
 
-If you so wish to run the unit tests across multiple python versions to make sure your changes are compatible, run: [`tox`](https://github.com/tox-dev/tox). You may need to run ` pip install tox tox-pyenv` & `brew install pyenv` beforehand.
+If you so wish to run the unit tests across multiple python versions to make sure your changes are compatible, run: [`tox`](https://github.com/tox-dev/tox) ([`detox`](https://github.com/tox-dev/detox/releases) to run in parallel). You may need to run `pip install tox tox-pyenv detox` & `brew install pyenv` beforehand.
 
 Caveats
 -------

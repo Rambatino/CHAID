@@ -29,24 +29,24 @@ class Split(object):
         self._dof = dof
 
     def sub_split_values(self, sub):
-        """ Substiutes the splits with other values into the split_map """
+        """ Substitutes the splits with other values into the split_map """
         for i, arr in enumerate(self.splits):
             self.split_map[i] = [sub.get(x, x) for x in arr]
         for split in self.surrogates:
             split.sub_split_values(sub)
 
     def name_columns(self, sub):
-        """ Substiutes the split column index with a human readable string """
+        """ Substitutes the split column index with a human readable string """
         if self.column_id is not None and len(sub) > self.column_id:
             self.split_name = sub[self.column_id]
         for split in self.surrogates:
             split.name_columns(sub)
 
     def __repr__(self):
-        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'\
-                     ', dof={0.dof})'
         if not self.valid():
             return '<Invalid Chaid Split>'
+        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'\
+                     ', dof={0.dof})'
         return format_str.format(self)
 
     @property

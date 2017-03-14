@@ -67,7 +67,7 @@ class Tree(object):
     """
     def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
                  min_child_node_size=0, split_titles=None, split_threshold=0, weights=None,
-                 variable_types=None):
+                 variable_types=None, dep_variable_type='categorical'):
         self.alpha_merge = alpha_merge
         self.max_depth = max_depth
         self.min_parent_node_size = min_parent_node_size
@@ -81,13 +81,19 @@ class Tree(object):
             elif col_type == 'nominal':
                 col = NominalColumn(ndarr[:, ind])
             else:
-                raise NotImplementedError('Unknown type ' + col_type)
+                raise NotImplementedError('Unknown independent variable type ' + col_type)
             self.vectorised_array.append(col)
 
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = None
-        self.observed = NominalColumn(arr)
+        if dep_variable_type == 'categorical':
+            self.observed = NominalColumn(arr)
+        elif dep_variable_type == 'continuous':
+            self.observed = ContinuousColumn(arr)
+        else:
+            raise NotImplementedError('Unknown dependent variable type ' + dep_variable_type)
+
         self.weights = weights
         self.split_threshold = split_threshold
 
@@ -100,7 +106,7 @@ class Tree(object):
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2,
                        min_parent_node_size=30, min_child_node_size=0, split_threshold=0,
-                       weight=None, variable_types=None):
+                       weight=None, variable_types=None, dep_variable_type='categorical'):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
@@ -135,7 +141,7 @@ class Tree(object):
             variable_types = [variable_types[col] for col in i_variables]
         return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
                     min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
-                    variable_types)
+                    variable_types, dep_variable_type)
 
     def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -309,6 +315,8 @@ class Tree(object):
         categorical dependent variable in the
         terminal node where that row fell
         """
+        if isinstance(self.observed, ContinuousColumn):
+            return ValueError, "Cannot make model predictions on a continuous scale"
         pred = np.zeros(self.data_size)
         for node in self:
             if node.is_terminal:
@@ -320,6 +328,4 @@ class Tree(object):
         Calculates the fraction of risk associated
         with the model predictions
         """
-        model_predictions = self.model_predictions()
-        observed = self.observed.arr
-        return 1 - float((model_predictions == observed).sum()) / self.data_size
+        return 1 - float((self.model_predictions() == self.observed.arr).sum()) / self.data_size
