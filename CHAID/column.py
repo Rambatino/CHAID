@@ -52,6 +52,13 @@ class Column(object):
         """
         return self._arr
 
+    @property
+    def weights(self):
+        """
+        Provides access to the internal numpy weights
+        """
+        return self._weights
+
     @arr.setter
     def arr(self, value):
         """
@@ -120,7 +127,8 @@ class NominalColumn(Column):
             self._metadata[-1] = self._missing_id
 
     def __getitem__(self, key):
-        return NominalColumn(self._arr[key], metadata=self.metadata, substitute=False, weights=self._weights)
+        new_weights = None if self._weights is None else self._weights[key]
+        return NominalColumn(self._arr[key], metadata=self.metadata, substitute=False, weights=new_weights)
 
     def __setitem__(self, key, value):
         self._arr[key] = value
@@ -181,9 +189,10 @@ class OrdinalColumn(Column):
                              groupings=self._groupings, weights=self._weights)
 
     def __getitem__(self, key):
+        new_weights = None if self._weights is None else self._weights[key]
         return OrdinalColumn(self._arr[key], metadata=self.metadata,
                              missing_id=self._missing_id, substitute=True,
-                             groupings=self._groupings, weights=self._weights)
+                             groupings=self._groupings, weights=new_weights)
 
     def __setitem__(self, key, value):
         self._arr[key] = value
@@ -247,7 +256,8 @@ class ContinuousColumn(Column):
         return ContinuousColumn(self._arr, metadata=self.metadata, missing_id=self._missing_id, weights=self._weights)
 
     def __getitem__(self, key):
-        return ContinuousColumn(self._arr[key], metadata=self.metadata, substitute=False, weights=self._weights)
+        new_weights = None if self._weights is None else self._weights[key]
+        return ContinuousColumn(self._arr[key], metadata=self.metadata, substitute=False, weights=new_weights)
 
     def __setitem__(self, key, value):
         self._arr[key] = value

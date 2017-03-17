@@ -87,8 +87,7 @@ class TestSurrogate(TestCase):
 
         split = tree.generate_best_split(
             tree.vectorised_array,
-            tree.observed,
-            None
+            tree.observed
         )
 
         assert split.column_id == 1, 'The best split should be on column 1'
@@ -103,8 +102,7 @@ class TestSurrogate(TestCase):
 
         split = tree.generate_best_split(
             tree.vectorised_array,
-            tree.observed,
-            None
+            tree.observed
         )
 
         assert split.p < split.surrogates[0].p, 'The best split should be the minimum p by default'
@@ -140,8 +138,7 @@ def test_p_and_chi_values_when_weighting_applied():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed,
-        weighting
+        tree.observed
     )
 
     assert round(split.chi, 4) == 1.6179
@@ -180,8 +177,7 @@ def test_zero_subbed_weighted_ndarry():
 
     split = tree.generate_best_split(
         tree.vectorised_array,
-        tree.observed,
-        weighting
+        tree.observed
     )
 
     assert round(split.chi, 4) == 14.5103
@@ -258,7 +254,7 @@ class TestStoppingRules(TestCase):
 
     def test_min_child_node_size_does_stop_for_unweighted_case(self):
         """
-        Check that minumun child node size causes the tree to
+        Check that minimum child node size causes the tree to
         terminate correctly
         """
         tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11)
@@ -267,7 +263,7 @@ class TestStoppingRules(TestCase):
 
     def test_min_child_node_size_does_not_stop_for_unweighted_case(self):
         """
-        Check that minumun child node size causes the tree to
+        Check that minimum child node size causes the tree to
         terminate correctly
         """
         tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=10)
@@ -276,7 +272,7 @@ class TestStoppingRules(TestCase):
 
     def test_min_child_node_size_does_stop_for_weighted_case(self):
         """
-        Check that minumun child node size causes the tree to
+        Check that minimum child node size causes the tree to
         terminate correctly
         """
         tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=10.7)
@@ -285,7 +281,7 @@ class TestStoppingRules(TestCase):
 
     def test_min_child_node_size_does_not_stop_for_weighted_case(self):
         """
-        Check that minumun child node size causes the tree to
+        Check that minimum child node size causes the tree to
         terminate correctly
         """
         tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=11.5)
@@ -328,36 +324,9 @@ class TestContinuousDependentVariable(TestCase):
 
     def test_min_child_node_size_does_stop_for_unweighted_case(self):
         """
-        Check that minumun child node size causes the tree to
+        Check that minimum child node size causes the tree to
         terminate correctly
         """
         tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11)
         tree.build_tree()
-        assert True#len(tree.tree_store) == 1
-
-    # def test_min_child_node_size_does_not_stop_for_unweighted_case(self):
-    #     """
-    #     Check that minumun child node size causes the tree to
-    #     terminate correctly
-    #     """
-    #     tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=10)
-    #     tree.build_tree()
-    #     assert len(tree.tree_store) == 4
-    #
-    # def test_min_child_node_size_does_stop_for_weighted_case(self):
-    #     """
-    #     Check that minumun child node size causes the tree to
-    #     terminate correctly
-    #     """
-    #     tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=10.7)
-    #     tree.build_tree()
-    #     assert len(tree.tree_store) == 4
-    #
-    # def test_min_child_node_size_does_not_stop_for_weighted_case(self):
-    #     """
-    #     Check that minumun child node size causes the tree to
-    #     terminate correctly
-    #     """
-    #     tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=11.5)
-    #     tree.build_tree()
-    #     assert len(tree.tree_store) == 3
+        assert True

@@ -104,6 +104,8 @@ def test_chaid_vector_with_dtype_object_and_nans():
     assert vector.metadata == {0: 1, 1: 2, -1: '<missing>'}, \
         'The metadata is formed correctly'
 
+def column_stores_weights():
+    assert False
 
 class TestDeepCopy(TestCase):
     """ Test fixture class for deep copy method """
