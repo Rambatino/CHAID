@@ -105,6 +105,9 @@ def test_chaid_vector_with_dtype_object_and_nans():
         'The metadata is formed correctly'
 
 def test_column_stores_weights():
+    """
+    Tests that the columns store the weights when they are passed
+    """
     arr = np.array([1.0, 2.0, 3.0])
     wt = np.array([2.0, 1.0, 0.25])
     nominal = CHAID.NominalColumn(arr, weights=wt)

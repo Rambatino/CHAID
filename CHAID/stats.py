@@ -36,7 +36,7 @@ def chisquare(n_ij, weighted):
 
 class Stats(object):
     """
-
+    Stats class that determines the correct statistical method to apply
     """
     def __init__(self, alpha_merge, min_child_node_size, split_threshold, dep_population):
         self.split_threshold = 1 - split_threshold
@@ -45,12 +45,14 @@ class Stats(object):
         self.dep_population = dep_population
 
     def best_split(self, ind, dep):
+        """ detrmine which splitting function to apply """
         if isinstance(dep, ContinuousColumn):
             return self.best_con_split(ind, dep)
         else:
             return self.best_cat_split(ind, dep)
 
     def best_cat_split(self, ind, dep):
+        """ detrmine best categorical variable split """
         split = Split(None, None, None, None, 0)
         all_dep = np.unique(dep.arr)
         for i, ind_var in enumerate(ind):
@@ -129,6 +131,7 @@ class Stats(object):
         return split
 
     def best_con_split(self, ind, dep):
+        """ detrmine best continuous variable split """
         split = Split(None, None, None, None, 0)
         is_normal = stats.normaltest(self.dep_population)[1] > 0.05
         sig_test = stats.bartlett if is_normal else stats.levene
