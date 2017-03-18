@@ -24,18 +24,95 @@ Alternatively, you can clone the repository and install via
 pip install -e path/to/your/checkout
 ```
 
-Creating a Tree
+Creating a CHAID Tree
 ---------------
 
 ``` python
-
 from CHAID import Tree
 
-pandas_data_frame = ...
+## create the data
+ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
+df = pd.DataFrame(ndarr)
+df.columns = ['a', 'b', 'c']
+df['d'] = np.array(([1] * 5) + ([2] * 5))
+
+>>> df
+   a  b  c  d
+0  1  2  3  1
+1  1  2  3  1
+2  1  2  3  1
+3  1  2  3  1
+4  1  2  3  1
+5  2  2  3  2
+6  2  2  3  2
+7  2  2  3  2
+8  2  2  3  2
+9  2  2  3  2
+
+## set the CHAID input parameters
 independent_variable_columns = ['a', 'b', 'c']
 dep_variable = 'd'
-Tree.from_pandas_df(df, independent_variable_columns, dep_variable)
+
+## create the Tree
+tree = Tree.from_pandas_df(df, independent_variable_columns, dep_variable)
+
+>>> tree.print_tree()
+([], {1: 5, 2: 5}, (a, p=0.001565402258, score=10.0, groups=[[1], [2]]), dof=1))
+├── ([1], {1: 5, 2: 0}, <Invalid Chaid Split>)
+└── ([2], {1: 0, 2: 5}, <Invalid Chaid Split>)
+
+## the different nodes of the tree can be accessed like
+first_node = tree.tree_store[0]
+
+>>> first_node
+([], {1: 5, 2: 5}, (a, p=0.001565402258, score=10.0, groups=[[1], [2]]), dof=1))
+
+## the properties of the node can be access like
+>>> first_node.members
+{1: 5, 2: 5}
+
+## the properties of split can be accessed like
+>>> first_node.split.p
+0.001565402258002549
+>>> first_node.split.score
+10.0
 ```
+
+Creating a Tree using Bartlett's or Levene's Significance Test for Continuous Variables
+----------
+
+When the dependent variable is continuous, the chi-squared test does not work due to very low frequencies of values across subgroups. As a consequence, and because the F-test is very susceptible to deviations from normality, the normality of the dependent set is determined and [Bartlett's test](https://en.wikipedia.org/wiki/Bartlett%27s_test) for significance is used when the data is normally distributed (although the subgroups may not necessarily be so) or [Levene's test](https://en.wikipedia.org/wiki/Levene%27s_test) is used when the data is non-normal.
+
+``` python
+from CHAID import Tree
+
+## create the data
+ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
+df = pd.DataFrame(ndarr)
+df.columns = ['a', 'b', 'c']
+df['d'] = np.random.normal(300, 100, 10)
+
+>>> df
+   a  b  c           d
+0  1  2  3  262.816747
+1  1  2  3  240.139085
+2  1  2  3  204.224083
+3  1  2  3  231.024752
+4  1  2  3  263.176338
+5  2  2  3  440.371621
+6  2  2  3  221.762452
+7  2  2  3  197.290268
+8  2  2  3  275.925549
+9  2  2  3  238.471850
+
+## create the Tree
+tree = Tree.from_pandas_df(df, independent_variable_columns, dep_variable, dep_variable_type='continuous')
+
+## print the tree (though not enough power to split)
+>>> tree.print_tree()
+([], {'s.t.d': 86.562258585515579, 'mean': 297.52027436303212}, <Invalid Chaid Split>)
+```
+
 Parameters
 ----------
 * `df`: Pandas DataFrame
@@ -48,7 +125,7 @@ Parameters
   * `min_child_node_size: Float (default = 0)`: If the split of a node results in a child node whose node size is less than `min_child_node_size`, child nodes that have too few cases (as with this minimum) will merge with the most similar child node as measured by the largest of the p-values. However, if the resulting number of child nodes is 1, the node will not be split.
   * `split_threshold: Float (default = 0)`: The split threshold when bucketing root node surrogate splits
   * `weight: String (default = None)`: The name of the weight column
-
+  * `dep_variable_type (default = categorical, other_options = continuous)`: Whether the dependent variable is categorical or continuous
 Running from the Command Line
 -----------------------------
 
@@ -97,6 +174,4 @@ Upcoming Features
 
 * Splitting Rules (under development)
 * Accuracy Estimation using Machine Learning techniques on the data
-* Allow both ordinal and nominal columns (under development)
-* Allow continuous dependent variable which uses the F-test
 * Binning of continuous independent variables
