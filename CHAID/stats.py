@@ -161,7 +161,7 @@ class Stats(object):
                 )
 
                 if sufficient_split and len(keyed_set.values()) > 1:
-                    dof = len(np.unique(np.concatenate(list(keyed_set.values())))) - 1
+                    dof = len(np.concatenate(list(keyed_set.values()))) - 1
                     score, p_split = sig_test(*keyed_set.values())
 
                     temp_split = Split(i, ind_var.groups(), score, p_split, dof)
