@@ -16,6 +16,7 @@ def main():
                                      ' csv/sav file.')
     parser.add_argument('file')
     parser.add_argument('dependent_variable', nargs=1)
+    parser.add_argument('--dependent-variable-type', type=str)
 
     var = parser.add_argument_group('Independent Variable Specification')
     var.add_argument('nominal_variables', nargs='*', help='The names of '
@@ -64,6 +65,9 @@ def main():
         config['min_child_node_size'] = nspace.min_child_node_size
     if nspace.weights:
         config['weight'] = nspace.weights
+    if nspace.dependent_variable_type:
+        config['dep_variable_type'] = nspace.dependent_variable_type
+
 
     ordinal = nspace.ordinal_variables or []
     nominal = nspace.nominal_variables or []
