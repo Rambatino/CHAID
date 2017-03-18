@@ -6,6 +6,9 @@ from setup_tests import CHAID
 import numpy as np
 
 def test_dependent_variable_properties_as_members_for_continous_node():
+    """
+    Tests that node prints the std and mean when contonuous column supplied
+    """
     continuous_dp = CHAID.ContinuousColumn(np.array([1.3, 23.0, 3.0, 3.0, 12.4]))
     node = CHAID.Node(dep_v=continuous_dp)
     assert node.members.keys() == ['s.t.d', 'mean']

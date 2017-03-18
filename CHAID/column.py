@@ -245,7 +245,7 @@ class ContinuousColumn(Column):
     def __init__(self, arr=None, metadata=None,
                  missing_id='<missing>', weights=None):
         if not np.issubdtype(arr.dtype, np.number):
-            raise ValueError 'Must only pass numerical values to create continuous column'
+            raise ValueError('Must only pass numerical values to create continuous column')
 
         super(self.__class__, self).__init__(arr, metadata, missing_id, weights=weights)
 
