@@ -201,7 +201,7 @@ class Tree(object):
         terminal node where that row fell
         """
         if isinstance(self.observed, ContinuousColumn):
-            return ValueError, "Cannot make model predictions on a continuous scale"
+            return ValueError("Cannot make model predictions on a continuous scale")
         pred = np.zeros(self.data_size)
         for node in self:
             if node.is_terminal:
