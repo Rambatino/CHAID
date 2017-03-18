@@ -293,7 +293,7 @@ class TestContinuousDependentVariable(TestCase):
     """ Testing that stopping rules are being applied correctly """
     def setUp(self):
         """ Setup test data for bug fixes """
-        self.arr = np.array(
+        self.random_arr = np.array(
            [0.23198952,  0.26550251,  0.96461057,  0.13733767,  0.76674088,
             0.60637166,  0.18822053,  0.78785506,  0.47786053,  0.44448984,
             0.88632344,  0.94060264,  0.52900520,  0.68301794,  0.00485769,
@@ -319,6 +319,38 @@ class TestContinuousDependentVariable(TestCase):
             0.57147433,  0.33414233,  0.13847757,  0.31316325,  0.04371212,
             0.36556674,  0.56316862,  0.66761528,  0.02491041,  0.12124478]
         )
+        self.normal_arr = np.array([
+            215.74655491,  237.0905247 ,  193.72021408,  152.89363815,
+            175.36670032,  232.59086085,  204.20219942,  248.99321897,
+            267.95686148,  165.7204985 ,  177.38110221,  220.40618705,
+            262.71893125,  240.00774431,  210.85572027,  255.06583994,
+            232.85274614,  274.71932373,  186.83175676,  241.47832856,
+            294.98781486,  190.82037054,  143.7991682 ,  170.32090888,
+            207.20320791,  208.10226642,  187.09923858,  178.9242382 ,
+            155.17266333,  140.69923988,  210.80029533,  193.85525698,
+            232.69854217,  230.4408611 ,  149.34523942,  303.6243051 ,
+            171.1562868 ,  185.24131426,  195.80616026,  224.38213062,
+            261.77203837,  170.81218927,  216.37943211,  265.25650174,
+            203.3098626 ,  229.84982086,  212.14777791,  265.25335911,
+            296.11334434,  242.40424522,  270.30264815,   77.97401496,
+            176.80382943,  156.35135782,  155.29031942,  262.11885208,
+            161.33251252,  256.05120377,  158.32542953,  189.07183278,
+            155.72524265,  244.68956731,  286.68689241,   94.08648606,
+            253.80300049,  161.17371005,  116.94584491,  182.88557535,
+            182.85752412,  253.42111371,  131.25146323,  264.86407965,
+            197.3742505 ,  296.95506279,  221.01600673,  234.04694958,
+            154.42957223,  176.94139196,  200.59554949,  170.4040058 ,
+            229.39358115,  127.43357367,  249.09735255,  227.90731765,
+            238.9667355 ,  163.83410357,  194.88998826,  134.49013182,
+            154.54356067,  254.19699384,  143.93816979,  256.11031829,
+            186.56096688,  178.40462838,  159.79032932,  187.7542398 ,
+            267.18537402,  190.99969385,  130.30080584,  216.12902248,
+            247.8707783 ,  246.49016072,  275.3636918 ,  165.69987612,
+            181.16709806,  193.87951446,  156.03720504,  221.44032879,
+            182.21405831,  119.22571297,  219.14946203,  140.358539  ,
+            210.5826685 ,  256.57132523,  244.82587339,  153.26377344,
+            198.44006972,  172.6057332 ,  140.26518016,  171.32162943]
+        )
         self.wt = np.array(([1.0] * 60) + ([1.2] * 60))
         self.ndarr = np.array(([2, 3] * 20) + ([2, 5] * 20) + ([3, 4] * 19) + [2, 3] + [1, 2, 5] * 80 + [1, 2, 3] * 40).reshape(120, 4)
 
@@ -326,7 +358,7 @@ class TestContinuousDependentVariable(TestCase):
         """
         Check that a tree can be built with a continuous dependent variable
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous')
+        tree = CHAID.Tree(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous')
         tree.build_tree()
         assert round(tree.tree_store[0].p, 4) == 0.4119
         assert len(tree.tree_store) == 9
@@ -335,7 +367,16 @@ class TestContinuousDependentVariable(TestCase):
         """
         Check that a tree can be built with a continuous dependent variable
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
+        tree = CHAID.Tree(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
         tree.build_tree()
         assert round(tree.tree_store[0].p, 4) == 0.1594
         assert len(tree.tree_store) == 9
+
+    def test_bartlett_significance(self):
+        """
+        Check that a tree can be built with a continuous dependent variable using the bartlett significance because the distribution is normal
+        """
+        tree = CHAID.Tree(self.ndarr, self.normal_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
+        tree.build_tree()
+        assert round(tree.tree_store[0].p, 4) == 0.3681
+        assert len(tree.tree_store) == 5

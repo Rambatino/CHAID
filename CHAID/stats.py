@@ -132,7 +132,6 @@ class Stats(object):
         split = Split(None, None, None, None, 0)
         is_normal = stats.normaltest(self.dep_population)[1] > 0.05
         sig_test = stats.bartlett if is_normal else stats.levene
-
         response_set = dep.arr
         if dep.weights is not None:
             response_set = dep.arr * dep.weights
