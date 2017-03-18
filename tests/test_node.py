@@ -9,8 +9,8 @@ def test_dependent_variable_properties_as_members_for_continous_node():
     """
     Tests that node prints the std and mean when contonuous column supplied
     """
-    continuous_dp = CHAID.ContinuousColumn(np.array([1.3, 23.0, 3.0, 3.0, 12.4]))
+    data = np.array([1.3, 23.0, 3.0, 3.0, 12.4])
+    continuous_dp = CHAID.ContinuousColumn(data)
     node = CHAID.Node(dep_v=continuous_dp)
-    assert node.members.keys() == ['s.t.d', 'mean']
-    assert [round(val, 4) for val in node.members.values()] == [8.2194, 8.54]
+    assert node.members == {'mean': data.mean(), 's.t.d': data.std()}
 
