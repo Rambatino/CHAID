@@ -104,8 +104,15 @@ def test_chaid_vector_with_dtype_object_and_nans():
     assert vector.metadata == {0: 1, 1: 2, -1: '<missing>'}, \
         'The metadata is formed correctly'
 
-def column_stores_weights():
-    assert False
+def test_column_stores_weights():
+    arr = np.array([1.0, 2.0, 3.0])
+    wt = np.array([2.0, 1.0, 0.25])
+    nominal = CHAID.NominalColumn(arr, weights=wt)
+    ordinal = CHAID.OrdinalColumn(arr, weights=wt)
+    continuous = CHAID.ContinuousColumn(arr, weights=wt)
+    assert (nominal.weights == wt).all()
+    assert (ordinal.weights == wt).all()
+    assert (continuous.weights == wt).all()
 
 class TestDeepCopy(TestCase):
     """ Test fixture class for deep copy method """
