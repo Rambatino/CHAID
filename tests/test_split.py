@@ -16,9 +16,3 @@ def test_column_name_mappings():
         split.name_columns(column_names)
         assert split.column == column_names[split.column_id], 'Names should correctly map to column name when mapping is applied'
 
-
-def test_column_name_mappings_when_continuous_dependent_variable():
-    """ Test printing when continuous variable data passed """
-    split = CHAID.Split('col', [['mean', 32.8], ['s.t.d', 2.5]], 13.45, 0.4, 52)
-
-    assert split.groupings == "[['mean', 32.8], ['s.t.d', 2.5]]"

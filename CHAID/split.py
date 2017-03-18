@@ -10,21 +10,21 @@ class Split(object):
         The grouped variables
     split_map : array-like
         The name of the grouped variables
-    chi : float
-        The chi-square value of that split
+    score : float
+        The score value of that split
     p : float
         The p value of that split
     dof : int
         The degrees of freedom as a result of this split
     """
-    def __init__(self, column, splits, chi, p, dof):
+    def __init__(self, column, splits, score, p, dof):
         splits = splits or []
         self.surrogates = []
         self.column_id = column
         self.split_name = None
         self.splits = list(splits)
         self.split_map = [None] * len(self.splits)
-        self.chi = chi
+        self.score = score
         self.p = p
         self._dof = dof
 
@@ -45,7 +45,7 @@ class Split(object):
     def __repr__(self):
         if not self.valid():
             return '<Invalid Chaid Split>'
-        format_str = '({0.column}, p={0.p}, chi={0.chi}, groups={0.groupings})'\
+        format_str = '({0.column}, p={0.p}, score={0.score}, groups={0.groupings})'\
                      ', dof={0.dof})'
         return format_str.format(self)
 

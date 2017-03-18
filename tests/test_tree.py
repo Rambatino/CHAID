@@ -106,7 +106,7 @@ class TestSurrogate(TestCase):
         )
 
         assert split.p < split.surrogates[0].p, 'The best split should be the minimum p by default'
-        assert split.chi > split.surrogates[0].chi, 'The data picked should not allow picked split to have both p and chi less than the surrogate'
+        assert split.score > split.surrogates[0].score, 'The data picked should not allow picked split to have both p and chi less than the surrogate'
 
 def test_p_and_chi_values():
     """
@@ -121,7 +121,7 @@ def test_p_and_chi_values():
         tree.vectorised_array,
         tree.observed
     )
-    assert round(split.chi, 4) == 3.9375
+    assert round(split.score, 4) == 3.9375
     assert round(split.p, 4) == 0.0472
 
 def test_p_and_chi_values_when_weighting_applied():
@@ -141,7 +141,7 @@ def test_p_and_chi_values_when_weighting_applied():
         tree.observed
     )
 
-    assert round(split.chi, 4) == 1.6179
+    assert round(split.score, 4) == 1.6179
     assert round(split.p, 4) == 0.4453
 
 def test_correct_dof():
@@ -180,7 +180,7 @@ def test_zero_subbed_weighted_ndarry():
         tree.observed
     )
 
-    assert round(split.chi, 4) == 14.5103
+    assert round(split.score, 4) == 14.5103
     assert round(split.p, 4) == 0.0007
 
 class TestTreeGenerated(TestCase):
@@ -322,11 +322,20 @@ class TestContinuousDependentVariable(TestCase):
         self.wt = np.array(([1.0] * 60) + ([1.2] * 60))
         self.ndarr = np.array(([2, 3] * 20) + ([2, 5] * 20) + ([3, 4] * 19) + [2, 3] + [1, 2, 5] * 80 + [1, 2, 3] * 40).reshape(120, 4)
 
-    def test_min_child_node_size_does_stop_for_unweighted_case(self):
+    def test_continuous_dependent_variable(self):
         """
-        Check that minimum child node size causes the tree to
-        terminate correctly
+        Check that a tree can be built with a continuous dependent variable
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11)
+        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous')
         tree.build_tree()
-        assert True
+        assert round(tree.tree_store[0].p, 4) == 0.4119
+        assert len(tree.tree_store) == 9
+
+    def test_continuous_dependent_variable_with_weighting(self):
+        """
+        Check that a tree can be built with a continuous dependent variable
+        """
+        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
+        tree.build_tree()
+        assert round(tree.tree_store[0].p, 4) == 0.1594
+        assert len(tree.tree_store) == 9

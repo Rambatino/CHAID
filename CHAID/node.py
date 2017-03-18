@@ -1,4 +1,5 @@
 from .split import Split
+from .column import ContinuousColumn
 import numpy as np
 
 
@@ -70,18 +71,24 @@ class Node(object):
     def members(self):
         if self._members is None:
             dep_v = self.dep_v
-            metadata = dep_v.metadata
-            self._members = {}
-            for member in metadata.values():
-                self._members[member] = 0
-
-            if dep_v.weights is None:
-                counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
+            if isinstance(dep_v, ContinuousColumn):
+                self._members = {
+                    'mean': self.dep_v.arr.mean(),
+                    's.t.d': self.dep_v.arr.std()
+                }
             else:
-                counts = np.array([
-                    [i, dep_v.weights[dep_v.arr == i].sum()] for i in set(dep_v.arr)
-                ])
+                metadata = dep_v.metadata
+                self._members = {}
+                for member in metadata.values():
+                    self._members[member] = 0
 
-            self._members.update((metadata[k], v) for k, v in counts)
+                if dep_v.weights is None:
+                    counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
+                else:
+                    counts = np.array([
+                        [i, dep_v.weights[dep_v.arr == i].sum()] for i in set(dep_v.arr)
+                    ])
+
+                self._members.update((metadata[k], v) for k, v in counts)
 
         return self._members

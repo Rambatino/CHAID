@@ -43,9 +43,9 @@ class Tree(object):
         variable_types = variable_types or ['nominal'] * ndarr.shape[1]
         for ind, col_type in enumerate(variable_types):
             if col_type == 'ordinal':
-                col = OrdinalColumn(ndarr[:, ind], weights=weights)
+                col = OrdinalColumn(ndarr[:, ind])
             elif col_type == 'nominal':
-                col = NominalColumn(ndarr[:, ind], weights=weights)
+                col = NominalColumn(ndarr[:, ind])
             else:
                 raise NotImplementedError('Unknown independent variable type ' + col_type)
             self.vectorised_array.append(col)
@@ -59,7 +59,7 @@ class Tree(object):
             self.observed = ContinuousColumn(arr, weights=weights)
         else:
             raise NotImplementedError('Unknown dependent variable type ' + dep_variable_type)
-        self._stats = Stats(alpha_merge, min_child_node_size, split_threshold)
+        self._stats = Stats(alpha_merge, min_child_node_size, split_threshold, arr)
 
     def build_tree(self):
         """ Build chaid tree """

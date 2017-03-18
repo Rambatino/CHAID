@@ -244,7 +244,7 @@ class ContinuousColumn(Column):
     """
     def __init__(self, arr=None, metadata=None,
                  missing_id='<missing>', weights=None):
-        if not np.issubdtype(arr.dtype, np.integer):
+        if not np.issubdtype(arr.dtype, np.number):
             raise ValueError, 'Must only pass numerical values to create continuous column'
 
         super(self.__class__, self).__init__(arr, metadata, missing_id, weights=weights)
@@ -257,7 +257,7 @@ class ContinuousColumn(Column):
 
     def __getitem__(self, key):
         new_weights = None if self._weights is None else self._weights[key]
-        return ContinuousColumn(self._arr[key], metadata=self.metadata, substitute=False, weights=new_weights)
+        return ContinuousColumn(self._arr[key], metadata=self.metadata, weights=new_weights)
 
     def __setitem__(self, key, value):
         self._arr[key] = value

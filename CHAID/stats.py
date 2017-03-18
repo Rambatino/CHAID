@@ -38,10 +38,11 @@ class Stats(object):
     """
 
     """
-    def __init__(self, alpha_merge, min_child_node_size, split_threshold):
+    def __init__(self, alpha_merge, min_child_node_size, split_threshold, dep_population):
         self.split_threshold = 1 - split_threshold
         self.alpha_merge = alpha_merge
         self.min_child_node_size = min_child_node_size
+        self.dep_population = dep_population
 
     def best_split(self, ind, dep):
         if isinstance(dep, ContinuousColumn):
@@ -100,16 +101,16 @@ class Stats(object):
 
                     temp_split = Split(i, ind_var.groups(), chi, p_split, dof)
 
-                    better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.chi)
+                    better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)
 
                     if better_split:
                         split, temp_split = temp_split, split
 
-                    chi_threshold = self.split_threshold * split.chi
+                    chi_threshold = self.split_threshold * split.score
 
-                    if temp_split.valid() and temp_split.chi >= chi_threshold:
+                    if temp_split.valid() and temp_split.score >= chi_threshold:
                         for sur in temp_split.surrogates:
-                            if sur.column_id != i and sur.chi >= chi_threshold:
+                            if sur.column_id != i and sur.score >= chi_threshold:
                                 split.surrogates.append(sur)
 
                         temp_split.surrogates = []
@@ -127,5 +128,66 @@ class Stats(object):
             split.sub_split_values(ind[split.column_id].metadata)
         return split
 
-    def best_con_split(self, ind, dep, split_threshold):
-        return 1
+    def best_con_split(self, ind, dep):
+        split = Split(None, None, None, None, 0)
+        is_normal = stats.normaltest(self.dep_population)[1] > 0.05
+        sig_test = stats.bartlett if is_normal else stats.levene
+
+        response_set = dep.arr
+        if dep.weights is not None:
+            response_set = dep.arr * dep.weights
+
+        for i, ind_var in enumerate(ind):
+            ind_var = ind_var.deep_copy()
+            unique = np.unique(ind_var.arr)
+            keyed_set = {}
+
+            for col in unique:
+                matched_elements = np.compress(ind_var.arr == col, response_set)
+                keyed_set[col] = matched_elements
+
+            while next(ind_var.possible_groupings(), None) is not None:
+                choice, highest_p_join, split_score = None, None, None
+                for comb in ind_var.possible_groupings():
+                    col1_keyed_set = keyed_set[comb[0]]
+                    col2_keyed_set = keyed_set[comb[1]]
+                    dof = len(np.unique(np.concatenate((col1_keyed_set, col2_keyed_set)))) - 1
+                    score, p_split = sig_test(col1_keyed_set, col2_keyed_set)
+
+                    if choice is None or p_split > highest_p_join or (p_split == highest_p_join and score > split_score):
+                        choice, highest_p_join, split_score = comb, p_split, score
+
+                sufficient_split = highest_p_join < self.alpha_merge and all(
+                    len(node_v) >= self.min_child_node_size for node_v in keyed_set.values()
+                )
+
+                if sufficient_split and len(keyed_set.values()) > 1:
+                    dof = len(np.unique(np.concatenate(keyed_set.values()))) - 1
+                    score, p_split = sig_test(*keyed_set.values())
+
+                    temp_split = Split(i, ind_var.groups(), score, p_split, dof)
+
+                    better_split = not split.valid() or p_split < split.p or (p_split == split.p and score > split.score)
+
+                    if better_split:
+                        split, temp_split = temp_split, split
+
+                    score_threshold = self.split_threshold * split.score
+
+                    if temp_split.valid() and temp_split.score >= score_threshold:
+                        for sur in temp_split.surrogates:
+                            if sur.column_id != i and sur.score >= score_threshold:
+                                split.surrogates.append(sur)
+
+                        temp_split.surrogates = []
+                        split.surrogates.append(temp_split)
+
+                    break
+                ind_var.group(choice[0], choice[1])
+
+                keyed_set[choice[0]] = np.concatenate((keyed_set[choice[1]], keyed_set[choice[0]]))
+                del keyed_set[choice[1]]
+
+        if split.valid():
+            split.sub_split_values(ind[split.column_id].metadata)
+        return split
