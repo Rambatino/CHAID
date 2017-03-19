@@ -34,7 +34,8 @@ from CHAID import Tree
 ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
 df = pd.DataFrame(ndarr)
 df.columns = ['a', 'b', 'c']
-df['d'] = np.array(([1] * 5) + ([2] * 5))
+arr = np.array(([1] * 5) + ([2] * 5))
+df['d'] = arr
 
 >>> df
    a  b  c  d
@@ -53,11 +54,13 @@ df['d'] = np.array(([1] * 5) + ([2] * 5))
 independent_variable_columns = ['a', 'b', 'c']
 dep_variable = 'd'
 
-## create the Tree
+## create the Tree via pandas
 tree = Tree.from_pandas_df(df, independent_variable_columns, dep_variable)
+## create the same tree, but without pandas helper
+tree = Tree(ndarr, arr, split_titles=['a', 'b', 'c'])
 
 >>> tree.print_tree()
-([], {1: 5, 2: 5}, (a, p=0.001565402258, score=10.0, groups=[[1], [2]]), dof=1))
+([], {1: 5, 2: 5}, ('a', p=0.001565402258, score=10.0, groups=[[1], [2]]), dof=1))
 ├── ([1], {1: 5, 2: 0}, <Invalid Chaid Split>)
 └── ([2], {1: 0, 2: 5}, <Invalid Chaid Split>)
 
@@ -65,7 +68,7 @@ tree = Tree.from_pandas_df(df, independent_variable_columns, dep_variable)
 first_node = tree.tree_store[0]
 
 >>> first_node
-([], {1: 5, 2: 5}, (a, p=0.001565402258, score=10.0, groups=[[1], [2]]), dof=1))
+([], {1: 5, 2: 5}, ('a', p=0.001565402258, score=10.0, groups=[[1], [2]]), dof=1))
 
 ## the properties of the node can be access like
 >>> first_node.members
@@ -105,7 +108,7 @@ df['d'] = np.random.normal(300, 100, 10)
 8  2  2  3  275.925549
 9  2  2  3  238.471850
 
-## create the Tree
+## create the Tree via pandas
 tree = Tree.from_pandas_df(df, independent_variable_columns, dep_variable, dep_variable_type='continuous')
 
 ## print the tree (though not enough power to split)
