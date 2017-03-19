@@ -1,5 +1,5 @@
 """
-Testing module for the class CHAID
+Testing module for the class Tree
 """
 from unittest import TestCase
 import numpy as np
@@ -290,9 +290,9 @@ class TestStoppingRules(TestCase):
 
 
 class TestContinuousDependentVariable(TestCase):
-    """ Testing that stopping rules are being applied correctly """
+    """ Testing that trees based on a continuous dependent variable work"""
     def setUp(self):
-        """ Setup test data for bug fixes """
+        """ Setup test data for continuous data """
         self.random_arr = np.array(
            [0.23198952,  0.26550251,  0.96461057,  0.13733767,  0.76674088,
             0.60637166,  0.18822053,  0.78785506,  0.47786053,  0.44448984,

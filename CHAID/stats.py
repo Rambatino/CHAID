@@ -45,7 +45,7 @@ class Stats(object):
         self.dep_population = dep_population
 
     def best_split(self, ind, dep):
-        """ detrmine which splitting function to apply """
+        """ determine which splitting function to apply """
         if isinstance(dep, ContinuousColumn):
             return self.best_con_split(ind, dep)
         else:
@@ -131,7 +131,7 @@ class Stats(object):
         return split
 
     def best_con_split(self, ind, dep):
-        """ detrmine best continuous variable split """
+        """ determine best continuous variable split """
         split = Split(None, None, None, None, 0)
         is_normal = stats.normaltest(self.dep_population)[1] > 0.05
         sig_test = stats.bartlett if is_normal else stats.levene
@@ -153,7 +153,7 @@ class Stats(object):
                 for comb in ind_var.possible_groupings():
                     col1_keyed_set = keyed_set[comb[0]]
                     col2_keyed_set = keyed_set[comb[1]]
-                    dof = len(np.unique(np.concatenate((col1_keyed_set, col2_keyed_set)))) - 1
+                    dof = len(np.concatenate((col1_keyed_set, col2_keyed_set))) - 2
                     score, p_split = sig_test(col1_keyed_set, col2_keyed_set)
 
                     if choice is None or p_split > highest_p_join or (p_split == highest_p_join and score > split_score):
@@ -164,7 +164,7 @@ class Stats(object):
                 )
 
                 if sufficient_split and len(keyed_set.values()) > 1:
-                    dof = len(np.concatenate(list(keyed_set.values()))) - 1
+                    dof = len(np.concatenate(list(keyed_set.values()))) - 2
                     score, p_split = sig_test(*keyed_set.values())
 
                     temp_split = Split(i, ind_var.groups(), score, p_split, dof)

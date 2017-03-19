@@ -1,5 +1,5 @@
 """
-Testing module for the class Split
+Testing module for the class Node
 """
 
 from setup_tests import CHAID

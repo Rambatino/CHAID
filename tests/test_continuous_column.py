@@ -1,14 +1,11 @@
 """
-Testing module for the class Continuous
+Testing module for the class ContinuousColumn
 """
 from unittest import TestCase
 import numpy as np
 from numpy import nan
 from setup_tests import list_ordered_equal, CHAID
 import pytest
-
-NAN = float('nan')
-
 
 def test_chaid_vector_converts_strings():
     """

@@ -6,8 +6,6 @@ import numpy as np
 from numpy import nan
 from setup_tests import list_ordered_equal, CHAID
 
-NAN = float('nan')
-
 
 def test_chaid_vector_converts_strings():
     """
@@ -40,7 +38,7 @@ def test_chaid_vector_with_ints_and_nan():
     """
     Check that the metadata is correct when NominalColumns are created from ints
     """
-    arr = np.array([1, 2, NAN])
+    arr = np.array([1, 2, np.nan])
     vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1, -1])), \
@@ -68,7 +66,7 @@ def test_chaid_vector_with_floats_and_nan():
     Check that the metadata is correct when NominalColumns are created from
     floats
     """
-    arr = np.array([1.0, 2.0, NAN])
+    arr = np.array([1.0, 2.0, np.nan])
     vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1, -1])), \
@@ -96,7 +94,7 @@ def test_chaid_vector_with_dtype_object_and_nans():
     Check that the metadata is correct when NominalColumns are created from
     objects
     """
-    arr = np.array([1, 2, NAN], dtype="object")
+    arr = np.array([1, 2, np.nan], dtype="object")
     vector = CHAID.NominalColumn(arr)
 
     assert np.array_equal(vector.arr, np.array([0, 1, -1])), \
