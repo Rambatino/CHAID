@@ -247,7 +247,7 @@ class ContinuousColumn(Column):
         if not np.issubdtype(arr.dtype, np.number):
             raise ValueError('Must only pass numerical values to create continuous column')
 
-        super(self.__class__, self).__init__(arr, metadata, missing_id, weights=weights)
+        super(self.__class__, self).__init__(np.nan_to_num(arr), metadata, missing_id, weights=weights)
 
     def deep_copy(self):
         """

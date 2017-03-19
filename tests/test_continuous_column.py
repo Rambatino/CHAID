@@ -18,7 +18,6 @@ def test_chaid_vector_converts_strings():
         vector = CHAID.ContinuousColumn(np.array(['2', '4']))
         assert excinfo.value.message == 'Must only pass numerical values to create continuous column'
 
-
 def test_chaid_vector_with_dtype_object():
     """
     Check that error raised when object column supplied
@@ -26,3 +25,11 @@ def test_chaid_vector_with_dtype_object():
     with pytest.raises(ValueError) as excinfo:
         vector = CHAID.ContinuousColumn(np.array(['2', '4'], dtype="object"))
         assert excinfo.value.message == 'Must only pass numerical values to create continuous column'
+
+def test_nans_filled_with_zero():
+    """
+    Check that nans are filled with zero
+    """
+    arr = np.array([np.nan, 1., 2., 3.])
+    assert (CHAID.ContinuousColumn(arr).arr == np.array([0., 1., 2., 3.])).all()
+
