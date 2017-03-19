@@ -64,6 +64,10 @@ tree = Tree(ndarr, arr, split_titles=['a', 'b', 'c'])
 ├── ([1], {1: 5, 2: 0}, <Invalid Chaid Split>)
 └── ([2], {1: 0, 2: 5}, <Invalid Chaid Split>)
 
+## to get a LibTree object,
+>>> tree.to_tree()
+<treelib.tree.Tree object at 0x114e2e350>
+
 ## the different nodes of the tree can be accessed like
 first_node = tree.tree_store[0]
 
@@ -134,13 +138,13 @@ Running from the Command Line
 
 You can play around with the repo by cloning and running this from the command line:
 
-```
+``` python
 python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05
 ```
 
 It calls the `print_tree()` method, which prints the tree to terminal:
 
-```
+``` python
 ([], {0: 809, 1: 500}, (sex, p=1.47145310169e-81, chi=365.886947811, groups=[['female'], ['male']]))
 ├── (['female'], {0: 127, 1: 339}, (embarked, p=9.17624191599e-07, chi=24.0936494474, groups=[['C', '<missing>'], ['Q', 'S']]))
 │   ├── (['C', '<missing>'], {0: 11, 1: 104}, <Invalid Chaid Split>)
@@ -149,7 +153,24 @@ It calls the `print_tree()` method, which prints the tree to terminal:
     ├── (['C'], {0: 109, 1: 48}, <Invalid Chaid Split>)
     └── (['Q', 'S'], {0: 573, 1: 113}, <Invalid Chaid Split>)
 ```
-To get a LibTree object, call to_tree() on the CHAID instance
+
+or to test the continuous dependent variable case:
+
+``` python
+python -m CHAID tests/data/titanic.csv fare sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05 --dependent-variable-type continuous
+
+([], {'s.t.d': 51.727293077231302, 'mean': 33.270043468296414}, (embarked, p=8.46027456424e-24, score=55.3476155546, groups=[['C'], ['Q', '<missing>'], ['S']]), dof=1308))
+├── (['C'], {'s.t.d': 84.029951444532529, 'mean': 62.336267407407405}, (sex, p=0.0293299541476, score=4.7994643184, groups=[['female'], ['male']]), dof=269))
+│   ├── (['female'], {'s.t.d': 90.687664523113241, 'mean': 81.12853982300885}, <Invalid Chaid Split>)
+│   └── (['male'], {'s.t.d': 76.07029674707077, 'mean': 48.810619108280257}, <Invalid Chaid Split>)
+├── (['Q', '<missing>'], {'s.t.d': 15.902095006812658, 'mean': 13.490467999999998}, <Invalid Chaid Split>)
+└── (['S'], {'s.t.d': 37.066877311088625, 'mean': 27.388825164113786}, (sex, p=3.43875930713e-07, score=26.3745361415, groups=[['female'], ['male']]), dof=913))
+    ├── (['female'], {'s.t.d': 48.971933059814894, 'mean': 39.339305154639177}, <Invalid Chaid Split>)
+    └── (['male'], {'s.t.d': 28.242580058030033, 'mean': 21.806819261637241}, <Invalid Chaid Split>)
+```
+
+Note that the frequency of the dependent variable is replaced with the standard deviation and mean of the continuous set at each node and that any NaNs in the dependent set are automatically converted to 0.0.
+
 Parameters
 ----------
 Run `python -m CHAID -h` to see description of command line arguments
