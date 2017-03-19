@@ -128,7 +128,7 @@ Parameters
   * `min_child_node_size: Float (default = 0)`: If the split of a node results in a child node whose node size is less than `min_child_node_size`, child nodes that have too few cases (as with this minimum) will merge with the most similar child node as measured by the largest of the p-values. However, if the resulting number of child nodes is 1, the node will not be split.
   * `split_threshold: Float (default = 0)`: The split threshold when bucketing root node surrogate splits
   * `weight: String (default = None)`: The name of the weight column
-  * `dep_variable_type (default = categorical, other_options = continuous)`: Whether the dependent variable is categorical or continuous
+  * `dep_variable_type (default = categorical, other_options = continuous)`: Whether the dependent variable is 'categorical' or 'continuous'
 Running from the Command Line
 -----------------------------
 
