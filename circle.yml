@@ -1,9 +1,7 @@
 dependencies:
   override:
-    - pip install tox tox-pyenv detox codecov
+    - pip install tox tox-pyenv detox
     - pyenv local 2.7.9 3.4.3 3.5.0
 test:
   override:
-    - detox
-  post:
-    - codecov
+    - tox
