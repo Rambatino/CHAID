@@ -28,7 +28,7 @@ class Node(object):
     is_terminal : boolean
         Whether the node is terminal
     """
-    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None, is_terminal=False):
+    def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None):
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
         self.split = split or Split(None, None, None, None, 0)
@@ -37,7 +37,6 @@ class Node(object):
         self.parent = parent
         self.dep_v = dep_v
         self._members = None
-        self.is_terminal = is_terminal
 
     def __hash__(self):
         return hash(self.__dict__)
@@ -66,6 +65,10 @@ class Node(object):
     @property
     def split_variable(self):
         return self.split.column
+
+    @property
+    def is_terminal(self):
+        return not self.split.is_valid()
 
     @property
     def members(self):

@@ -112,7 +112,7 @@ class Tree(object):
 
         if self.max_depth < depth:
             terminal_node = Node(choices=parent_decisions, node_id=self.node_count,
-                                 parent=parent, indices=rows, dep_v=dep, is_terminal=True)
+                                 parent=parent, indices=rows, dep_v=dep)
             self.tree_store.append(terminal_node)
             self.node_count += 1
             return self.tree_store
@@ -129,7 +129,6 @@ class Tree(object):
         self.node_count += 1
 
         if not split.valid():
-            node.is_terminal = True
             return self.tree_store
 
         for index, choices in enumerate(split.splits):
@@ -142,8 +141,7 @@ class Tree(object):
                           parent_decisions=split.split_map[index])
             else:
                 terminal_node = Node(choices=split.split_map[index], node_id=self.node_count,
-                                     parent=parent, indices=row_slice, dep_v=dep_slice,
-                                     is_terminal=True)
+                                     parent=parent, indices=row_slice, dep_v=dep_slice)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
