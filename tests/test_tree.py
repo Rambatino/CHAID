@@ -183,6 +183,22 @@ def test_zero_subbed_weighted_ndarry():
     assert round(split.score, 4) == 14.5103
     assert round(split.p, 4) == 0.0007
 
+def test_min_child_node_size_is_30():
+    """
+    Test that the min_child_node_size is set to 30 and prevents
+    splitting if the parent's child would have less than 30 data points
+    """
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9)
+    tree.build_tree()
+
+    assert len(tree.tree_store) == 1
+
+
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """
     def setUp(self):
