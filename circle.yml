@@ -4,6 +4,6 @@ dependencies:
     - pyenv local 2.7.9 3.4.3 3.5.0
 test:
   override:
-    - detox
+    - tox
   post:
     - codecov
