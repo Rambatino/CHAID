@@ -188,7 +188,7 @@ class Tree(object):
         """ Determines which rows fall into which node """
         pred = np.zeros(self.data_size)
         for node in self:
-            if node.is_terminal():
+            if node.is_terminal:
                 pred[node.indices] = node.node_id
         return pred
 
@@ -202,7 +202,7 @@ class Tree(object):
             return ValueError("Cannot make model predictions on a continuous scale")
         pred = np.zeros(self.data_size)
         for node in self:
-            if node.is_terminal():
+            if node.is_terminal:
                 pred[node.indices] = max(node.members, key=node.members.get)
         return pred
 
