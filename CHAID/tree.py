@@ -1,41 +1,9 @@
-import collections as cl
 import numpy as np
-from scipy import stats
 from treelib import Tree as TreeLibTree
 from .node import Node
 from .split import Split
-from .column import NominalColumn, OrdinalColumn
-
-
-def chisquare(n_ij, weighted):
-    """
-    Calculates the chisquare for a matrix of ind_v x dep_v
-    for the unweighted and SPSS weighted case
-    """
-    if weighted:
-        m_ij = n_ij / n_ij
-
-        nan_mask = np.isnan(m_ij)
-        m_ij[nan_mask] = 0.000001  # otherwise it breaks the chi-squared test
-
-        w_ij = m_ij
-        n_ij_col_sum = n_ij.sum(axis=1)
-        n_ij_row_sum = n_ij.sum(axis=0)
-        alpha, beta, eps = (1, 1, 1)
-        while eps > 10e-6:
-            alpha = alpha * np.vstack(n_ij_col_sum / m_ij.sum(axis=1))
-            beta = n_ij_row_sum / (alpha * w_ij).sum(axis=0)
-            eps = np.max(np.absolute(w_ij * alpha * beta - m_ij))
-            m_ij = w_ij * alpha * beta
-
-    else:
-        m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
-
-    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-    chi, p_val = stats.chisquare(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
-
-    return (chi, p_val, dof)
-
+from .column import NominalColumn, OrdinalColumn, ContinuousColumn
+from .stats import Stats
 
 class Tree(object):
     """
@@ -67,11 +35,9 @@ class Tree(object):
     """
     def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
                  min_child_node_size=0, split_titles=None, split_threshold=0, weights=None,
-                 variable_types=None):
-        self.alpha_merge = alpha_merge
+                 variable_types=None, dep_variable_type='categorical'):
         self.max_depth = max_depth
         self.min_parent_node_size = min_parent_node_size
-        self.min_child_node_size = min_child_node_size
         self.split_titles = split_titles or []
         self.vectorised_array = []
         variable_types = variable_types or ['nominal'] * ndarr.shape[1]
@@ -81,26 +47,29 @@ class Tree(object):
             elif col_type == 'nominal':
                 col = NominalColumn(ndarr[:, ind])
             else:
-                raise NotImplementedError('Unknown type ' + col_type)
+                raise NotImplementedError('Unknown independent variable type ' + col_type)
             self.vectorised_array.append(col)
 
         self.data_size = ndarr.shape[0]
         self.node_count = 0
         self.tree_store = None
-        self.observed = NominalColumn(arr)
-        self.weights = weights
-        self.split_threshold = split_threshold
+        if dep_variable_type == 'categorical':
+            self.observed = NominalColumn(arr, weights=weights)
+        elif dep_variable_type == 'continuous':
+            self.observed = ContinuousColumn(arr, weights=weights)
+        else:
+            raise NotImplementedError('Unknown dependent variable type ' + dep_variable_type)
+        self._stats = Stats(alpha_merge, min_child_node_size, split_threshold, arr)
 
     def build_tree(self):
         """ Build chaid tree """
         self.tree_store = []
-        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed,
-                  wt=self.weights)
+        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed)
 
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2,
                        min_parent_node_size=30, min_child_node_size=0, split_threshold=0,
-                       weight=None, variable_types=None):
+                       weight=None, variable_types=None, dep_variable_type='categorical'):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
@@ -135,26 +104,25 @@ class Tree(object):
             variable_types = [variable_types[col] for col in i_variables]
         return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
                     min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
-                    variable_types)
+                    variable_types, dep_variable_type)
 
-    def node(self, rows, ind, dep, wt=None, depth=0, parent=None, parent_decisions=None):
+    def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
         depth += 1
 
         if self.max_depth < depth:
             terminal_node = Node(choices=parent_decisions, node_id=self.node_count,
-                                 parent=parent, indices=rows, dep_v=dep, is_terminal=True,
-                                 weights=wt)
+                                 parent=parent, indices=rows, dep_v=dep, is_terminal=True)
             self.tree_store.append(terminal_node)
             self.node_count += 1
             return self.tree_store
 
-        split = self.generate_best_split(ind, dep, wt)
+        split = self.generate_best_split(ind, dep)
 
         split.name_columns(self.split_titles)
 
         node = Node(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
-                    parent=parent, split=split, weights=wt)
+                    parent=parent, split=split)
 
         self.tree_store.append(node)
         parent = self.node_count
@@ -169,97 +137,20 @@ class Tree(object):
             dep_slice = dep[correct_rows]
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
-            weight_slice = wt[correct_rows] if wt is not None else None
             if self.min_parent_node_size < len(dep_slice.arr):
                 self.node(row_slice, ind_slice, dep_slice, depth=depth, parent=parent,
-                          parent_decisions=split.split_map[index], wt=weight_slice)
+                          parent_decisions=split.split_map[index])
             else:
                 terminal_node = Node(choices=split.split_map[index], node_id=self.node_count,
                                      parent=parent, indices=row_slice, dep_v=dep_slice,
-                                     is_terminal=True, weights=weight_slice)
+                                     is_terminal=True)
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
 
-    def generate_best_split(self, ind, dep, wt=None):
+    def generate_best_split(self, ind, dep):
         """ internal method to generate the best split """
-        split = Split(None, None, None, None, 0)
-        relative_split_threshold = 1 - self.split_threshold
-        all_dep = np.unique(dep.arr)
-        for i, ind_var in enumerate(ind):
-            ind_var = ind_var.deep_copy()
-            unique = np.unique(ind_var.arr)
-
-            freq = {}
-            if wt is None:
-                for col in unique:
-                    counts = np.unique(np.compress(ind_var.arr == col, dep.arr), return_counts=True)
-                    freq[col] = cl.defaultdict(int)
-                    freq[col].update(np.transpose(counts))
-            else:
-                for col in unique:
-                    counts = np.unique(np.compress(ind_var.arr == col, dep.arr), return_counts=True)
-                    freq[col] = cl.defaultdict(int)
-                    for dep_v in all_dep:
-                        freq[col][dep_v] = wt[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
-
-            while next(ind_var.possible_groupings(), None) is not None:
-                choice, highest_p_join, split_chi = None, None, None
-                for comb in ind_var.possible_groupings():
-                    col1_freq = freq[comb[0]]
-                    col2_freq = freq[comb[1]]
-
-                    keys = set(col1_freq.keys()).union(col2_freq.keys())
-
-                    n_ij = np.array([
-                        [col1_freq.get(k, 0) for k in keys],
-                        [col2_freq.get(k, 0) for k in keys]
-                    ])
-
-                    chi, p_split, dof = chisquare(n_ij, wt is not None)
-
-                    if choice is None or p_split > highest_p_join or (p_split == highest_p_join and chi > split_chi):
-                        choice, highest_p_join, split_chi = comb, p_split, chi
-
-                sufficient_split = highest_p_join < self.alpha_merge and all(
-                    sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()
-                )
-                if sufficient_split and len(freq.values()) > 1:
-                    n_ij = np.array([
-                        [f[dep_val] for dep_val in all_dep] for f in freq.values()
-                    ])
-
-                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                    chi, p_split, dof = chisquare(n_ij, wt is not None)
-
-                    temp_split = Split(i, ind_var.groups(), chi, p_split, dof)
-
-                    better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.chi)
-
-                    if better_split:
-                        split, temp_split = temp_split, split
-
-                    chi_threshold = relative_split_threshold * split.chi
-
-                    if temp_split.valid() and temp_split.chi >= chi_threshold:
-                        for sur in temp_split.surrogates:
-                            if sur.column_id != i and sur.chi >= chi_threshold:
-                                split.surrogates.append(sur)
-
-                        temp_split.surrogates = []
-                        split.surrogates.append(temp_split)
-
-                    break
-
-                ind_var.group(choice[0], choice[1])
-
-                for val, count in freq[choice[1]].items():
-                    freq[choice[0]][val] += count
-                del freq[choice[1]]
-
-        if split.valid():
-            split.sub_split_values(ind[split.column_id].metadata)
-        return split
+        return self._stats.best_split(ind, dep)
 
     def to_tree(self):
         """ returns a TreeLib tree """
@@ -309,6 +200,8 @@ class Tree(object):
         categorical dependent variable in the
         terminal node where that row fell
         """
+        if isinstance(self.observed, ContinuousColumn):
+            return ValueError("Cannot make model predictions on a continuous scale")
         pred = np.zeros(self.data_size)
         for node in self:
             if node.is_terminal:
@@ -320,6 +213,4 @@ class Tree(object):
         Calculates the fraction of risk associated
         with the model predictions
         """
-        model_predictions = self.model_predictions()
-        observed = self.observed.arr
-        return 1 - float((model_predictions == observed).sum()) / self.data_size
+        return 1 - float((self.model_predictions() == self.observed.arr).sum()) / self.data_size
