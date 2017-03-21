@@ -1,4 +1,20 @@
 <h2>__A python implementation of Chi-Squared Automatic Interaction Detection (CHAID)__
+###  3.0.0 (2017-03-20)
+
+- Enabled continuous dependent variables to be passed through CHAID using Bartlett's and Levene's tests
+  ([af3e3b1](https://github.com/Rambatino/CHAID/commit/af3e3b15aa9c14995526916be50f7b61a8d4cd27))
+
+- Min Child Node Size now defaults to 30
+  ([ba5545e](https://github.com/Rambatino/CHAID/commit/ba5545e2929d7555817f8f53babad9cb2731e138))
+
+- Added codecov to PRs
+  ([2cf68d9](https://github.com/Rambatino/CHAID/commit/2cf68d94ca9162c92f43ab1bc8ed50db6758fccc))
+
+- Removed Node's `is_terminal` constructor key and created the property via a decorator based on the split object it contains
+  ([07b0830](https://github.com/Rambatino/CHAID/commit/07b0830e106ad0aee5e9930e6647ae150867b02d))
+
+- Added method to return the classification rules of the tree or node
+  ([70290f2](https://github.com/Rambatino/CHAID/commit/70290f2b6613fd2ba92efef27bb6a717d6a6ce18))
 
 ###  2.1.0 (2016-08-17)
 
