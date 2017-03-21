@@ -1,3 +1,8 @@
+machine:
+  pre:
+    - cd /opt/circleci/.pyenv; git pull
+  python:
+    version: 3.6.0
 dependencies:
   override:
     - pip install tox tox-pyenv detox pytest-cov numpy pandas savReaderWriter treelib scipy codecov
