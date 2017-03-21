@@ -77,7 +77,7 @@ first_node = tree.tree_store[0]
 ## the properties of split can be accessed like
 >>> first_node.split.p
 0.001565402258002549
- first_node.split.score
+>>> first_node.split.score
 10.0
 ```
 
