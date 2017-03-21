@@ -1,8 +1,4 @@
-<img src="https://img.shields.io/pypi/v/CHAID.svg">
-<img src="https://img.shields.io/pypi/pyversions/pytest.svg">
-<img src="https://circleci.com/gh/Rambatino/CHAID.png?style=shield&circle-token=031aab51ad1dea4a698d02f02288887f06c1a9ef">
-<a href="https://www.quantifiedcode.com/app/project/7400e498230e4df6b7aa00d4064c5f93"><img src="https://www.quantifiedcode.com/api/v1/project/7400e498230e4df6b7aa00d4064c5f93/badge.svg" alt="Code issues"/></a>
-<a href="https://codecov.io/gh/Rambatino/CHAID"><img src="https://codecov.io/gh/Rambatino/CHAID/branch/master/graph/badge.svg" alt="Codecov" /></a>
+<img src="https://img.shields.io/pypi/v/CHAID.svg"><img src="https://img.shields.io/pypi/pyversions/pytest.svg"><img src="https://circleci.com/gh/Rambatino/CHAID.png?style=shield&circle-token=031aab51ad1dea4a698d02f02288887f06c1a9ef"><a href="https://www.quantifiedcode.com/app/project/7400e498230e4df6b7aa00d4064c5f93"><img src="https://www.quantifiedcode.com/api/v1/project/7400e498230e4df6b7aa00d4064c5f93/badge.svg" alt="Code issues"/></a><a href="https://codecov.io/gh/Rambatino/CHAID"><img src="https://codecov.io/gh/Rambatino/CHAID/branch/master/graph/badge.svg" alt="Codecov" /></a>
 
 Chi-Squared Automatic Inference Detection
 =========================================
@@ -158,7 +154,9 @@ or to test the continuous dependent variable case:
 
 ```
 python -m CHAID tests/data/titanic.csv fare sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05 --dependent-variable-type continuous
+```
 
+``` python
 ([], {'s.t.d': 51.727293077231302, 'mean': 33.270043468296414}, (embarked, p=8.46027456424e-24, score=55.3476155546, groups=[['C'], ['Q', '<missing>'], ['S']]), dof=1308))
 ├── (['C'], {'s.t.d': 84.029951444532529, 'mean': 62.336267407407405}, (sex, p=0.0293299541476, score=4.7994643184, groups=[['female'], ['male']]), dof=269))
 │   ├── (['female'], {'s.t.d': 90.687664523113241, 'mean': 81.12853982300885}, <Invalid Chaid Split>)
