@@ -288,4 +288,4 @@ class ContinuousColumn(Column):
         """
         Returns a string representing the type
         """
-        return 'continuious'
+        return 'continuous'
