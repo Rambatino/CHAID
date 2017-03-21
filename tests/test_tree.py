@@ -6,6 +6,63 @@ import numpy as np
 from setup_tests import list_ordered_equal, list_unordered_equal, CHAID, ROOT_FOLDER
 import pandas as pd
 
+
+class TestClassificationRules(TestCase):
+    def setUp(self):
+        invalid_split = CHAID.Split(None, None, 0, 1, 0)
+        self.tree = CHAID.Tree(np.array([[1]]), np.array([1]))
+        self.tree.tree_store = [
+            CHAID.Node(
+                node_id=0,
+                split=CHAID.Split('a', [[1], [2]], 1, 0.2, 2)
+            ),
+            CHAID.Node(node_id=1, split=invalid_split, choices=[1], parent=0),
+            CHAID.Node(
+                node_id=2,
+                split=CHAID.Split('c', [[3]], 1, 0.2, 2),
+                choices=[2],
+                parent=0
+            )
+        ]
+        self.last_node = CHAID.Node(
+            node_id=3,
+            split=invalid_split,
+            choices=[3],
+            parent=2
+        )
+        self.tree.tree_store.append(self.last_node)
+
+    def test_single_path(self):
+        expected_rules = [
+            {
+                'node': 3,
+                'rules': [
+                    {'data': [3], 'variable': 'c'},
+                    {'data': [2], 'variable': 'a'}
+                ]
+            }
+        ]
+        assert list_unordered_equal(self.tree.classification_rules(self.last_node), expected_rules), "Couldn't find path to determine rules from specified node"
+
+    def test_all_paths(self):
+        expected_rules = [
+            {
+                'node': 3,
+                'rules': [
+                    {'data': [3], 'variable': 'c'},
+                    {'data': [2], 'variable': 'a'}
+                ]
+            },
+            {
+                'node': 1,
+                'rules': [
+                    {'data': [1], 'variable': 'a'}
+                ]
+            }
+        ]
+        assert list_unordered_equal(self.tree.classification_rules(), expected_rules), "Couldn't find path to determine rules from all terminal nodes"
+
+
 def test_best_split_unique_values():
     """
     Test passing in a perfect split data, with no catagory merges needed
@@ -72,6 +129,7 @@ def test_best_split_with_combination():
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
     assert split.p < 0.015
 
+
 class TestSurrogate(TestCase):
     """ Test case class to test surrogate detection """
     def setUp(self):
@@ -108,6 +166,7 @@ class TestSurrogate(TestCase):
         assert split.p < split.surrogates[0].p, 'The best split should be the minimum p by default'
         assert split.score > split.surrogates[0].score, 'The data picked should not allow picked split to have both p and chi less than the surrogate'
 
+
 def test_p_and_chi_values():
     """
     Check chi and p value against hand calculated values
@@ -123,6 +182,7 @@ def test_p_and_chi_values():
     )
     assert round(split.score, 4) == 3.9375
     assert round(split.p, 4) == 0.0472
+
 
 def test_p_and_chi_values_when_weighting_applied():
     """
@@ -144,6 +204,7 @@ def test_p_and_chi_values_when_weighting_applied():
     assert round(split.score, 4) == 1.6179
     assert round(split.p, 4) == 0.4453
 
+
 def test_correct_dof():
     """
     Check the degrees of freedom is correct
@@ -161,6 +222,7 @@ def test_correct_dof():
     )
 
     assert split.dof == (len(set(gender)) - 1) * (len(set(income)) - 1)
+
 
 def test_zero_subbed_weighted_ndarry():
     """
@@ -182,6 +244,7 @@ def test_zero_subbed_weighted_ndarry():
 
     assert round(split.score, 4) == 14.5103
     assert round(split.p, 4) == 0.0007
+
 
 def test_min_child_node_size_is_30():
     """
@@ -222,10 +285,11 @@ class TestTreeGenerated(TestCase):
         self.tree.build_tree()
         assert self.tree.tree_store is not None
 
+
 class TestComplexStructures(TestCase):
     """ Test case class to utilise logic only exposed from large datasets """
     # def setUp(self):
-        # self.df = pd.read_csv(ROOT_FOLDER + '/tests/data/CHAID.csv')
+    #    self.df = pd.read_csv(ROOT_FOLDER + '/tests/data/CHAID.csv')
 
     def test_p_and_chi_values_selectivity(self):
         """
@@ -241,6 +305,7 @@ class TestComplexStructures(TestCase):
         #     tree.observed
         # )
         assert True
+
 
 class TestBugFixes(TestCase):
     """ Specific tests for bug fixes """
@@ -259,6 +324,7 @@ class TestBugFixes(TestCase):
         tree.build_tree()
         assert tree.tree_store[3].members == {1: 0, 2: 1.2}
         assert tree.tree_store[5].members == {1: 5.0, 2: 6.0}
+
 
 class TestStoppingRules(TestCase):
     """ Testing that stopping rules are being applied correctly """

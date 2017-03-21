@@ -138,7 +138,7 @@ Running from the Command Line
 
 You can play around with the repo by cloning and running this from the command line:
 
-``` python
+```
 python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05
 ```
 
@@ -156,7 +156,7 @@ It calls the `print_tree()` method, which prints the tree to terminal:
 
 or to test the continuous dependent variable case:
 
-``` python
+```
 python -m CHAID tests/data/titanic.csv fare sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05 --dependent-variable-type continuous
 
 ([], {'s.t.d': 51.727293077231302, 'mean': 33.270043468296414}, (embarked, p=8.46027456424e-24, score=55.3476155546, groups=[['C'], ['Q', '<missing>'], ['S']]), dof=1308))
@@ -170,6 +170,23 @@ python -m CHAID tests/data/titanic.csv fare sex embarked --max-depth 4 --min-par
 ```
 
 Note that the frequency of the dependent variable is replaced with the standard deviation and mean of the continuous set at each node and that any NaNs in the dependent set are automatically converted to 0.0.
+
+Generating Splitting Rules
+----------
+Append `--rules` to the cli or call `tree.classification_rules(node)` (either pass in the node or if node is None then it will return all splitting rules)
+
+```
+python -m CHAID tests/data/titanic.csv fare sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05 --dependent-variable-type continuous --rules
+```
+
+``` python
+{'node': 2, 'rules': [{'variable': 'sex', 'data': ['female']}, {'variable': 'embarked', 'data': ['C']}]}
+{'node': 3, 'rules': [{'variable': 'sex', 'data': ['male']}, {'variable': 'embarked', 'data': ['C']}]}
+{'node': 4, 'rules': [{'variable': 'embarked', 'data': ['Q', '<missing>']}]}
+{'node': 6, 'rules': [{'variable': 'sex', 'data': ['female']}, {'variable': 'embarked', 'data': ['S']}]}
+{'node': 7, 'rules': [{'variable': 'sex', 'data': ['male']}, {'variable': 'embarked', 'data': ['S']}]}
+```
+
 
 Parameters
 ----------
@@ -196,6 +213,5 @@ Caveats
 Upcoming Features
 -------
 
-* Splitting Rules (under development)
 * Accuracy Estimation using Machine Learning techniques on the data
 * Binning of continuous independent variables

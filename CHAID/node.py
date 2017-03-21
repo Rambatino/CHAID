@@ -68,7 +68,7 @@ class Node(object):
 
     @property
     def is_terminal(self):
-        return not self.split.is_valid()
+        return not self.split.valid()
 
     @property
     def members(self):
