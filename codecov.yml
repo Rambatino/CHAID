@@ -1,0 +1,5 @@
+ignore:
+  - "CHAID/__init__.py"
+  - "CHAID/__main__.py"
+  - "tests/"
+  - "setup.py"

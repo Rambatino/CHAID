@@ -5,6 +5,7 @@ from unittest import TestCase
 import numpy as np
 from setup_tests import list_ordered_equal, list_unordered_equal, CHAID, ROOT_FOLDER
 import pandas as pd
+from treelib import Tree as TreeLibTree
 
 
 class TestClassificationRules(TestCase):
@@ -261,6 +262,20 @@ def test_min_child_node_size_is_30():
 
     assert len(tree.tree_store) == 1
 
+def test_to_tree_returns_a_tree():
+    """
+    Test that the to_tree() method returns expected result
+    and is returned even when build_tree() not called prior
+    """
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9,
+                      min_child_node_size=1, min_parent_node_size=1)
+
+    assert isinstance(tree.to_tree(), TreeLibTree), 'A TreeLib object is returned'
+    assert len(tree.tree_store) == len(tree.to_tree().nodes), 'The tree contains the correct number of nodes'
 
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """
