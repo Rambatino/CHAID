@@ -2,7 +2,7 @@ dependencies:
   override:
     - pip install tox tox-pyenv detox pytest-cov numpy pandas savReaderWriter treelib scipy codecov
     - pyenv local 2.7.12 3.4.4 3.5.2 3.6.0
-    - tox --notest
+    - if [[ ! -e .tox ]]; then tox --notest; fi
     - ls .tox | tr " " "\n" | awk 'NR>1' | xargs -I {} -P 5 sh -c '.tox/{}/bin/pip install .'
   cache_directories:
     - ".tox"
