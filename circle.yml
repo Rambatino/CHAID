@@ -4,6 +4,8 @@ dependencies:
     - pyenv local 2.7.12 3.4.4 3.5.2 3.6.0
     - tox --notest
     - ls .tox | tr " " "\n" | awk 'NR>1' | xargs -I {} -P 5 sh -c '.tox/{}/bin/pip install .'
+  cache_directories:
+    - ".tox"
 test:
   override:
     - detox
