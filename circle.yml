@@ -2,12 +2,8 @@ dependencies:
   override:
     - pip install tox tox-pyenv detox pytest-cov numpy pandas savReaderWriter treelib scipy codecov
     - pyenv local 2.7.12 3.4.4 3.5.2 3.6.0
-  cache_directories:
-    - "/home/ubuntu/CHAID/.tox/py27"
-    - "/home/ubuntu/CHAID/.tox/py34"
-    - "/home/ubuntu/CHAID/.tox/py35"
-    - "/home/ubuntu/CHAID/.tox/py35"
-    - "bin"
+    - ".tox/py27/bin/pip install ."
+    - ".tox/py27/bin/pip install ."
 test:
   override:
     - detox
