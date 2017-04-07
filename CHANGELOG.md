@@ -1,4 +1,5 @@
-<h2>__A python implementation of Chi-Squared Automatic Interaction Detection (CHAID)__
+<h2>__A python implementation of Chi-Squared Automatic Interaction Detection (CHAID)__</h2>
+
 ###  3.0.0 (2017-03-20)
 
 - Enabled continuous dependent variables to be passed through CHAID using Bartlett's and Levene's tests
