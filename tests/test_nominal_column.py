@@ -141,12 +141,15 @@ class TestDeepCopy(TestCase):
 
 class TestBugFixes(TestCase):
     """ Specific tests for bug fixes """
-    def test_incorrect_weighted_counts(self):
+    def test_comparison_of_different_object_types(self):
         """
         Fix bug wherby floats were being passed into NominalColumn
         from `self.observed = NominalColumn(arr)` but as `dtype=object`
         resulting in `TypeError: unorderable types: int() > str()` in
         python 3.x only
         """
-        object_arr = np.array([100, '12', 13, 15], dtype=object)
-        CHAID.NominalColumn(object_arr)
+        input_list = [100, 'c', 13, 15, np.nan, np.nan]
+        object_arr = np.array(input_list, dtype=object)
+        vector = CHAID.NominalColumn(object_arr)
+
+        assert [vector.metadata[x] for x in vector.arr] == ['<missing>' if x != x else x for x in input_list]
