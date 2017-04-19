@@ -137,3 +137,16 @@ class TestDeepCopy(TestCase):
     def test_metadata(self):
         """ Ensure metadata is copied correctly or deep_copy """
         assert self.copy.metadata == self.orig.metadata, 'Copied metadata should be equivilent'
+
+
+class TestBugFixes(TestCase):
+    """ Specific tests for bug fixes """
+    def test_incorrect_weighted_counts(self):
+        """
+        Fix bug wherby floats were being passed into NominalColumn
+        from `self.observed = NominalColumn(arr)` but as `dtype=object`
+        resulting in `TypeError: unorderable types: int() > str()` in
+        python 3.x only
+        """
+        object_arr = np.array([100, '12', 13, 15], dtype=object)
+        CHAID.NominalColumn(object_arr)
