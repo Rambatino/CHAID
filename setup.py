@@ -56,6 +56,6 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     install_requires=['cython', 'numpy', 'pandas', 'treelib', 'pytest', 'scipy', 'savReaderWriter'],
     extras_require={
-        'test': ['coverage', 'tox', 'tox-pyenv', 'detox', 'pytest-cov'],
+        'test': ['codecov', 'tox', 'tox-pyenv', 'detox', 'pytest-cov'],
     }
 )
