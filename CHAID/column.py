@@ -117,9 +117,13 @@ class NominalColumn(Column):
         ----------
         vect : np.array
             the vector in which to substitute values in
-
         """
-        unique = np.unique(vect)
+
+        try:
+            unique = np.unique(vect)
+        except:
+            unique = set(vect)
+
         unique = [
             x for x in unique if not isinstance(x, float) or not isnan(x)
         ]

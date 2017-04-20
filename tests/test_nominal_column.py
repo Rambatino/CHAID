@@ -136,4 +136,20 @@ class TestDeepCopy(TestCase):
 
     def test_metadata(self):
         """ Ensure metadata is copied correctly or deep_copy """
-        assert self.copy.metadata == self.orig.metadata, 'Copied metadata should be equivilent'
+        assert self.copy.metadata == self.orig.metadata, 'Copied metadata should be equivalent'
+
+
+class TestBugFixes(TestCase):
+    """ Specific tests for bug fixes """
+    def test_comparison_of_different_object_types(self):
+        """
+        Fix bug whereby floats were being passed into NominalColumn
+        from `self.observed = NominalColumn(arr)` but as `dtype=object`
+        resulting in `TypeError: unorderable types: int() > str()` in
+        python 3.x only
+        """
+        input_list = [100, 'c', 13, 15, np.nan, np.nan]
+        object_arr = np.array(input_list, dtype=object)
+        vector = CHAID.NominalColumn(object_arr)
+
+        assert [vector.metadata[x] for x in vector.arr] == ['<missing>' if x != x else x for x in input_list]
