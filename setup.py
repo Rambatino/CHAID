@@ -14,7 +14,7 @@ def get_version():
     Read version from __init__.py
     """
     version_regex = re.compile(
-        '__version__\\s*=\\s*(?P<q>[\'"])(?P<version>\\d+(\\.\\d+)*)(?P=q)'
+        '__version__\\s*=\\s*(?P<q>[\'"])(?P<version>\\d+(\\.\\d+)*(-(alpha|beta|rc)(\\.\\d+)?)?)(?P=q)'
     )
     here = path.abspath(path.dirname(__file__))
     init_location = path.join(here, "CHAID/__init__.py")
