@@ -13,8 +13,8 @@ class Node(object):
         Contains a list of the splits that gave rise to that node
     split_variable : number or string
         A value indicating what independent variable the node derived from
-    chi : float
-        The chi-squared score for the split
+    score : float
+        The score for the split
     p : float
         The p-value for the split
     indices : array-like or None
@@ -55,8 +55,8 @@ class Node(object):
         return self.node_id < other.node_id
 
     @property
-    def chi(self):
-        return self.split.chi
+    def score(self):
+        return self.split.score
 
     @property
     def p(self):
