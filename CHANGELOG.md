@@ -1,49 +1,182 @@
-<h2>__A python implementation of Chi-Squared Automatic Interaction Detection (CHAID)__</h2>
+# Change Log
 
-###  3.0.0 (2017-03-20)
+## [Unreleased](https://github.com/Rambatino/CHAID/tree/HEAD)
 
-- Enabled continuous dependent variables to be passed through CHAID using Bartlett's and Levene's tests
-  ([af3e3b1](https://github.com/Rambatino/CHAID/commit/af3e3b15aa9c14995526916be50f7b61a8d4cd27))
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v3.0.0...HEAD)
 
-- Min Child Node Size now defaults to 30
-  ([ba5545e](https://github.com/Rambatino/CHAID/commit/ba5545e2929d7555817f8f53babad9cb2731e138))
+**Implemented enhancements:**
 
-- Added codecov to PRs
-  ([2cf68d9](https://github.com/Rambatino/CHAID/commit/2cf68d94ca9162c92f43ab1bc8ed50db6758fccc))
+- Switched chi to score in node [\#58](https://github.com/Rambatino/CHAID/pull/58) ([Rambatino](https://github.com/Rambatino))
+- Increase Circle CI caching [\#56](https://github.com/Rambatino/CHAID/pull/56) ([Rambatino](https://github.com/Rambatino))
+- Ignore setup.py and test files [\#55](https://github.com/Rambatino/CHAID/pull/55) ([Rambatino](https://github.com/Rambatino))
+- Added codecov file [\#54](https://github.com/Rambatino/CHAID/pull/54) ([Rambatino](https://github.com/Rambatino))
 
-- Removed Node's `is_terminal` constructor key and created the property via a decorator based on the split object it contains
-  ([07b0830](https://github.com/Rambatino/CHAID/commit/07b0830e106ad0aee5e9930e6647ae150867b02d))
+**Fixed bugs:**
 
-- Added method to return the classification rules of the tree or node
-  ([70290f2](https://github.com/Rambatino/CHAID/commit/70290f2b6613fd2ba92efef27bb6a717d6a6ce18))
+- Change version regex to allow for alpha versions [\#59](https://github.com/Rambatino/CHAID/pull/59) ([xulaus](https://github.com/xulaus))
+- Added Failing Python 3 Spec [\#57](https://github.com/Rambatino/CHAID/pull/57) ([Rambatino](https://github.com/Rambatino))
 
-###  2.1.0 (2016-08-17)
+## [v3.0.0](https://github.com/Rambatino/CHAID/tree/v3.0.0) (2017-03-21)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v2.2.0...v3.0.0)
 
-- Added min child node size
-  ([54e805b](https://github.com/Rambatino/CHAID/commit/54e805b8d044c1aa2d3b2fbbc4b3395659170812))
+**Implemented enhancements:**
 
-###  2.0.0 (2016-08-27)
+- Updated min\_child\_node\_size to default to 30 [\#49](https://github.com/Rambatino/CHAID/pull/49) ([Rambatino](https://github.com/Rambatino))
+- Added Levene & Bartlett test for continuous dependent variables [\#48](https://github.com/Rambatino/CHAID/pull/48) ([Rambatino](https://github.com/Rambatino))
+- Add classification rules to Tree [\#47](https://github.com/Rambatino/CHAID/pull/47) ([xulaus](https://github.com/xulaus))
 
-- Refactored and renamed classes
-  ([994fdaf](https://github.com/Rambatino/CHAID/commit/994fdaf7919e7ff047b0458c1bd0d38aa82f3b21))
+**Fixed bugs:**
 
-- Renamed min_sample to min_parent_node_size
-  ([ee474f2](https://github.com/Rambatino/CHAID/commit/ee474f26837f666b326d2a7c39969db388e99e66))
+- Created is\_terminal property and removed setting it in the Node const… [\#50](https://github.com/Rambatino/CHAID/pull/50) ([Rambatino](https://github.com/Rambatino))
 
-###  1.0.1 (2016-08-25)
+**Closed issues:**
 
-- fixed weighting slice to slice on the sliced version, rather than the original
-  ([e6ff0b4](https://github.com/Rambatino/CHAID/commit/e6ff0b4e0782eafda7fda55c9cb860746de59e2a))
+- min\_child\_node\_size defaults to None [\#44](https://github.com/Rambatino/CHAID/issues/44)
+- test model performance on validation dataset [\#23](https://github.com/Rambatino/CHAID/issues/23)
+- Use bin count instead of unique to get frequencies. [\#19](https://github.com/Rambatino/CHAID/issues/19)
+- Unify CHAIDNode.is\_terminal and CHAIDSplit.valid\(\) [\#17](https://github.com/Rambatino/CHAID/issues/17)
 
----
+## [v2.2.0](https://github.com/Rambatino/CHAID/tree/v2.2.0) (2016-10-25)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v2.1.0...v2.2.0)
 
-### Bug Fixes
+**Implemented enhancements:**
 
-- fixed truth value of terminal indices ndarray
-  ([a2d0cff7](https://github.com/Rambatino/CHAID/commit/a2d0cff7e0546bf1b52375eab8c6a466e055f591))
+- Added python 3 to circle [\#46](https://github.com/Rambatino/CHAID/pull/46) ([Rambatino](https://github.com/Rambatino))
+- Added ordinal variable type to independent variables [\#45](https://github.com/Rambatino/CHAID/pull/45) ([xulaus](https://github.com/xulaus))
+
+## [v2.1.0](https://github.com/Rambatino/CHAID/tree/v2.1.0) (2016-10-17)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v2.0.0...v2.1.0)
+
+**Implemented enhancements:**
+
+- Added min\_child\_node\_sixe for both weighted and unweighted case [\#43](https://github.com/Rambatino/CHAID/pull/43) ([Rambatino](https://github.com/Rambatino))
+
+**Closed issues:**
+
+- Add weighting for respondents. [\#35](https://github.com/Rambatino/CHAID/issues/35)
+
+## [v2.0.0](https://github.com/Rambatino/CHAID/tree/v2.0.0) (2016-09-29)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v1.0.2...v2.0.0)
+
+**Implemented enhancements:**
+
+- Renamed min\_sample to min\_parent\_node\_size [\#42](https://github.com/Rambatino/CHAID/pull/42) ([Rambatino](https://github.com/Rambatino))
+
+**Merged pull requests:**
+
+- Refactored and renamed classes [\#41](https://github.com/Rambatino/CHAID/pull/41) ([Rambatino](https://github.com/Rambatino))
+
+## [v1.0.2](https://github.com/Rambatino/CHAID/tree/v1.0.2) (2016-09-26)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v1.0.1...v1.0.2)
+
+**Fixed bugs:**
+
+- Hotfix/weight base size fix [\#40](https://github.com/Rambatino/CHAID/pull/40) ([Rambatino](https://github.com/Rambatino))
+
+## [v1.0.1](https://github.com/Rambatino/CHAID/tree/v1.0.1) (2016-09-22)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v1.0.0...v1.0.1)
+
+## [v1.0.0](https://github.com/Rambatino/CHAID/tree/v1.0.0) (2016-09-22)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.3.4...v1.0.0)
+
+**Implemented enhancements:**
+
+- Added SPSS weighting to the CHAID Algorithm [\#37](https://github.com/Rambatino/CHAID/pull/37) ([Rambatino](https://github.com/Rambatino))
+
+## [v0.3.4](https://github.com/Rambatino/CHAID/tree/v0.3.4) (2016-07-27)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.3.3...v0.3.4)
+
+## [v0.3.3](https://github.com/Rambatino/CHAID/tree/v0.3.3) (2016-07-25)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.3.2...v0.3.3)
+
+**Merged pull requests:**
+
+- Add version to CHAID python module. [\#33](https://github.com/Rambatino/CHAID/pull/33) ([xulaus](https://github.com/xulaus))
+
+## [v0.3.2](https://github.com/Rambatino/CHAID/tree/v0.3.2) (2016-07-25)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.3.1...v0.3.2)
+
+**Merged pull requests:**
+
+- Ensure metadata for CHAIDVector contains all values, and all members … [\#32](https://github.com/Rambatino/CHAID/pull/32) ([xulaus](https://github.com/xulaus))
+- Fix force splitting of nodes that should not be split [\#31](https://github.com/Rambatino/CHAID/pull/31) ([xulaus](https://github.com/xulaus))
+
+## [v0.3.1](https://github.com/Rambatino/CHAID/tree/v0.3.1) (2016-07-14)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.3.0...v0.3.1)
+
+**Merged pull requests:**
+
+- Revert "Hotfix/numpy 1 9 feature removal" [\#28](https://github.com/Rambatino/CHAID/pull/28) ([Rambatino](https://github.com/Rambatino))
+
+## [v0.3.0](https://github.com/Rambatino/CHAID/tree/v0.3.0) (2016-07-14)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.2.0...v0.3.0)
+
+**Merged pull requests:**
+
+- Hotfix/numpy 1 9 feature removal [\#27](https://github.com/Rambatino/CHAID/pull/27) ([Rambatino](https://github.com/Rambatino))
+- Fixed risk value calculation [\#26](https://github.com/Rambatino/CHAID/pull/26) ([Rambatino](https://github.com/Rambatino))
+- Switched yates correction off to match spss [\#25](https://github.com/Rambatino/CHAID/pull/25) ([Rambatino](https://github.com/Rambatino))
+- Now checking for CHI aswell due to 0.0 p-values being the same [\#24](https://github.com/Rambatino/CHAID/pull/24) ([Rambatino](https://github.com/Rambatino))
+- More Testing [\#21](https://github.com/Rambatino/CHAID/pull/21) ([xulaus](https://github.com/xulaus))
+- Add --classify command for command line tool [\#14](https://github.com/Rambatino/CHAID/pull/14) ([xulaus](https://github.com/xulaus))
+
+## [v0.2.0](https://github.com/Rambatino/CHAID/tree/v0.2.0) (2016-06-28)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.1.1...v0.2.0)
+
+**Merged pull requests:**
+
+- Feature/testing [\#20](https://github.com/Rambatino/CHAID/pull/20) ([Rambatino](https://github.com/Rambatino))
+- Remove surrogate split if column already has split. [\#18](https://github.com/Rambatino/CHAID/pull/18) ([xulaus](https://github.com/xulaus))
+
+## [v0.1.1](https://github.com/Rambatino/CHAID/tree/v0.1.1) (2016-06-23)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.1.0...v0.1.1)
+
+## [v0.1.0](https://github.com/Rambatino/CHAID/tree/v0.1.0) (2016-06-23)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.0.11...v0.1.0)
+
+**Merged pull requests:**
+
+- Refactor to solve pylint issues. [\#16](https://github.com/Rambatino/CHAID/pull/16) ([xulaus](https://github.com/xulaus))
+- Feature/risk [\#15](https://github.com/Rambatino/CHAID/pull/15) ([Rambatino](https://github.com/Rambatino))
+- Maintain a list of surrogate splits [\#13](https://github.com/Rambatino/CHAID/pull/13) ([xulaus](https://github.com/xulaus))
+
+## [v0.0.11](https://github.com/Rambatino/CHAID/tree/v0.0.11) (2016-06-22)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.0.10...v0.0.11)
+
+**Merged pull requests:**
+
+- Feature/indices at every level [\#12](https://github.com/Rambatino/CHAID/pull/12) ([Rambatino](https://github.com/Rambatino))
+
+## [v0.0.10](https://github.com/Rambatino/CHAID/tree/v0.0.10) (2016-06-22)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.0.9...v0.0.10)
+
+## [v0.0.9](https://github.com/Rambatino/CHAID/tree/v0.0.9) (2016-06-21)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.0.8...v0.0.9)
+
+**Merged pull requests:**
+
+- Add iteration and node accessor interface [\#11](https://github.com/Rambatino/CHAID/pull/11) ([xulaus](https://github.com/xulaus))
+
+## [v0.0.8](https://github.com/Rambatino/CHAID/tree/v0.0.8) (2016-06-21)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.0.7...v0.0.8)
+
+## [v0.0.7](https://github.com/Rambatino/CHAID/tree/v0.0.7) (2016-06-20)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v0.0.6...v0.0.7)
+
+**Merged pull requests:**
+
+- Added docs [\#7](https://github.com/Rambatino/CHAID/pull/7) ([Rambatino](https://github.com/Rambatino))
+- Small refactors [\#6](https://github.com/Rambatino/CHAID/pull/6) ([xulaus](https://github.com/xulaus))
+- Enable passing through of column names [\#5](https://github.com/Rambatino/CHAID/pull/5) ([Rambatino](https://github.com/Rambatino))
+- Properly label aggregations of dependent variable [\#4](https://github.com/Rambatino/CHAID/pull/4) ([xulaus](https://github.com/xulaus))
+
+## [v0.0.6](https://github.com/Rambatino/CHAID/tree/v0.0.6) (2016-06-17)
+**Merged pull requests:**
+
+- Misc refactors [\#3](https://github.com/Rambatino/CHAID/pull/3) ([xulaus](https://github.com/xulaus))
+- I have no idea what I am doing. [\#2](https://github.com/Rambatino/CHAID/pull/2) ([Rambatino](https://github.com/Rambatino))
+- Enabled numpy to be of type float and added meta [\#1](https://github.com/Rambatino/CHAID/pull/1) ([Rambatino](https://github.com/Rambatino))
 
 
-### Features
 
-- Add version to CHAID python module. (#33)
-  ([586c9a95](https://github.com/Rambatino/CHAID/commit/586c9a954aa36014b1568cbaa526f8fbb9146e49))
+\* *This Change Log was automatically generated by [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator)*
