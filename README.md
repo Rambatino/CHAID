@@ -213,3 +213,8 @@ Upcoming Features
 
 * Accuracy Estimation using Machine Learning techniques on the data
 * Binning of continuous independent variables
+
+Generating the CHANGELOG.md
+--------
+
+`gem install github_changelog_generator && github_changelog_generator --exclude-labels maintenance,refactor,testing`
