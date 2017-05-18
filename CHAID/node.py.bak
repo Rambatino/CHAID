@@ -82,7 +82,7 @@ class Node(object):
             else:
                 metadata = dep_v.metadata
                 self._members = {}
-                for member in list(metadata.values()):
+                for member in metadata.values():
                     self._members[member] = 0
 
                 if dep_v.weights is None:

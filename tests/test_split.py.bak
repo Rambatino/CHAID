@@ -8,7 +8,7 @@ from setup_tests import CHAID
 def test_column_name_mappings():
     """ Test column name mappings are applied correctly """
     column_names = ["a", "b", "c"]
-    cols = list(range(0, len(column_names)))
+    cols = range(0, len(column_names))
     splits = [CHAID.Split(col, None, None, 1, 0) for col in cols]
 
     for split in splits:
