@@ -87,14 +87,14 @@ def main():
         predictions = pd.Series(tree.node_predictions())
         predictions.name = 'node_id'
         data = pd.concat([data, predictions], axis=1)
-        print((data.to_csv()))
+        print(data.to_csv())
     elif nspace.predict:
         predictions = pd.Series(tree.model_predictions())
         predictions.name = 'predicted'
         data = pd.concat([data, predictions], axis=1)
-        print((data.to_csv()))
+        print(data.to_csv())
     elif nspace.rules:
-        print(('\n'.join(str(x) for x in tree.classification_rules())))
+        print('\n'.join(str(x) for x in tree.classification_rules()))
     else:
         tree.print_tree()
 

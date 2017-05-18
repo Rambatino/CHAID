@@ -149,7 +149,7 @@ class NominalColumn(Column):
         return list(self._groupings.values())
 
     def possible_groupings(self):
-        return combinations(list(self._groupings.keys()), 2)
+        return combinations(self._groupings.keys(), 2)
 
     def group(self, x, y):
         self._groupings[x] += self._groupings[y]
@@ -217,7 +217,7 @@ class OrdinalColumn(Column):
         return self
 
     def groups(self):
-        vals = list(self._groupings.values())
+        vals = self._groupings.values()
         return [
             [x for x in range(minmax[0], minmax[1])] + ([self._nan] if minmax[2] else [])
             for minmax in vals
@@ -226,14 +226,14 @@ class OrdinalColumn(Column):
     def possible_groupings(self):
         if self._possible_groups is None:
             ranges = sorted(self._groupings.items())
-            candidates = list(zip(ranges[0:], ranges[1:]))
+            candidates = zip(ranges[0:], ranges[1:])
             self._possible_groups = [
                 (k1, k2) for (k1, minmax1), (k2, minmax2) in candidates
                 if minmax1[1] == minmax2[0]
             ]
             if self._nan in self._arr:
                 self._possible_groups += [
-                    (key, self._nan) for key in list(self._groupings.keys()) if key != self._nan
+                    (key, self._nan) for key in self._groupings.keys() if key != self._nan
                 ]
         return self._possible_groups.__iter__()
 
