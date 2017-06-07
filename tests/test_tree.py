@@ -348,7 +348,7 @@ class TestBugFixes(TestCase):
         no_exception = True
         try:
             CHAID.Tree.from_pandas_df(df, cols, 'dep_v', min_child_node_size=0).print_tree()
-        except Exception, e:
+        except:
             no_exception = False
         assert no_exception, 'Raised error while printing the tree'
 
