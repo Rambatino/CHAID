@@ -48,7 +48,7 @@ class Node(object):
             return False
 
     def __repr__(self):
-        format_str = '({0.choices}, {0.members}, {0.split})'
+        format_str = u'({0.choices}, {0.members}, {0.split})'
         return format_str.format(self)
 
     def __lt__(self, other):

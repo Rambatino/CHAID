@@ -329,6 +329,7 @@ class TestBugFixes(TestCase):
         self.arr = np.array(([1] * 15) + ([2] * 15))
         self.wt = np.array(([1.0] * 15) + ([1.2] * 15))
         self.ndarr = np.array(([2, 3] * 20) + ([2, 5] * 20) + ([3, 4] * 19) + [2, 3]).reshape(30, 4)
+        self.string_ndarr = np.array(([u'\u2013', u'\u2012'] * 20) + ([u'\u2011', u'\u2008'] * 20) + ([u'\u2000', u'\u2223'] * 19) + [u'\u2123', u'\u1993']).reshape(30, 4)
 
     def test_incorrect_weighted_counts(self):
         """
@@ -339,6 +340,17 @@ class TestBugFixes(TestCase):
         tree.build_tree()
         assert tree.tree_store[3].members == {1: 0, 2: 1.2}
         assert tree.tree_store[5].members == {1: 5.0, 2: 6.0}
+
+    def test_unicode_printing(self):
+        cols = [u'\u2013', 'a', 'b', u'another unicode \u2013 \u2013']
+        df = pd.DataFrame(data=self.string_ndarr, columns=cols)
+        df['dep_v'] = self.arr
+        no_exception = True
+        try:
+            CHAID.Tree.from_pandas_df(df, cols, 'dep_v', min_child_node_size=0).print_tree()
+        except:
+            no_exception = False
+        assert no_exception, 'Raised error while printing the tree'
 
 
 class TestStoppingRules(TestCase):

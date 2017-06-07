@@ -45,7 +45,7 @@ class Split(object):
     def __repr__(self):
         if not self.valid():
             return '<Invalid Chaid Split>'
-        format_str = '({0.column}, p={0.p}, score={0.score}, groups={0.groupings})'\
+        format_str = u'({0.column}, p={0.p}, score={0.score}, groups={0.groupings})'\
                      ', dof={0.dof})'
         return format_str.format(self)
 
