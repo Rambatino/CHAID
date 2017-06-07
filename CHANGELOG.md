@@ -13,6 +13,7 @@
 
 **Fixed bugs:**
 
+- Fix for printing unicode characters [\#63](https://github.com/Rambatino/CHAID/pull/63) ([Rambatino](https://github.com/Rambatino))
 - Change version regex to allow for alpha versions [\#59](https://github.com/Rambatino/CHAID/pull/59) ([xulaus](https://github.com/xulaus))
 - Added Failing Python 3 Spec [\#57](https://github.com/Rambatino/CHAID/pull/57) ([Rambatino](https://github.com/Rambatino))
 

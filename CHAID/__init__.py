@@ -4,4 +4,4 @@ from .node import Node
 from .column import NominalColumn, OrdinalColumn, ContinuousColumn
 from .stats import Stats
 
-__version__ = "4.0.0-alpha.1"
+__version__ = "4.0.0-alpha.2"
