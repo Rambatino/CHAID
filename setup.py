@@ -40,7 +40,7 @@ setup(
     author_email='mark.tint.ramotowski@gmail.com',
     license='Apache License 2.0',
     classifiers=[
-        'Development Status :: 1 - Production',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'License :: OSI Approved :: Apache License 2.0',
