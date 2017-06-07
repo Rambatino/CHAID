@@ -345,7 +345,12 @@ class TestBugFixes(TestCase):
         cols = [u'\u2013', 'a', 'b', u'another unicode \u2013 \u2013']
         df = pd.DataFrame(data=self.string_ndarr, columns=cols)
         df['dep_v'] = self.arr
-        CHAID.Tree.from_pandas_df(df, cols, 'dep_v', min_child_node_size=0).print_tree()
+        no_exception = True
+        try:
+            CHAID.Tree.from_pandas_df(df, cols, 'dep_v', min_child_node_size=0).print_tree()
+        except Exception, e:
+            no_exception = False
+        assert no_exception, 'Raised error while printing the tree'
 
 
 class TestStoppingRules(TestCase):
