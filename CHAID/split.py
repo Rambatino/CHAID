@@ -16,8 +16,10 @@ class Split(object):
         The p value of that split
     dof : int
         The degrees of freedom as a result of this split
+    invalid_reason : str
+        The reason why the node failed to split
     """
-    def __init__(self, column, splits, score, p, dof):
+    def __init__(self, column, splits, score, p, dof, invalid_reason=None):
         splits = splits or []
         self.surrogates = []
         self.column_id = column
@@ -27,6 +29,7 @@ class Split(object):
         self.score = score
         self.p = p
         self._dof = dof
+        self._invalid_reason = invalid_reason
 
     def sub_split_values(self, sub):
         """ Substitutes the splits with other values into the split_map """
@@ -66,6 +69,10 @@ class Split(object):
     @property
     def dof(self):
         return self._dof
+
+    @property
+    def invalid_reason():
+        return self.invalid_reason
 
     def valid(self):
         return self.column_id is not None
