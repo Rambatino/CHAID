@@ -272,7 +272,7 @@ ipdb> split.groupings
 "[['female'], ['male']]"
 ```
 
-Therefore, in this example, the root node is split on the column 'sex' in the data, splitting up the females and males. These females and males each form a new node and further down, the all male and all female nodes are split on the column 'embarked' (although they needn't split on the same column).
+Therefore, in this example, the root node is split on the column 'sex' in the data, splitting up the females and males. These females and males each form a new node and further down, the all male and all female nodes are split on the column 'embarked' (although they needn't split on the same column). A `<Invalid Chaid Split>` is reached when either the node is pure (only one dependent variable remains) or when a terminating parameter is met (e.g. min node size, or max depth [see tree parameters above])
 
 The conclusion drawn from this tree is that: "Gender was the most important factor driving the survival of people on the titanic. Whereby females had a much higher likelihood of surviving (survival = 1 in the survival column and 0 means they died). Of those females, those who embarked first class (class 'C', node 2) had a much higher likelihood of surviving."
 
