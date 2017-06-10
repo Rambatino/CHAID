@@ -3,6 +3,7 @@ from .column import NominalColumn, OrdinalColumn, ContinuousColumn
 from .split import Split
 import numpy as np
 from scipy import stats
+from .invalid import Invalid
 
 def chisquare(n_ij, weighted):
     """
@@ -90,9 +91,16 @@ class Stats(object):
                     if choice is None or p_split > highest_p_join or (p_split == highest_p_join and chi > split_chi):
                         choice, highest_p_join, split_chi = comb, p_split, chi
 
-                sufficient_split = highest_p_join < self.alpha_merge and all(
+                invalid_key = None
+                sufficient_split = highest_p_join < self.alpha_merge
+                if not sufficient_split: invalid_key = 'alpha_merge'
+
+                sufficient_split = sufficient_split and all(
+                    # what if a greater p-value on a different grouping would satisfy alpha merge _and_ min_child_node_size?
                     sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()
                 )
+                if not sufficient_split: invalid_key = 'min_child_node_size'
+
                 if sufficient_split and len(freq.values()) > 1:
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
@@ -119,13 +127,14 @@ class Stats(object):
                         split.surrogates.append(temp_split)
 
                     break
+                else:
+                    split.invalid_reason = Invalid.messages[invalid_key]
 
                 ind_var.group(choice[0], choice[1])
 
                 for val, count in freq[choice[1]].items():
                     freq[choice[0]][val] += count
                 del freq[choice[1]]
-
         if split.valid():
             split.sub_split_values(ind[split.column_id].metadata)
         return split
@@ -163,6 +172,16 @@ class Stats(object):
                     len(node_v) >= self.min_child_node_size for node_v in keyed_set.values()
                 )
 
+                invalid_key = None
+                sufficient_split = highest_p_join < self.alpha_merge
+                if not sufficient_split: invalid_key = 'alpha_merge'
+
+                sufficient_split = sufficient_split and all(
+                    len(node_v) >= self.min_child_node_size for node_v in keyed_set.values()
+                )
+
+                if not sufficient_split: invalid_key = 'min_child_node_size'
+
                 if sufficient_split and len(keyed_set.values()) > 1:
                     dof = len(np.concatenate(list(keyed_set.values()))) - 2
                     score, p_split = sig_test(*keyed_set.values())
@@ -185,6 +204,9 @@ class Stats(object):
                         split.surrogates.append(temp_split)
 
                     break
+                else:
+                    split.invalid_reason = Invalid.messages[invalid_key]
+
                 ind_var.group(choice[0], choice[1])
 
                 keyed_set[choice[0]] = np.concatenate((keyed_set[choice[1]], keyed_set[choice[0]]))

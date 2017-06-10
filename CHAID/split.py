@@ -47,7 +47,7 @@ class Split(object):
 
     def __repr__(self):
         if not self.valid():
-            return '<Invalid Chaid Split>'
+            return '<Invalid Chaid Split> - %s' % self.invalid_reason
         format_str = u'({0.column}, p={0.p}, score={0.score}, groups={0.groupings})'\
                      ', dof={0.dof})'
         return format_str.format(self)
@@ -71,8 +71,12 @@ class Split(object):
         return self._dof
 
     @property
-    def invalid_reason():
-        return self.invalid_reason
+    def invalid_reason(self):
+        return self._invalid_reason
+
+    @invalid_reason.setter
+    def invalid_reason(self, value):
+        self._invalid_reason = value
 
     def valid(self):
         return self.column_id is not None

@@ -4,6 +4,7 @@ from .node import Node
 from .split import Split
 from .column import NominalColumn, OrdinalColumn, ContinuousColumn
 from .stats import Stats
+from .invalid import Invalid
 
 class Tree(object):
     """
@@ -115,9 +116,11 @@ class Tree(object):
                                  parent=parent, indices=rows, dep_v=dep)
             self.tree_store.append(terminal_node)
             self.node_count += 1
+            terminal_node.split = Invalid.messages["max_depth"]
             return self.tree_store
 
-        split = self.generate_best_split(ind, dep)
+        split = self._stats.best_split(ind, dep)
+        print(split)
 
         split.name_columns(self.split_titles)
 
@@ -142,13 +145,10 @@ class Tree(object):
             else:
                 terminal_node = Node(choices=split.split_map[index], node_id=self.node_count,
                                      parent=parent, indices=row_slice, dep_v=dep_slice)
+                terminal_node.split.invalid_reason = Invalid.messages['min_parent_node_size']
                 self.tree_store.append(terminal_node)
                 self.node_count += 1
         return self.tree_store
-
-    def generate_best_split(self, ind, dep):
-        """ internal method to generate the best split """
-        return self._stats.best_split(ind, dep)
 
     def to_tree(self):
         """ returns a TreeLib tree """
