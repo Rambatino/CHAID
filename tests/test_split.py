@@ -16,3 +16,16 @@ def test_column_name_mappings():
         split.name_columns(column_names)
         assert split.column == column_names[split.column_id], 'Names should correctly map to column name when mapping is applied'
 
+def test_invalid_reason_can_be_setted_and_getted():
+    """ Test that invalid reasons can be set and accessed on a split instance """
+    split = CHAID.Split("a", None, None, 1, 0)
+    reason = "test reason"
+    split.invalid_reason = reason
+
+    assert split.invalid_reason == reason, 'Splits should be able to store invalid reasons'
+
+def test_invalid_split():
+    """ Test properties when split invalid """
+    split = CHAID.Split(None, None, None, 1, 0)
+    assert split.invalid_reason == None
+    assert split.column == None

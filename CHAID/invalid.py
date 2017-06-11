@@ -1,4 +1,7 @@
 class Invalid:
+    """
+    Private class to store possible invalid reasons
+    """
     messages = {
         "alpha_merge":          "p-value greater than alpha merge",
         "min_child_node_size":  "splitting would create nodes with less than the minimum child "\
