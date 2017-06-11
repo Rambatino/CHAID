@@ -72,7 +72,7 @@ class Split(object):
 
     @property
     def invalid_reason(self):
-        return self._invalid_reason
+        return self._invalid_reason 
 
     @invalid_reason.setter
     def invalid_reason(self, value):

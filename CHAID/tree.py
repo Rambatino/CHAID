@@ -120,7 +120,6 @@ class Tree(object):
             return self.tree_store
 
         split = self._stats.best_split(ind, dep)
-        print(split)
 
         split.name_columns(self.split_titles)
 

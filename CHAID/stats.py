@@ -73,6 +73,9 @@ class Stats(object):
                     for dep_v in all_dep:
                         freq[col][dep_v] = dep.weights[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
 
+            if len(list(ind_var.possible_groupings())) == 0:
+                split.invalid_reason = Invalid.messages['pure_node']
+
             while next(ind_var.possible_groupings(), None) is not None:
                 choice, highest_p_join, split_chi = None, None, None
                 for comb in ind_var.possible_groupings():
@@ -110,7 +113,6 @@ class Stats(object):
                     chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
 
                     temp_split = Split(i, ind_var.groups(), chi, p_split, dof)
-
                     better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)
 
                     if better_split:
@@ -131,7 +133,6 @@ class Stats(object):
                     split.invalid_reason = Invalid.messages[invalid_key]
 
                 ind_var.group(choice[0], choice[1])
-
                 for val, count in freq[choice[1]].items():
                     freq[choice[0]][val] += count
                 del freq[choice[1]]
