@@ -149,6 +149,10 @@ class Tree(object):
                 self.node_count += 1
         return self.tree_store
 
+    def generate_best_split(self, ind, dep):
+        """ internal method to generate the best split """
+        return self._stats.best_split(ind, dep)
+
     def to_tree(self):
         """ returns a TreeLib tree """
         tree = TreeLibTree()
