@@ -222,7 +222,7 @@ Running `tree.print_tree()` gives:
     └── (['Q', 'S'], {0: 573, 1: 113}, <Invalid Chaid Split>)
 ```
 
-as show above. The first line is the root node. This means that all the data is present in this node. And the vertical bars originating from a node represents paths to that node's children.
+as show above. The first line is the root node, all the data is present in this node. The the vertical bars originating from a node represents paths to that node's children.
 
 Running `tree.tree_store` will give you a list of all the nodes in the tree:
 
@@ -242,7 +242,7 @@ So let's inspect the root node `tree.tree_store[0]`:
 ([], {0: 809, 1: 500}, (sex, p=1.47145310169e-81, score=365.886947811, groups=[['female'], ['male']]), dof=1))
 ```
 
-Nodes have certain properties, the have the column that was chosen to split to this node (for a root node there doesn't exist a column, because, well it's the root node and is thus all the data). The second property `{0: 809, 1: 500}` are the members of that node, and represent the frequency of the dependent variable at that node. In this case, it is all the answers in the 'survived' column, as that was the first column past to the program in the command line (`python -m CHAID tests/data/titanic.csv survived`). The next property represents the splitting of the node. What column was chosen to make that split (in this case, `sex`), the p-value of the split and the chi-score and most importantly, which variables in `sex` create the new nodes and the degrees of freedom associated with that split (1, in this case)
+Nodes have certain properties. Firstly, they show the column that was chosen to split to this node (for a root node the column is empty '([])'). The second property `{0: 809, 1: 500}` show the members of that node, and represent the current frequency of the dependent variable. In this case, it is all the answers in the 'survived' column, as that was the first column past to the program in the command line (`python -m CHAID tests/data/titanic.csv survived`). The next property represents the splitting of the node. What column was chosen to make that split (in this case, `sex`), the p-value of the split and the chi-score and most importantly, which variables in `sex` create the new nodes and the degrees of freedom associated with that split (1, in this case)
 
 These properties that can be accessed:
 
