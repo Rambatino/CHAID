@@ -12,7 +12,7 @@ class TestClassificationRules(TestCase):
     def setUp(self):
         invalid_split = CHAID.Split(None, None, 0, 1, 0)
         self.tree = CHAID.Tree(np.array([[1]]), np.array([1]))
-        self.tree.tree_store = [
+        self.tree._tree_store = [
             CHAID.Node(
                 node_id=0,
                 split=CHAID.Split('a', [[1], [2]], 1, 0.2, 2)
@@ -31,7 +31,7 @@ class TestClassificationRules(TestCase):
             choices=[3],
             parent=2
         )
-        self.tree.tree_store.append(self.last_node)
+        self.tree._tree_store.append(self.last_node)
 
     def test_single_path(self):
         expected_rules = [
@@ -276,6 +276,21 @@ def test_to_tree_returns_a_tree():
 
     assert isinstance(tree.to_tree(), TreeLibTree), 'A TreeLib object is returned'
     assert len(tree.tree_store) == len(tree.to_tree().nodes), 'The tree contains the correct number of nodes'
+
+def test_max_depth_returns_correct_invalid_message():
+    """
+    Test when max_depth reached, it has the correct invalid message
+    on the terminal nodes
+    """
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, max_depth=1,
+                      min_child_node_size=1, min_parent_node_size=1)
+
+    assert tree.tree_store[-1].split.invalid_reason == 'the max depth has been reached', 'The max depth limit is '\
+                                                 'the invalid reason on the terminal node'
 
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """
