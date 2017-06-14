@@ -16,7 +16,7 @@ class Split(object):
         The p value of that split
     dof : int
         The degrees of freedom as a result of this split
-    invalid_reason : str
+    invalid_reason : InvalidSplitReason()
         The reason why the node failed to split
     """
     def __init__(self, column, splits, score, p, dof, invalid_reason=None):

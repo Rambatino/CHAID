@@ -19,7 +19,7 @@ def test_column_name_mappings():
 def test_invalid_reason_can_be_setted_and_getted():
     """ Test that invalid reasons can be set and accessed on a split instance """
     split = CHAID.Split("a", None, None, 1, 0)
-    reason = "test reason"
+    reason = CHAID.InvalidSplitReason.ALPHA_MERGE
     split.invalid_reason = reason
 
     assert split.invalid_reason == reason, 'Splits should be able to store invalid reasons'
