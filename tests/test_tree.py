@@ -292,6 +292,15 @@ def test_max_depth_returns_correct_invalid_message():
     assert tree.tree_store[-1].split.invalid_reason == CHAID.InvalidSplitReason.MAX_DEPTH, 'The max depth limit is '\
                                                  'the invalid reason on the terminal node'
 
+def test_node_predictions():
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, max_depth=1,
+                      min_child_node_size=1, min_parent_node_size=1)
+    assert (tree.node_predictions() == np.array([1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 3, 3, 3., 3, 3, 3, 3, 3, 2])).all() == True
+
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """
     def setUp(self):
