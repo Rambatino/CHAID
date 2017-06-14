@@ -2,7 +2,31 @@
 
 ## [Unreleased](https://github.com/Rambatino/CHAID/tree/HEAD)
 
-[Full Changelog](https://github.com/Rambatino/CHAID/compare/v3.0.0...HEAD)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0-alpha.2...HEAD)
+
+**Implemented enhancements:**
+
+- Changed architecture of from\_pandas\_df to align variable types and instance variables into a single parameter [\#70](https://github.com/Rambatino/CHAID/pull/70) ([Rambatino](https://github.com/Rambatino))
+
+**Closed issues:**
+
+- Creating tree different from README [\#65](https://github.com/Rambatino/CHAID/issues/65)
+- User shouldn't have to pass in variables and variable types [\#53](https://github.com/Rambatino/CHAID/issues/53)
+
+**Merged pull requests:**
+
+- Adding invalid split messages [\#68](https://github.com/Rambatino/CHAID/pull/68) ([Rambatino](https://github.com/Rambatino))
+
+## [v4.0.0-alpha.2](https://github.com/Rambatino/CHAID/tree/v4.0.0-alpha.2) (2017-06-07)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0-alpha.1...v4.0.0-alpha.2)
+
+**Fixed bugs:**
+
+- Fix for printing unicode characters [\#63](https://github.com/Rambatino/CHAID/pull/63) ([Rambatino](https://github.com/Rambatino))
+- Change version regex to allow for alpha versions [\#59](https://github.com/Rambatino/CHAID/pull/59) ([xulaus](https://github.com/xulaus))
+
+## [v4.0.0-alpha.1](https://github.com/Rambatino/CHAID/tree/v4.0.0-alpha.1) (2017-05-04)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v3.0.0...v4.0.0-alpha.1)
 
 **Implemented enhancements:**
 
@@ -13,8 +37,6 @@
 
 **Fixed bugs:**
 
-- Fix for printing unicode characters [\#63](https://github.com/Rambatino/CHAID/pull/63) ([Rambatino](https://github.com/Rambatino))
-- Change version regex to allow for alpha versions [\#59](https://github.com/Rambatino/CHAID/pull/59) ([xulaus](https://github.com/xulaus))
 - Added Failing Python 3 Spec [\#57](https://github.com/Rambatino/CHAID/pull/57) ([Rambatino](https://github.com/Rambatino))
 
 ## [v3.0.0](https://github.com/Rambatino/CHAID/tree/v3.0.0) (2017-03-21)

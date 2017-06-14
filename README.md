@@ -51,7 +51,7 @@ independent_variable_columns = ['a', 'b', 'c']
 dep_variable = 'd'
 
 ## create the Tree via pandas
-tree = Tree.from_pandas_df(df, independent_variable_columns, dep_variable)
+tree = Tree.from_pandas_df(df, dict(zip(independent_variable_columns, 'nominal' * 3)), dep_variable)
 ## create the same tree, but without pandas helper
 tree = Tree(ndarr, arr, split_titles=['a', 'b', 'c'], min_child_node_size=5)
 
@@ -109,7 +109,7 @@ df['d'] = np.random.normal(300, 100, 10)
 9  2  2  3  238.471850
 
 ## create the Tree via pandas
-tree = Tree.from_pandas_df(df, independent_variable_columns, dep_variable, dep_variable_type='continuous')
+tree = Tree.from_pandas_df(df, dict(zip(independent_variable_columns, 'nominal' * 3)), dep_variable, dep_variable_type='continuous')
 
 ## print the tree (though not enough power to split)
 >>> tree.print_tree()
@@ -119,7 +119,7 @@ tree = Tree.from_pandas_df(df, independent_variable_columns, dep_variable, dep_v
 Parameters
 ----------
 * `df`: Pandas DataFrame
-* `i_variables: Array<string>`: Independent variable column names
+* `i_variables: Dict<string, string>`: Independent variable column names as keys and the type as the values (nominal or ordinal)
 * `d_variable: String`: Dependent variable column name
 * `opts: {}`:
   * `alpha_merge: Float (default = 0.05)`: If the respective test for a given pair of predictor categories is not statistically significant as defined by an `alpha_merge` value, the least significant predictor categories are merged and the splitting of the node is attempted with the newly formed categories

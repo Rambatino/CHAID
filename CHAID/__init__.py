@@ -5,4 +5,4 @@ from .column import NominalColumn, OrdinalColumn, ContinuousColumn
 from .stats import Stats
 from .invalid_split_reason import InvalidSplitReason
 
-__version__ = "4.0.0-alpha.2"
+__version__ = "4.0.0"

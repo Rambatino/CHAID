@@ -75,13 +75,12 @@ def main():
     ordinal = nspace.ordinal_variables or []
     nominal = nspace.nominal_variables or []
     independent_variables = nominal + ordinal
-    types = ['nominal'] * len(nominal) + ['ordinal'] * len(ordinal)
+    types = dict(zip(nominal + ordinal, ['nominal'] * len(nominal) + ['ordinal'] * len(ordinal)))
     if len(independent_variables) == 0:
         print('Need to provide at least one independent variable')
         exit(1)
-    tree = Tree.from_pandas_df(data, independent_variables,
-                               nspace.dependent_variable[0],
-                               variable_types=types, **config)
+    tree = Tree.from_pandas_df(data, types, nspace.dependent_variable[0],
+                               **config)
 
     if nspace.classify:
         predictions = pd.Series(tree.node_predictions())
