@@ -41,20 +41,15 @@ class Tree(object):
         self.min_parent_node_size = min_parent_node_size
         self.split_titles = split_titles or []
         self.vectorised_array = []
-
-        if not variable_types:
-            variable_types = ['nominal'] * ndarr.shape[1]
-            self.vectorised_array = [ NominalColumn(ndarr[:,i]) for i in range(ndarr.shape[1]) ]
-        else:
-            for col_name, col_type in variable_types.items():
-                ind = list(variable_types.keys()).index(col_name)
-                if col_type == 'ordinal':
-                    col = OrdinalColumn(ndarr[:, ind])
-                elif col_type == 'nominal':
-                    col = NominalColumn(ndarr[:, ind])
-                else:
-                    raise NotImplementedError('Unknown independent variable type ' + col_type)
-                self.vectorised_array.append(col)
+        variable_types = variable_types or ['nominal'] * ndarr.shape[1]
+        for ind, col_type in enumerate(variable_types):
+            if col_type == 'ordinal':
+                col = OrdinalColumn(ndarr[:, ind])
+            elif col_type == 'nominal':
+                col = NominalColumn(ndarr[:, ind])
+            else:
+                raise NotImplementedError('Unknown independent variable type ' + col_type)
+            self.vectorised_array.append(col)
 
         self.data_size = ndarr.shape[0]
         self.node_count = 0
@@ -122,7 +117,7 @@ class Tree(object):
         weights = df[weight] if weight is not None else None
         return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
                     min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
-                    i_variables, dep_variable_type)
+                    list(i_variables.values()), dep_variable_type)
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """

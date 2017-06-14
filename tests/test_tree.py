@@ -368,6 +368,8 @@ class TestBugFixes(TestCase):
     def test_unicode_printing(self):
         cols = dict(zip([u'\u2013', 'a', 'b', u'another unicode \u2013 \u2013'], ['nominal'] * 4))
         df = pd.DataFrame(data=self.string_ndarr, columns=cols)
+        df['ordinal'] = self.arr[::-1]
+        cols['ordinal'] = 'ordinal'
         df['dep_v'] = self.arr
         no_exception = True
         try:
