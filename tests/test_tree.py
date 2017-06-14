@@ -357,7 +357,7 @@ class TestBugFixes(TestCase):
         assert tree.tree_store[5].members == {1: 5.0, 2: 6.0}
 
     def test_unicode_printing(self):
-        cols = [u'\u2013', 'a', 'b', u'another unicode \u2013 \u2013']
+        cols = dict(zip([u'\u2013', 'a', 'b', u'another unicode \u2013 \u2013'], ['nominal'] * 4))
         df = pd.DataFrame(data=self.string_ndarr, columns=cols)
         df['dep_v'] = self.arr
         no_exception = True

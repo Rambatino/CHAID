@@ -41,15 +41,20 @@ class Tree(object):
         self.min_parent_node_size = min_parent_node_size
         self.split_titles = split_titles or []
         self.vectorised_array = []
-        variable_types = variable_types or ['nominal'] * ndarr.shape[1]
-        for ind, col_type in enumerate(variable_types):
-            if col_type == 'ordinal':
-                col = OrdinalColumn(ndarr[:, ind])
-            elif col_type == 'nominal':
-                col = NominalColumn(ndarr[:, ind])
-            else:
-                raise NotImplementedError('Unknown independent variable type ' + col_type)
-            self.vectorised_array.append(col)
+
+        if not variable_types:
+            variable_types = ['nominal'] * ndarr.shape[1]
+            self.vectorised_array = [ NominalColumn(ndarr[:,i]) for i in range(ndarr.shape[1]) ]
+        else:
+            for col_name, col_type in variable_types.iteritems():
+                ind = variable_types.keys().index(col_name)
+                if col_type == 'ordinal':
+                    col = OrdinalColumn(ndarr[:, ind])
+                elif col_type == 'nominal':
+                    col = NominalColumn(ndarr[:, ind])
+                else:
+                    raise NotImplementedError('Unknown independent variable type ' + col_type)
+                self.vectorised_array.append(col)
 
         self.data_size = ndarr.shape[0]
         self.node_count = 0
@@ -76,18 +81,19 @@ class Tree(object):
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2,
                        min_parent_node_size=30, min_child_node_size=30, split_threshold=0,
-                       weight=None, variable_types=None, dep_variable_type='categorical'):
+                       weight=None, dep_variable_type='categorical'):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
 
         Parameters
         ----------
-        df :  pandas.DataFrame
+        df : pandas.DataFrame
             the dataframe with the dependent and independent variables in which
             to slice from
-        i_variables :  array-like
-            list of the column names for the independent variables
+        i_variables : dict
+            dict of instance variable names with their variable types. Supported
+            variable types are the strings 'nominal' or 'ordinal' in lower case
         d_variable : string
             the name of the dependent variable in the dataframe
         alpha_merge : float
@@ -95,23 +101,28 @@ class Tree(object):
         max_depth : float
             the threshold value for the maximum number of levels after the root
             node in the tree (default 2)
+        split_threshold : float
+            the variation in chi-score such that surrogate splits are created
+            (default 0)
         min_parent_node_size : float
             the threshold value of the number of respondents that the node must
             contain (default 30)
-        variable_types : array-like or dict
-            array of variable types, or dict of column names to variable types.
-            Supported variable types are the strings 'nominal' or 'ordinal' in
-            lower case
+        min_child_node_size : float
+            the threshold value of the number of respondents that each child node must
+            contain (default 30)
+        weight : array-like
+            the respondent weights. If passed, weighted chi-square calculation is run
+        dep_variable_type : str
+            the type of dependent variable. Supported variable types are 'categorical' or
+            'continuous'
         """
-        ind_df = df[i_variables]
+        ind_df = df[i_variables.keys()]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
-        if isinstance(variable_types, dict):
-            variable_types = [variable_types[col] for col in i_variables]
         return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
                     min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
-                    variable_types, dep_variable_type)
+                    i_variables, dep_variable_type)
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
