@@ -4,6 +4,7 @@ from .node import Node
 from .split import Split
 from .column import NominalColumn, OrdinalColumn, ContinuousColumn
 from .stats import Stats
+from .invalid_split_reason import InvalidSplitReason
 
 class Tree(object):
     """
@@ -52,7 +53,7 @@ class Tree(object):
 
         self.data_size = ndarr.shape[0]
         self.node_count = 0
-        self.tree_store = None
+        self._tree_store = None
         if dep_variable_type == 'categorical':
             self.observed = NominalColumn(arr, weights=weights)
         elif dep_variable_type == 'continuous':
@@ -63,8 +64,14 @@ class Tree(object):
 
     def build_tree(self):
         """ Build chaid tree """
-        self.tree_store = []
+        self._tree_store = []
         self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed)
+
+    @property
+    def tree_store(self):
+        if not self._tree_store:
+            self.build_tree()
+        return self._tree_store
 
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2,
@@ -113,23 +120,24 @@ class Tree(object):
         if self.max_depth < depth:
             terminal_node = Node(choices=parent_decisions, node_id=self.node_count,
                                  parent=parent, indices=rows, dep_v=dep)
-            self.tree_store.append(terminal_node)
+            self._tree_store.append(terminal_node)
             self.node_count += 1
-            return self.tree_store
+            terminal_node.split.invalid_reason = InvalidSplitReason.MAX_DEPTH
+            return self._tree_store
 
-        split = self.generate_best_split(ind, dep)
+        split = self._stats.best_split(ind, dep)
 
         split.name_columns(self.split_titles)
 
         node = Node(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
                     parent=parent, split=split)
 
-        self.tree_store.append(node)
+        self._tree_store.append(node)
         parent = self.node_count
         self.node_count += 1
 
         if not split.valid():
-            return self.tree_store
+            return self._tree_store
 
         for index, choices in enumerate(split.splits):
             correct_rows = np.in1d(ind[split.column_id].arr, choices)
@@ -142,9 +150,10 @@ class Tree(object):
             else:
                 terminal_node = Node(choices=split.split_map[index], node_id=self.node_count,
                                      parent=parent, indices=row_slice, dep_v=dep_slice)
-                self.tree_store.append(terminal_node)
+                terminal_node.split.invalid_reason = InvalidSplitReason.MIN_PARENT_NODE_SIZE
+                self._tree_store.append(terminal_node)
                 self.node_count += 1
-        return self.tree_store
+        return self._tree_store
 
     def generate_best_split(self, ind, dep):
         """ internal method to generate the best split """
@@ -159,13 +168,9 @@ class Tree(object):
 
     def __iter__(self):
         """ Function to allow nodes to be iterated over """
-        if not self.tree_store:
-            self.build_tree()
         return iter(self.tree_store)
 
     def __repr__(self):
-        if not self.tree_store:
-            self.build_tree()
         return str(self.tree_store)
 
     def get_node(self, node_id):
@@ -176,8 +181,6 @@ class Tree(object):
         node_id : integer
             Find the node with this ID
         """
-        if not self.tree_store:
-            self.build_tree()
         return self.tree_store[node_id]
 
     def print_tree(self):
