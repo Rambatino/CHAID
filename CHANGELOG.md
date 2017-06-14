@@ -1,8 +1,7 @@
 # Change Log
 
-## [Unreleased](https://github.com/Rambatino/CHAID/tree/HEAD)
-
-[Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0-alpha.2...HEAD)
+## [v4.0.0](https://github.com/Rambatino/CHAID/tree/v4.0.0) (2017-06-14)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0-alpha.2...v4.0.0)
 
 **Implemented enhancements:**
 
