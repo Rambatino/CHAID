@@ -46,8 +46,8 @@ class Tree(object):
             variable_types = ['nominal'] * ndarr.shape[1]
             self.vectorised_array = [ NominalColumn(ndarr[:,i]) for i in range(ndarr.shape[1]) ]
         else:
-            for col_name, col_type in variable_types.iteritems():
-                ind = variable_types.keys().index(col_name)
+            for col_name, col_type in variable_types.items():
+                ind = list(variable_types.keys()).index(col_name)
                 if col_type == 'ordinal':
                     col = OrdinalColumn(ndarr[:, ind])
                 elif col_type == 'nominal':
@@ -116,7 +116,7 @@ class Tree(object):
             the type of dependent variable. Supported variable types are 'categorical' or
             'continuous'
         """
-        ind_df = df[i_variables.keys()]
+        ind_df = df[list(i_variables.keys())]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
