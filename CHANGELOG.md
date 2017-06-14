@@ -1,21 +1,17 @@
 # Change Log
 
-## [Unreleased](https://github.com/Rambatino/CHAID/tree/HEAD)
-
-[Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0-alpha.2...HEAD)
+## [v4.0.0](https://github.com/Rambatino/CHAID/tree/v4.0.0) (2017-06-14)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0-alpha.2...v4.0.0)
 
 **Implemented enhancements:**
 
 - Changed architecture of from\_pandas\_df to align variable types and instance variables into a single parameter [\#70](https://github.com/Rambatino/CHAID/pull/70) ([Rambatino](https://github.com/Rambatino))
+- Adding invalid split messages [\#68](https://github.com/Rambatino/CHAID/pull/68) ([Rambatino](https://github.com/Rambatino))
 
 **Closed issues:**
 
 - Creating tree different from README [\#65](https://github.com/Rambatino/CHAID/issues/65)
 - User shouldn't have to pass in variables and variable types [\#53](https://github.com/Rambatino/CHAID/issues/53)
-
-**Merged pull requests:**
-
-- Adding invalid split messages [\#68](https://github.com/Rambatino/CHAID/pull/68) ([Rambatino](https://github.com/Rambatino))
 
 ## [v4.0.0-alpha.2](https://github.com/Rambatino/CHAID/tree/v4.0.0-alpha.2) (2017-06-07)
 [Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0-alpha.1...v4.0.0-alpha.2)
