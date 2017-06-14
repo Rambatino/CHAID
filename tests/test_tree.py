@@ -289,7 +289,7 @@ def test_max_depth_returns_correct_invalid_message():
     tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, max_depth=1,
                       min_child_node_size=1, min_parent_node_size=1)
 
-    assert tree.tree_store[-1].split.invalid_reason == 'the max depth has been reached', 'The max depth limit is '\
+    assert tree.tree_store[-1].split.invalid_reason == CHAID.InvalidSplitReason.MAX_DEPTH, 'The max depth limit is '\
                                                  'the invalid reason on the terminal node'
 
 class TestTreeGenerated(TestCase):

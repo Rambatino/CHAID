@@ -4,7 +4,7 @@ from .node import Node
 from .split import Split
 from .column import NominalColumn, OrdinalColumn, ContinuousColumn
 from .stats import Stats
-from .invalid import Invalid
+from .invalid_split_reason import InvalidSplitReason
 
 class Tree(object):
     """
@@ -122,7 +122,7 @@ class Tree(object):
                                  parent=parent, indices=rows, dep_v=dep)
             self._tree_store.append(terminal_node)
             self.node_count += 1
-            terminal_node.split.invalid_reason = Invalid.messages["max_depth"]
+            terminal_node.split.invalid_reason = InvalidSplitReason.MAX_DEPTH
             return self._tree_store
 
         split = self._stats.best_split(ind, dep)
@@ -150,7 +150,7 @@ class Tree(object):
             else:
                 terminal_node = Node(choices=split.split_map[index], node_id=self.node_count,
                                      parent=parent, indices=row_slice, dep_v=dep_slice)
-                terminal_node.split.invalid_reason = Invalid.messages['min_parent_node_size']
+                terminal_node.split.invalid_reason = InvalidSplitReason.MIN_PARENT_NODE_SIZE
                 self._tree_store.append(terminal_node)
                 self.node_count += 1
         return self._tree_store
