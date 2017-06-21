@@ -185,10 +185,96 @@ python -m CHAID tests/data/titanic.csv fare sex embarked --max-depth 4 --min-par
 {'node': 7, 'rules': [{'variable': 'sex', 'data': ['male']}, {'variable': 'embarked', 'data': ['S']}]}
 ```
 
-
 Parameters
-----------
+-------
 Run `python -m CHAID -h` to see description of command line arguments
+
+How to Read the Tree
+-------
+
+We'll start with a real world example using the titanic dataset.
+
+Run `python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05` after placing an ipdb statement on like 55 on \_\_main\_\_.py as in the example below. The parameters mean max depth two 4 levels, a minimum parent node size threshold to 2 and merge the groups if the p-value is greater than 0.05 when comparing the groups.
+
+```
+82        tree = Tree.from_pandas_df(data, independent_variables,
+83                                   nspace.dependent_variable[0],
+84                                   variable_types=types, **config)
+---> 85   import ipdb; ipdb.set_trace()
+86    
+87        if nspace.classify:
+88            predictions = pd.Series(tree.node_predictions())
+89            predictions.name = 'node_id'
+90            data = pd.concat([data, predictions], axis=1)
+91            print(data.to_csv())
+92        elif nspace.predict:
+```
+
+Running `tree.print_tree()` gives:
+
+``` python
+([], {0: 809, 1: 500}, (sex, p=1.47145310169e-81, score=365.886947811, groups=[['female'], ['male']]), dof=1))
+├── (['female'], {0: 127, 1: 339}, (embarked, p=9.17624191599e-07, score=24.0936494474, groups=[['C', '<missing>'], ['Q', 'S']]), dof=1))
+│   ├── (['C', '<missing>'], {0: 11, 1: 104}, <Invalid Chaid Split>)
+│   └── (['Q', 'S'], {0: 116, 1: 235}, <Invalid Chaid Split>)
+└── (['male'], {0: 682, 1: 161}, (embarked, p=5.017855245e-05, score=16.4413525404, groups=[['C'], ['Q', 'S']]), dof=1))
+    ├── (['C'], {0: 109, 1: 48}, <Invalid Chaid Split>)
+    └── (['Q', 'S'], {0: 573, 1: 113}, <Invalid Chaid Split>)
+```
+
+as show above. The first line is the root node, all the data is present in this node. The the vertical bars originating from a node represents paths to that node's children.
+
+Running `tree.tree_store` will give you a list of all the nodes in the tree:
+
+``` python
+[
+  ([], {0: 809, 1: 500}, (sex, p=1.47145310169e-81, score=365.886947811, groups=[['female'], ['male']]), dof=1)),
+  (['female'], {0: 127, 1: 339}, (embarked, p=9.17624191599e-07, score=24.0936494474, groups=[['C', '<missing>'], ['Q', 'S']]), dof=1)),
+  (['C', '<missing>'], {0: 11, 1: 104}, <Invalid Chaid Split>), (['Q', 'S'], {0: 116, 1: 235}, <Invalid Chaid Split>),
+  (['male'], {0: 682, 1: 161}, (embarked, p=5.017855245e-05, score=16.4413525404, groups=[['C'], ['Q', 'S']]), dof=1)),
+  (['C'], {0: 109, 1: 48}, <Invalid Chaid Split>), (['Q', 'S'], {0: 573, 1: 113}, <Invalid Chaid Split>)
+]
+```
+
+So let's inspect the root node `tree.tree_store[0]`:
+
+``` python
+([], {0: 809, 1: 500}, (sex, p=1.47145310169e-81, score=365.886947811, groups=[['female'], ['male']]), dof=1))
+```
+
+Nodes have certain properties. Firstly, they show the column that was chosen to split to this node (for a root node the column is empty '([])'). The second property `{0: 809, 1: 500}` show the members of that node, and represent the current frequency of the dependent variable. In this case, it is all the answers in the 'survived' column, as that was the first column past to the program in the command line (`python -m CHAID tests/data/titanic.csv survived`). The next property represents the splitting of the node. What column was chosen to make that split (in this case, `sex`), the p-value of the split and the chi-score and most importantly, which variables in `sex` create the new nodes and the degrees of freedom associated with that split (1, in this case)
+
+These properties that can be accessed:
+
+``` python
+ipdb> root_node = tree.tree_store[0]
+ipdb> root_node.choices
+[]
+ipdb> root_node.members
+{0: 809, 1: 500}
+ipdb> root_node.split
+(sex, p=1.47145310169e-81, score=365.886947811, groups=[['female'], ['male']]), dof=1)
+```
+
+The split variable can be further inspected:
+
+``` python
+ipdb> split = root_node.split
+ipdb> split.column
+'sex'
+ipdb> split.p
+1.4714531016922664e-81
+ipdb> split.score
+365.88694781112048
+ipdb> split.dof
+1
+ipdb> split.groupings
+"[['female'], ['male']]"
+```
+
+Therefore, in this example, the root node is split on the column 'sex' in the data, splitting up the females and males. These females and males each form a new node and further down, the all male and all female nodes are split on the column 'embarked' (although they needn't split on the same column). A `<Invalid Chaid Split>` is reached when either the node is pure (only one dependent variable remains) or when a terminating parameter is met (e.g. min node size, or max depth [see tree parameters above])
+
+The conclusion drawn from this tree is that: "Gender was the most important factor driving the survival of people on the titanic. Whereby females had a much higher likelihood of surviving (survival = 1 in the survival column and 0 means they died). Of those females, those who embarked first class (class 'C', node 2) had a much higher likelihood of surviving."
 
 Testing
 -------
