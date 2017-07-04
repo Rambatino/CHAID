@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from treelib import Tree as TreeLibTree
 from .node import Node
 from .split import Split
@@ -225,6 +226,38 @@ class Tree(object):
             ]
         else:
             return self.classification_rules(self.get_node(node.parent), stack)
+
+    def tree_predictions(self):
+        """
+        Calculates the row criteria that give rise
+        to a particular terminal node
+        """
+        tree_predictions = pd.DataFrame()
+        for node in self:
+            if node.is_terminal:
+                sliced_arr = np.array([x.arr for x in self.vectorised_array]).T[self.tree_store[-1].indices]
+                unique_set = np.vstack({ tuple(row) for row in sliced_arr })
+                index = pd.MultiIndex.from_arrays(np.transpose(unique_set))
+                if tree_predictions.empty:
+                    tree_predictions = pd.DataFrame([[node.node_id, node.predict]] * len(index), index=index)
+                else:
+                    tree_predictions = tree_predictions.append(pd.DataFrame([[node.node_id, node.predict]] * len(index), index=index))
+        tree_predictions.columns = ['node_id', 'prediction']
+        return tree_predictions
+
+    def accuracy(self, ndarr, arr):
+        """
+        Calculates the accuracy of predicting the
+        dependent variable based upon the node
+        predictions
+        """
+        tree_predictions = self.tree_predictions()
+        tree_predictions.index.names = [0]
+        index = pd.MultiIndex.from_arrays(np.transpose(ndarr))
+        series = pd.Series(arr, index=index, name='dep')
+        join = tree_predictions.join(series)
+        true_set = (join['prediction'] == join['dep']).sum()
+        return true_set / float(len(arr))
 
     def model_predictions(self):
         """

@@ -299,6 +299,7 @@ def test_node_predictions():
     ndarr = np.transpose(np.vstack([gender]))
     tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, max_depth=1,
                       min_child_node_size=1, min_parent_node_size=1)
+
     assert (tree.node_predictions() == np.array([1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 3, 3, 3., 3, 3, 3, 3, 3, 2])).all() == True
 
 class TestTreeGenerated(TestCase):
@@ -515,3 +516,44 @@ class TestContinuousDependentVariable(TestCase):
         tree.build_tree()
         assert round(tree.tree_store[0].p, 4) == 0.3681
         assert len(tree.tree_store) == 5
+
+
+def test_accuracy_when_same_data():
+    """
+    Check whether it correctly determines the unique independent
+    variables for each node
+    """
+
+    independent_set = np.array([
+        [1], [2], [1], [3], [1], [2], [1], [2], [3], [4],
+        [1], [2], [3], [4], [1], [2], [3], [1], [2], [3]
+    ])
+
+    dependent_set = np.array([
+        1, 2, 2, 1, 2, 1, 2, 1, 2, 1,
+        2, 2, 1, 1, 2, 1, 2, 1, 1, 2
+    ])
+
+
+    tree = CHAID.Tree(ndarr=independent_set, arr=dependent_set)
+
+    indices_1 = np.array([0,  2,  4,  6, 10, 14, 17, 1,  5,  7, 11, 15, 18])
+
+    split = CHAID.Split(None, None, None, None, 0)
+
+    terminal_node_1 = CHAID.Node(
+        node_id=2, split=split, indices=indices_1,
+        dep_v=CHAID.NominalColumn(dependent_set[indices_1])
+    )
+
+    indices_2   = np.array([ 3,  8, 12, 16, 19, 9, 13])
+    terminal_node_2 = CHAID.Node(
+        node_id=3, split=split, indices=indices_2,
+        dep_v=CHAID.NominalColumn(dependent_set[indices_2])
+    )
+
+    tree._tree_store = [terminal_node_1, terminal_node_2]
+
+    accuracy = tree.accuracy(ndarr=independent_set, arr=dependent_set)
+
+    assert accuracy == float(11)/20

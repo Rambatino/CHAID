@@ -95,3 +95,7 @@ class Node(object):
                 self._members.update((metadata[k], v) for k, v in counts)
 
         return self._members
+
+    @property
+    def predict(self):
+        return max(self.members, key=self.members.get)
