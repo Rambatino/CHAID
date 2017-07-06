@@ -1,10 +1,12 @@
 import numpy as np
+import pandas as pd
 from treelib import Tree as TreeLibTree
 from .node import Node
 from .split import Split
 from .column import NominalColumn, OrdinalColumn, ContinuousColumn
 from .stats import Stats
 from .invalid_split_reason import InvalidSplitReason
+from collections import OrderedDict
 
 class Tree(object):
     """
@@ -111,13 +113,14 @@ class Tree(object):
             the type of dependent variable. Supported variable types are 'categorical' or
             'continuous'
         """
-        ind_df = df[list(i_variables.keys())]
+        df_ordered_keys = [x for x in df.columns if x in i_variables.keys()]
+        ind_df = df[df_ordered_keys] # preserve df column order
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
         return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
                     min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
-                    list(i_variables.values()), dep_variable_type)
+                    [i_variables[key] for key in df_ordered_keys], dep_variable_type)
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
@@ -225,6 +228,38 @@ class Tree(object):
             ]
         else:
             return self.classification_rules(self.get_node(node.parent), stack)
+
+    def tree_predictions(self):
+        """
+        Calculates the row criteria that give rise
+        to a particular terminal node
+        """
+        tree_predictions = pd.DataFrame()
+        for node in self:
+            if node.is_terminal:
+                sliced_arr = np.array([x.original_vector for x in self.vectorised_array]).T[node.indices]
+                unique_set = np.vstack({ tuple(row) for row in sliced_arr })
+                index = pd.MultiIndex.from_arrays(np.transpose(unique_set))
+                if tree_predictions.empty:
+                    tree_predictions = pd.DataFrame([[node.node_id, node.predict]] * len(index), index=index)
+                else:
+                    tree_predictions = tree_predictions.append(pd.DataFrame([[node.node_id, node.predict]] * len(index), index=index))
+        tree_predictions.columns = ['node_id', 'prediction']
+        # need to retroactively fill missing values
+        return tree_predictions
+
+    def accuracy(self, ndarr, arr):
+        """
+        Calculates the accuracy of predicting the
+        dependent variable based upon the node
+        predictions
+        """
+        tree_predictions = self.tree_predictions()
+        index = pd.MultiIndex.from_arrays(np.transpose(ndarr))
+        series = pd.Series(arr, index=index, name='dep')
+        join = tree_predictions.join(series)
+        true_set = (join['prediction'] == join['dep']).sum()
+        return true_set / float(len(arr))
 
     def model_predictions(self):
         """

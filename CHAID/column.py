@@ -23,9 +23,11 @@ class Column(object):
     def __init__(self, arr=None, metadata=None,
                  missing_id='<missing>', substitute=True, weights=None):
         self._metadata = dict(metadata or {})
+        self._original_arr = arr
         self._arr = np.array(arr)
         self._missing_id = missing_id
         self._weights = weights
+        self._counts = {}
 
     def __iter__(self):
         return iter(self._arr)
@@ -82,6 +84,33 @@ class Column(object):
         """
         return self._metadata
 
+    @property
+    def original_vector(self):
+        """
+        Convert back to the original vector
+        """
+        return np.array([self._metadata[v] for v in self.arr])
+
+    def counts(self, substitute_metadata=False):
+        """
+        Enables the column to determine the most efficient way of
+        calculating the frequency of the different variables
+        """
+        for member in self._metadata.values():
+            self._counts[member] = 0
+
+        if self._weights is None:
+            counts = np.transpose(np.unique(self._arr, return_counts=True))
+        else:
+            counts = np.array([
+                [i, self._weights[self._arr == i].sum()] for i in set(self._arr)
+            ])
+        if substitute_metadata:
+            self._counts.update((self._metadata[k], v) for k, v in counts)
+        else:
+            self._counts.update((k, v) for k, v in counts)
+        return self._counts
+
 
 class NominalColumn(Column):
     """
@@ -111,7 +140,7 @@ class NominalColumn(Column):
         metadata to convert back to the original vector.
 
         np.nan is always given -1, all other objects are given integers in
-        order of apperence.
+        order of appearence.
 
         Parameters
         ----------
@@ -286,6 +315,14 @@ class ContinuousColumn(Column):
     def __setitem__(self, key, value):
         self._arr[key] = value
         return self
+
+    def counts(self, substitute_metadata=False):
+        if not self._counts:
+            self._counts = {
+                'mean': self._arr.mean(),
+                's.t.d': self._arr.std()
+            }
+        return self._counts
 
     @property
     def type(self):

@@ -7,7 +7,7 @@ import savReaderWriter as spss
 from .tree import Tree
 import pandas as pd
 import numpy as np
-
+from collections import OrderedDict
 
 def main():
     """Entry point when module is run from command line"""
@@ -42,6 +42,8 @@ def main():
                        'input with the value of the  dependent variable that '
                        'the majority of respondents in that node selected')
     group.add_argument('--rules', action='store_true')
+    group.add_argument('--accuracy', action='store_true', help='Find the accuracy '
+                       'of CHAID on this data')
 
 
     nspace = parser.parse_args()
@@ -71,7 +73,6 @@ def main():
     if nspace.dependent_variable_type:
         config['dep_variable_type'] = nspace.dependent_variable_type
 
-
     ordinal = nspace.ordinal_variables or []
     nominal = nspace.nominal_variables or []
     independent_variables = nominal + ordinal
@@ -94,6 +95,8 @@ def main():
         print(data.to_csv())
     elif nspace.rules:
         print('\n'.join(str(x) for x in tree.classification_rules()))
+    elif nspace.accuracy:
+        print(tree.accuracy(data[nominal + ordinal].values, data[nspace.dependent_variable[0]].values))
     else:
         tree.print_tree()
 
