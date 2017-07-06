@@ -113,13 +113,14 @@ class Tree(object):
             the type of dependent variable. Supported variable types are 'categorical' or
             'continuous'
         """
-        ind_df = df[[x for x in df.columns if x in i_variables.keys()]] # preserve df column order
+        df_ordered_keys = [x for x in df.columns if x in i_variables.keys()]
+        ind_df = df[df_ordered_keys] # preserve df column order
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
         return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
                     min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
-                    list(i_variables.values()), dep_variable_type)
+                    [i_variables[key] for key in df_ordered_keys], dep_variable_type)
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
