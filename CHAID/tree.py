@@ -6,6 +6,7 @@ from .split import Split
 from .column import NominalColumn, OrdinalColumn, ContinuousColumn
 from .stats import Stats
 from .invalid_split_reason import InvalidSplitReason
+from collections import OrderedDict
 
 class Tree(object):
     """
@@ -112,7 +113,7 @@ class Tree(object):
             the type of dependent variable. Supported variable types are 'categorical' or
             'continuous'
         """
-        ind_df = df[list(i_variables.keys())]
+        ind_df = df[[x for x in df.columns if x in i_variables.keys()]] # preserve df column order
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
@@ -235,7 +236,7 @@ class Tree(object):
         tree_predictions = pd.DataFrame()
         for node in self:
             if node.is_terminal:
-                sliced_arr = np.array([x.arr for x in self.vectorised_array]).T[self.tree_store[-1].indices]
+                sliced_arr = np.array([x.original_vector for x in self.vectorised_array]).T[node.indices]
                 unique_set = np.vstack({ tuple(row) for row in sliced_arr })
                 index = pd.MultiIndex.from_arrays(np.transpose(unique_set))
                 if tree_predictions.empty:
@@ -243,6 +244,7 @@ class Tree(object):
                 else:
                     tree_predictions = tree_predictions.append(pd.DataFrame([[node.node_id, node.predict]] * len(index), index=index))
         tree_predictions.columns = ['node_id', 'prediction']
+        # need to retroactively fill missing values
         return tree_predictions
 
     def accuracy(self, ndarr, arr):
@@ -252,7 +254,6 @@ class Tree(object):
         predictions
         """
         tree_predictions = self.tree_predictions()
-        tree_predictions.index.names = [0]
         index = pd.MultiIndex.from_arrays(np.transpose(ndarr))
         series = pd.Series(arr, index=index, name='dep')
         join = tree_predictions.join(series)

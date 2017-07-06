@@ -7,7 +7,7 @@ import savReaderWriter as spss
 from .tree import Tree
 import pandas as pd
 import numpy as np
-
+from collections import OrderedDict
 
 def main():
     """Entry point when module is run from command line"""
@@ -83,7 +83,6 @@ def main():
     tree = Tree.from_pandas_df(data, types, nspace.dependent_variable[0],
                                **config)
 
-
     if nspace.classify:
         predictions = pd.Series(tree.node_predictions())
         predictions.name = 'node_id'
@@ -97,8 +96,7 @@ def main():
     elif nspace.rules:
         print('\n'.join(str(x) for x in tree.classification_rules()))
     elif nspace.accuracy:
-        import ipdb; ipdb.set_trace()
-        tree.tree_predictions()
+        print(tree.accuracy(data[nominal + ordinal].values, data[nspace.dependent_variable[0]].values))
     else:
         tree.print_tree()
 

@@ -23,6 +23,7 @@ class Column(object):
     def __init__(self, arr=None, metadata=None,
                  missing_id='<missing>', substitute=True, weights=None):
         self._metadata = dict(metadata or {})
+        self._original_arr = arr
         self._arr = np.array(arr)
         self._missing_id = missing_id
         self._weights = weights
@@ -83,6 +84,13 @@ class Column(object):
         """
         return self._metadata
 
+    @property
+    def original_vector(self):
+        """
+        Convert back to the original vector
+        """
+        return np.array([self._metadata[v] for v in self.arr])
+
     def counts(self, substitute_metadata=False):
         """
         Enables the column to determine the most efficient way of
@@ -132,7 +140,7 @@ class NominalColumn(Column):
         metadata to convert back to the original vector.
 
         np.nan is always given -1, all other objects are given integers in
-        order of apperence.
+        order of appearence.
 
         Parameters
         ----------
