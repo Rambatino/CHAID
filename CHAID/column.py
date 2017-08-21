@@ -62,7 +62,7 @@ class NominalColumn(Column):
     def __init__(self, arr=None, metadata=None, missing_id='<missing>',
                  substitute=True, weights=None, name=None):
         super(self.__class__, self).__init__(arr, metadata=metadata, missing_id=missing_id, weights=weights, name=name)
-        if substitute:
+        if substitute and metadata is None:
             self.substitute_values(arr)
 
         self._groupings = MappingDict()
@@ -143,7 +143,7 @@ class OrdinalColumn(Column):
                  groupings=None, substitute=True, weights=None, name=None):
         super(self.__class__, self).__init__(arr, metadata, missing_id=missing_id, weights=weights, name=name)
 
-        if substitute:
+        if substitute and metadata is None:
             self.arr, self.orig_type = self.substitute_values(self.arr)
 
         self._groupings = {}
@@ -238,21 +238,21 @@ class ContinuousColumn(Column):
     A column containing numerical values on a continuous scale
     """
     def __init__(self, arr=None, metadata=None, missing_id='<missing>',
-                 weights=None, name=None):
+                 weights=None):
         if not np.issubdtype(arr.dtype, np.number):
             raise ValueError('Must only pass numerical values to create continuous column')
 
-        super(self.__class__, self).__init__(np.nan_to_num(arr), metadata, missing_id=missing_id, weights=weights, name=self.name)
+        super(self.__class__, self).__init__(np.nan_to_num(arr), metadata, missing_id=missing_id, weights=weights)
 
     def deep_copy(self):
         """
         Returns a deep copy.
         """
-        return ContinuousColumn(self.arr, metadata=self.metadata, missing_id=self._missing_id, weights=self.weights, name=self.name)
+        return ContinuousColumn(self.arr, metadata=self.metadata, missing_id=self._missing_id, weights=self.weights)
 
     def __getitem__(self, key):
         new_weights = None if self.weights is None else self.weights[key]
-        return ContinuousColumn(self.arr[key], metadata=self.metadata, weights=new_weights, name=self.name)
+        return ContinuousColumn(self.arr[key], metadata=self.metadata, weights=new_weights)
 
     def __setitem__(self, key, value):
         self.arr[key] = value
