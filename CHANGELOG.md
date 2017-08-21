@@ -1,5 +1,21 @@
 # Change Log
 
+## [v5.0.0](https://github.com/Rambatino/CHAID/tree/v5.0.0) (2017-08-21)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0...v5.0.0)
+
+**Implemented enhancements:**
+
+- Formalised tree initialisation method to use Column classes [\#76](https://github.com/Rambatino/CHAID/pull/76) ([Rambatino](https://github.com/Rambatino))
+
+**Closed issues:**
+
+- Continuous independent variables? [\#75](https://github.com/Rambatino/CHAID/issues/75)
+- CHAID tree to json [\#71](https://github.com/Rambatino/CHAID/issues/71)
+
+**Merged pull requests:**
+
+- First draft of the how to guide [\#67](https://github.com/Rambatino/CHAID/pull/67) ([Rambatino](https://github.com/Rambatino))
+
 ## [v4.0.0](https://github.com/Rambatino/CHAID/tree/v4.0.0) (2017-06-14)
 [Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0-alpha.2...v4.0.0)
 
