@@ -7,60 +7,92 @@ from .stats import Stats
 from .invalid_split_reason import InvalidSplitReason
 
 class Tree(object):
-    """
-    Create a CHAID object which contains all the information of the tree
+    def __init__(self, independent_columns, dependent_column, config={}):
+        """
+        Init method to derive the tree from the columns constructing it
 
-    Parameters
-    ----------
-    ndarr : numpy.ndarray
-        non-aggregated 2-dimensional array containing
-        independent variables on the veritcal axis and (usually)
-        respondent level data on the horizontal axis
-    arr : numpy.ndarray
-        1-dimensional array of the dependent variable associated with
-        ndarr
-    alpha_merge : float
-        the threshold value in which to create a split (default 0.05)
-    max_depth : float
-        the threshold value for the maximum number of levels after the root
-        node in the tree (default 2)
-    min_parent_node_size : float
-        the threshold value of the number of respondents that the node must
-        contain (default 30)
-    split_titles : array-like
-        array of names for the independent variables in the data
-    variable_types : array-like or dict
-        array of variable types, or dict of column names to variable types.
-        Supported variable types are the strings 'nominal' or 'ordinal' in
-        lower case
-    """
-    def __init__(self, ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
-                 min_child_node_size=30, split_titles=None, split_threshold=0, weights=None,
-                 variable_types=None, dep_variable_type='categorical'):
-        self.max_depth = max_depth
-        self.min_parent_node_size = min_parent_node_size
-        self.split_titles = split_titles or []
-        self.vectorised_array = []
-        variable_types = variable_types or ['nominal'] * ndarr.shape[1]
-        for ind, col_type in enumerate(variable_types):
-            if col_type == 'ordinal':
-                col = OrdinalColumn(ndarr[:, ind])
-            elif col_type == 'nominal':
-                col = NominalColumn(ndarr[:, ind])
-            else:
-                raise NotImplementedError('Unknown independent variable type ' + col_type)
-            self.vectorised_array.append(col)
-
-        self.data_size = ndarr.shape[0]
+        Parameters
+        ----------
+        independent_columns : array<Column>
+            an array of CHAID columns
+        dependent_column : Column
+            a single CHAID column to use as the dependent variable
+        config: Dict
+            {
+                alpha_merge=0.05,
+                max_depth=2,
+                min_parent_node_size=30,
+                min_child_node_size=30,
+                split_threshold=0
+            }
+        """
+        self.max_depth = config.get('max_depth', 2)
+        self.min_parent_node_size = config.get('min_parent_node_size', 30)
+        self.vectorised_array = independent_columns
+        self.data_size = dependent_column.arr.shape[0]
         self.node_count = 0
         self._tree_store = None
+        self.observed = dependent_column
+        self._stats = Stats(
+            config.get('alpha_merge', 0.05),
+            config.get('min_child_node_size', 30),
+            config.get('split_threshold', 0),
+            dependent_column.arr
+        )
+
+    @staticmethod
+    def from_numpy(ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
+                 min_child_node_size=30, split_titles=None, split_threshold=0, weights=None,
+                 variable_types=None, dep_variable_type='categorical'):
+        """
+        Create a CHAID object from numpy
+
+        Parameters
+        ----------
+        ndarr : numpy.ndarray
+            non-aggregated 2-dimensional array containing
+            independent variables on the veritcal axis and (usually)
+            respondent level data on the horizontal axis
+        arr : numpy.ndarray
+            1-dimensional array of the dependent variable associated with
+            ndarr
+        alpha_merge : float
+            the threshold value in which to create a split (default 0.05)
+        max_depth : float
+            the threshold value for the maximum number of levels after the root
+            node in the tree (default 2)
+        min_parent_node_size : float
+            the threshold value of the number of respondents that the node must
+            contain (default 30)
+        split_titles : array-like
+            array of names for the independent variables in the data
+        variable_types : array-like or dict
+            array of variable types, or dict of column names to variable types.
+            Supported variable types are the strings 'nominal' or 'ordinal' in
+            lower case
+        """
+        vectorised_array = []
+        variable_types = variable_types or ['nominal'] * ndarr.shape[1]
+        for ind, col_type in enumerate(variable_types):
+            title = None
+            if split_titles is not None: title = split_titles[ind]
+            if col_type == 'ordinal':
+                col = OrdinalColumn(ndarr[:, ind], name=title)
+            elif col_type == 'nominal':
+                col = NominalColumn(ndarr[:, ind], name=title)
+            else:
+                raise NotImplementedError('Unknown independent variable type ' + col_type)
+            vectorised_array.append(col)
+
         if dep_variable_type == 'categorical':
-            self.observed = NominalColumn(arr, weights=weights)
+            observed = NominalColumn(arr, weights=weights)
         elif dep_variable_type == 'continuous':
-            self.observed = ContinuousColumn(arr, weights=weights)
+            observed = ContinuousColumn(arr, weights=weights)
         else:
             raise NotImplementedError('Unknown dependent variable type ' + dep_variable_type)
-        self._stats = Stats(alpha_merge, min_child_node_size, split_threshold, arr)
+        config = { 'alpha_merge': alpha_merge, 'max_depth': max_depth, 'min_parent_node_size': min_parent_node_size,
+                   'min_child_node_size': min_child_node_size, 'split_threshold': split_threshold }
+        return Tree(vectorised_array, observed, config)
 
     def build_tree(self):
         """ Build chaid tree """
@@ -115,7 +147,7 @@ class Tree(object):
         ind_values = ind_df.values
         dep_values = df[d_variable].values
         weights = df[weight] if weight is not None else None
-        return Tree(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
+        return Tree.from_numpy(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
                     min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
                     list(i_variables.values()), dep_variable_type)
 
@@ -132,8 +164,6 @@ class Tree(object):
             return self._tree_store
 
         split = self._stats.best_split(ind, dep)
-
-        split.name_columns(self.split_titles)
 
         node = Node(choices=parent_decisions, node_id=self.node_count, indices=rows, dep_v=dep,
                     parent=parent, split=split)

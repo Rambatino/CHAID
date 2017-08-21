@@ -112,7 +112,7 @@ class Stats(object):
                     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
                     chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
 
-                    temp_split = Split(i, ind_var.groups(), chi, p_split, dof)
+                    temp_split = Split(i, ind_var.groups(), chi, p_split, dof, split_name=ind_var.name)
                     better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)
 
                     if better_split:
@@ -187,7 +187,7 @@ class Stats(object):
                     dof = len(np.concatenate(list(keyed_set.values()))) - 2
                     score, p_split = sig_test(*keyed_set.values())
 
-                    temp_split = Split(i, ind_var.groups(), score, p_split, dof)
+                    temp_split = Split(i, ind_var.groups(), score, p_split, dof, split_name=ind_var.name)
 
                     better_split = not split.valid() or p_split < split.p or (p_split == split.p and score > split.score)
 

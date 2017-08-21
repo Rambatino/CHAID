@@ -19,11 +19,11 @@ class Split(object):
     invalid_reason : InvalidSplitReason()
         The reason why the node failed to split
     """
-    def __init__(self, column, splits, score, p, dof, invalid_reason=None):
+    def __init__(self, column, splits, score, p, dof, invalid_reason=None, split_name=None):
         splits = splits or []
         self.surrogates = []
         self.column_id = column
-        self.split_name = None
+        self.split_name = split_name
         self.splits = list(splits)
         self.split_map = [None] * len(self.splits)
         self.score = score
