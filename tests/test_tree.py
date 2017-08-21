@@ -6,12 +6,12 @@ import numpy as np
 from setup_tests import list_ordered_equal, list_unordered_equal, CHAID, ROOT_FOLDER
 import pandas as pd
 from treelib import Tree as TreeLibTree
-
+import os
 
 class TestClassificationRules(TestCase):
     def setUp(self):
         invalid_split = CHAID.Split(None, None, 0, 1, 0)
-        self.tree = CHAID.Tree(np.array([[1]]), np.array([1]))
+        self.tree = CHAID.Tree.from_numpy(np.array([[1]]), np.array([1]))
         self.tree._tree_store = [
             CHAID.Node(
                 node_id=0,
@@ -72,7 +72,7 @@ def test_best_split_unique_values():
     orig_arr = arr.copy()
     ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
     orig_ndarr = ndarr.copy()
-    tree = CHAID.Tree(ndarr, arr, min_child_node_size=0)
+    tree = CHAID.Tree.from_numpy(ndarr, arr, min_child_node_size=0)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -94,7 +94,7 @@ def test_spliting_identical_values():
     orig_arr = arr.copy()
     ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
     orig_ndarr = ndarr.copy()
-    tree = CHAID.Tree(ndarr, arr, min_child_node_size=0)
+    tree = CHAID.Tree.from_numpy(ndarr, arr, min_child_node_size=0)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -116,7 +116,7 @@ def test_best_split_with_combination():
     orig_arr = arr.copy()
     ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5) + ([3, 2, 3] * 5)).reshape(15, 3)
     orig_ndarr = ndarr.copy()
-    tree = CHAID.Tree(ndarr, arr, min_child_node_size=0)
+    tree = CHAID.Tree.from_numpy(ndarr, arr, min_child_node_size=0)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -131,6 +131,22 @@ def test_best_split_with_combination():
     assert split.p < 0.015
 
 
+def test_new_columns_constructor():
+    """
+    Test the new tree constructor that takes CHAID Columns as parameters
+    """
+    orientation = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    age = np.array([0,1,1,0,2,2,2,2,1,1,1,0,0,0,0,0,0,0,0,0])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    cols = [
+        CHAID.OrdinalColumn(orientation, name="orientation"),
+        CHAID.OrdinalColumn(age, name="age", metadata={0: '0-5', 1: '6-10', 2: '11-15'}),
+    ]
+    tree = CHAID.Tree(cols, CHAID.NominalColumn(income), {'min_child_node_size': 1})
+    assert tree.tree_store[0].split.groupings == "[['0-5'], ['6-10', '11-15']]"
+
+
 class TestSurrogate(TestCase):
     """ Test case class to test surrogate detection """
     def setUp(self):
@@ -142,7 +158,7 @@ class TestSurrogate(TestCase):
         """
         Test passing in data, in which a surrogate split exists
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, split_threshold=0.9, min_child_node_size=0)
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, split_threshold=0.9, min_child_node_size=0)
 
         split = tree.generate_best_split(
             tree.vectorised_array,
@@ -157,7 +173,7 @@ class TestSurrogate(TestCase):
         """
         Test that chaid selects min p split
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, split_threshold=0.9, min_child_node_size=0)
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, split_threshold=0.9, min_child_node_size=0)
 
         split = tree.generate_best_split(
             tree.vectorised_array,
@@ -175,7 +191,7 @@ def test_p_and_chi_values():
     arr = np.array(([1] * 3) + ([2] * 4))
     ndarr = np.array(([1] * 4) + ([2] * 3)).reshape(7, 1)
 
-    tree = CHAID.Tree(ndarr, arr, split_threshold=0.9, min_child_node_size=0)
+    tree = CHAID.Tree.from_numpy(ndarr, arr, split_threshold=0.9, min_child_node_size=0)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -195,7 +211,7 @@ def test_p_and_chi_values_when_weighting_applied():
     weighting = np.array([0.9,0.8,0.9,1.1,1.2,0.8,1.3,0.2,0.5,0.7,1.1])
     ndarr = np.transpose(np.vstack([gender]))
 
-    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, weights=weighting, min_child_node_size=0)
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, weights=weighting, min_child_node_size=0)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -215,7 +231,7 @@ def test_correct_dof():
 
     ndarr = np.transpose(np.vstack([gender]))
 
-    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, min_child_node_size=0)
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_child_node_size=0)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -236,7 +252,7 @@ def test_zero_subbed_weighted_ndarry():
 
     ndarr = np.transpose(np.vstack([gender]))
 
-    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, weights=weighting, min_child_node_size=0)
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, weights=weighting, min_child_node_size=0)
 
     split = tree.generate_best_split(
         tree.vectorised_array,
@@ -257,21 +273,19 @@ def test_min_child_node_size_is_30():
 
     ndarr = np.transpose(np.vstack([gender]))
 
-    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9)
-    tree.build_tree()
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9)
 
     assert len(tree.tree_store) == 1
 
 def test_to_tree_returns_a_tree():
     """
     Test that the to_tree() method returns expected result
-    and is returned even when build_tree() not called prior
     """
     gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
     income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
 
     ndarr = np.transpose(np.vstack([gender]))
-    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9,
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9,
                       min_child_node_size=1, min_parent_node_size=1)
 
     assert isinstance(tree.to_tree(), TreeLibTree), 'A TreeLib object is returned'
@@ -286,7 +300,7 @@ def test_max_depth_returns_correct_invalid_message():
     income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
 
     ndarr = np.transpose(np.vstack([gender]))
-    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, max_depth=1,
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, max_depth=1,
                       min_child_node_size=1, min_parent_node_size=1)
 
     assert tree.tree_store[-1].split.invalid_reason == CHAID.InvalidSplitReason.MAX_DEPTH, 'The max depth limit is '\
@@ -297,7 +311,7 @@ def test_node_predictions():
     income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
 
     ndarr = np.transpose(np.vstack([gender]))
-    tree = CHAID.Tree(ndarr, income, alpha_merge=0.9, max_depth=1,
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, max_depth=1,
                       min_child_node_size=1, min_parent_node_size=1)
     assert (tree.node_predictions() == np.array([1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 3, 3, 3., 3, 3, 3, 3, 3, 2])).all() == True
 
@@ -307,7 +321,7 @@ class TestTreeGenerated(TestCase):
         """ Set up for tree generation tests """
         arr = np.array(([1] * 5) + ([2] * 5))
         ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
-        self.tree = CHAID.Tree(ndarr, arr, min_child_node_size=0)
+        self.tree = CHAID.Tree.from_numpy(ndarr, arr, min_child_node_size=0)
 
     def test_iter(self):
         """ Test the calls to __iter__() populate the tree """
@@ -320,8 +334,6 @@ class TestTreeGenerated(TestCase):
         assert self.tree.tree_store is not None
 
     def test_deletion(self):
-        """ Test the calls to build_tree() populate the tree """
-        self.tree.build_tree()
         assert self.tree.tree_store is not None
 
 
@@ -337,7 +349,7 @@ class TestComplexStructures(TestCase):
         # ndarr = self.df[['col_17', 'col_27']].values
         # arr = self.df['dep'].values
         #
-        # tree = CHAID.Tree(ndarr, arr, split_threshold=0.9)
+        # tree = CHAID.Tree.from_numpy(ndarr, arr, split_threshold=0.9)
         #
         # split = tree.generate_best_split(
         #     tree.vectorised_array,
@@ -360,8 +372,7 @@ class TestBugFixes(TestCase):
         Fix bug wherby the weights was using the class weights
         and not the sliced weights in node()
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_parent_node_size=2, min_child_node_size=0)
-        tree.build_tree()
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_parent_node_size=2, min_child_node_size=0)
         assert tree.tree_store[3].members == {1: 0, 2: 1.2}
         assert tree.tree_store[5].members == {1: 5.0, 2: 6.0}
 
@@ -392,8 +403,7 @@ class TestStoppingRules(TestCase):
         Check that minimum child node size causes the tree to
         terminate correctly
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11)
-        tree.build_tree()
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11)
         assert len(tree.tree_store) == 1
 
     def test_min_child_node_size_does_not_stop_for_unweighted_case(self):
@@ -401,8 +411,7 @@ class TestStoppingRules(TestCase):
         Check that minimum child node size causes the tree to
         terminate correctly
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=10)
-        tree.build_tree()
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=5)
         assert len(tree.tree_store) == 4
 
     def test_min_child_node_size_does_stop_for_weighted_case(self):
@@ -410,8 +419,7 @@ class TestStoppingRules(TestCase):
         Check that minimum child node size causes the tree to
         terminate correctly
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=10.7)
-        tree.build_tree()
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=10.7)
         assert len(tree.tree_store) == 4
 
     def test_min_child_node_size_does_not_stop_for_weighted_case(self):
@@ -419,8 +427,7 @@ class TestStoppingRules(TestCase):
         Check that minimum child node size causes the tree to
         terminate correctly
         """
-        tree = CHAID.Tree(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=11.5)
-        tree.build_tree()
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=11.5)
         assert len(tree.tree_store) == 3
 
 
@@ -493,8 +500,7 @@ class TestContinuousDependentVariable(TestCase):
         """
         Check that a tree can be built with a continuous dependent variable
         """
-        tree = CHAID.Tree(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous')
-        tree.build_tree()
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous')
         assert round(tree.tree_store[0].p, 4) == 0.4119
         assert len(tree.tree_store) == 9
 
@@ -502,8 +508,7 @@ class TestContinuousDependentVariable(TestCase):
         """
         Check that a tree can be built with a continuous dependent variable
         """
-        tree = CHAID.Tree(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
-        tree.build_tree()
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
         assert round(tree.tree_store[0].p, 4) == 0.1594
         assert len(tree.tree_store) == 9
 
@@ -511,7 +516,6 @@ class TestContinuousDependentVariable(TestCase):
         """
         Check that a tree can be built with a continuous dependent variable using the bartlett significance because the distribution is normal
         """
-        tree = CHAID.Tree(self.ndarr, self.normal_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
-        tree.build_tree()
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.normal_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
         assert round(tree.tree_store[0].p, 4) == 0.3681
         assert len(tree.tree_store) == 5

@@ -115,6 +115,12 @@ def test_column_stores_weights():
     assert (ordinal.weights == wt).all()
     assert (continuous.weights == wt).all()
 
+def test_fix_metadata_if_passed_in():
+    arr = np.array([1.0, 2.0, 3.0])
+    nominal = CHAID.NominalColumn(arr, metadata={1.0: 'Cat', 2.0: 'Haz', 3.0: 'Cheezburger'})
+    assert [nominal.metadata[x] for x in nominal.arr] == ['Cat', 'Haz', 'Cheezburger']
+
+
 class TestDeepCopy(TestCase):
     """ Test fixture class for deep copy method """
     def setUp(self):

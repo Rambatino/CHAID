@@ -53,7 +53,14 @@ dep_variable = 'd'
 ## create the Tree via pandas
 tree = Tree.from_pandas_df(df, dict(zip(independent_variable_columns, 'nominal' * 3)), dep_variable)
 ## create the same tree, but without pandas helper
-tree = Tree(ndarr, arr, split_titles=['a', 'b', 'c'], min_child_node_size=5)
+tree = Tree.from_numpy(ndarr, arr, split_titles=['a', 'b', 'c'], min_child_node_size=5)
+## create the same tree using the tree constructor
+cols = [
+  NominalColumn(ndarr[:,0], name='a')
+  NominalColumn(ndarr[:,0], name='b')
+  NominalColumn(ndarr[:,0], name='b')
+]
+tree = Tree.from_numpy(cols, NominalColumn(arr, name='d'), {'min_child_node_size': 5})
 
 >>> tree.print_tree()
 ([], {1: 5, 2: 5}, ('a', p=0.001565402258, score=10.0, groups=[[1], [2]]), dof=1))
