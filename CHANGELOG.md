@@ -1,5 +1,12 @@
 # Change Log
 
+## [v5.0.1](https://github.com/Rambatino/CHAID/tree/v5.0.1) (2017-08-22)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.0.0...v5.0.1)
+
+**Fixed bugs:**
+
+- Fixed numpy for 1.11.1 [\#77](https://github.com/Rambatino/CHAID/pull/77) ([Rambatino](https://github.com/Rambatino))
+
 ## [v5.0.0](https://github.com/Rambatino/CHAID/tree/v5.0.0) (2017-08-21)
 [Full Changelog](https://github.com/Rambatino/CHAID/compare/v4.0.0...v5.0.0)
 
