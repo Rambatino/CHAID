@@ -99,10 +99,12 @@ class NominalColumn(Column):
             x for x in unique if not isinstance(x, float) or not isnan(x)
         ]
 
-        arr = np.zeros(len(vect), dtype=int) - 1
+        arr = np.copy(vect)
         for new_id, value in enumerate(unique):
-            arr[vect == value] = new_id
+            np.place(arr, arr==value, new_id)
             self.metadata[new_id] = value
+        arr = arr.astype(np.float)
+        np.place(arr, np.isnan(arr), -1)
         self.arr = arr
 
         if -1 in arr:
