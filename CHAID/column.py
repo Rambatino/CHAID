@@ -151,7 +151,7 @@ class OrdinalColumn(Column):
         elif substitute and metadata and not np.issubdtype(self.arr.dtype, np.integer):
             # custom metadata has been passed in from external source, and must be converted to int
             self.arr = self.arr.astype(int)
-            self.metadata = { int(k):v for k, v in metadata.iteritems() }
+            self.metadata = { int(k):v for k, v in metadata.items() }
             self.metadata[self._nan] = missing_id
 
         self._groupings = {}
