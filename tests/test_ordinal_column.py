@@ -250,3 +250,19 @@ class TestOrdinalGroupingWithnan(TestCase):
         groups = [[col.metadata[i] for i in group] for group in col.groups()]
         actual_groups = [[1.0], [2.0, 3.0, 4.0, '<missing>'], [5.0], [10.0]]
         assert list_unordered_equal(actual_groups, groups), 'With NaNs, with groups containing nan identified, actual groupings are incorrectly reported'
+
+class TestOrdinalConstructor(TestCase):
+    """ Test fixture class for testing external Ordinal contruction """
+    def setUp(self):
+        """ Setup for tests """
+        arr_with_nan = np.array([1.0, 2.0, nan, 3.0, 3.0, nan, 3.0])
+        self.col_with_nan = CHAID.OrdinalColumn(arr_with_nan, {1.0: 'first', 2.0: 'second', 3.0: 'third'})
+
+    def test_correctly_subs_nan_values(self):
+        assert self.col_with_nan.arr[2] == self.col_with_nan._nan
+
+    def test_correctly_subs_floats_for_ints(self):
+        assert np.issubdtype(self.col_with_nan.arr.dtype, np.integer)
+
+    def test_correctly_subs_floated_metadata(self):
+        assert self.col_with_nan.metadata == {self.col_with_nan._nan: '<missing>', 1: 'first', 2: 'second', 3: 'third'}
