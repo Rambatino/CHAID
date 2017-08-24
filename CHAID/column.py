@@ -144,9 +144,15 @@ class OrdinalColumn(Column):
     def __init__(self, arr=None, metadata=None, missing_id='<missing>',
                  groupings=None, substitute=True, weights=None, name=None):
         super(self.__class__, self).__init__(arr, metadata, missing_id=missing_id, weights=weights, name=name)
+        self._nan = np.array([np.nan]).astype(int)[0]
 
         if substitute and metadata is None:
             self.arr, self.orig_type = self.substitute_values(self.arr)
+        elif substitute and metadata and not np.issubdtype(self.arr.dtype, np.integer):
+            # custom metadata has been passed in from external source, and must be converted to int
+            self.arr = self.arr.astype(int)
+            self.metadata = { int(k):v for k, v in metadata.items() }
+            self.metadata[self._nan] = missing_id
 
         self._groupings = {}
         if groupings is None:
@@ -155,7 +161,6 @@ class OrdinalColumn(Column):
         else:
             for x in np.unique(self.arr):
                 self._groupings[x] = list(groupings[x])
-        self._nan = np.array([np.nan]).astype(int)[0]
         self._possible_groups = None
 
     def substitute_values(self, vect):
