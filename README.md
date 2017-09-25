@@ -51,14 +51,14 @@ independent_variable_columns = ['a', 'b', 'c']
 dep_variable = 'd'
 
 ## create the Tree via pandas
-tree = Tree.from_pandas_df(df, dict(zip(independent_variable_columns, 'nominal' * 3)), dep_variable)
+tree = Tree.from_pandas_df(df, dict(zip(independent_variable_columns, ['nominal'] * 3)), dep_variable)
 ## create the same tree, but without pandas helper
 tree = Tree.from_numpy(ndarr, arr, split_titles=['a', 'b', 'c'], min_child_node_size=5)
 ## create the same tree using the tree constructor
 cols = [
   NominalColumn(ndarr[:,0], name='a')
-  NominalColumn(ndarr[:,0], name='b')
-  NominalColumn(ndarr[:,0], name='b')
+  NominalColumn(ndarr[:,1], name='b')
+  NominalColumn(ndarr[:,2], name='c')
 ]
 tree = Tree.from_numpy(cols, NominalColumn(arr, name='d'), {'min_child_node_size': 5})
 
@@ -101,6 +101,8 @@ ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
 df = pd.DataFrame(ndarr)
 df.columns = ['a', 'b', 'c']
 df['d'] = np.random.normal(300, 100, 10)
+independent_variable_columns = ['a', 'b', 'c']
+dep_variable = 'd'
 
 >>> df
    a  b  c           d
@@ -116,7 +118,7 @@ df['d'] = np.random.normal(300, 100, 10)
 9  2  2  3  238.471850
 
 ## create the Tree via pandas
-tree = Tree.from_pandas_df(df, dict(zip(independent_variable_columns, 'nominal' * 3)), dep_variable, dep_variable_type='continuous')
+tree = Tree.from_pandas_df(df, dict(zip(independent_variable_columns, ['nominal'] * 3)), dep_variable, dep_variable_type='continuous')
 
 ## print the tree (though not enough power to split)
 >>> tree.print_tree()
