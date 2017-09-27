@@ -313,7 +313,11 @@ def test_node_predictions():
     ndarr = np.transpose(np.vstack([gender]))
     tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, max_depth=1,
                       min_child_node_size=1, min_parent_node_size=1)
-    assert (tree.node_predictions() == np.array([1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 3, 3, 3., 3, 3, 3, 3, 3, 2])).all() == True
+
+    assert (tree.node_predictions() == np.array([
+        2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0,
+        2.0, 2.0, 2.0, 2.0, 2.0, 1.0
+    ])).all() == True
 
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """

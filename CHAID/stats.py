@@ -76,7 +76,7 @@ class Stats(object):
             if len(list(ind_var.possible_groupings())) == 0:
                 split.invalid_reason = InvalidSplitReason.PURE_NODE
 
-            choice, highest_p_join, split_chi = None, None, None
+            choice, highest_p_join, split_chi, dof = None, None, None, None
             for comb in ind_var.all_combinations():
                 freqs = [ sum( [ cl.Counter(freq[key]) for key in c ], cl.Counter()) for c in comb ]
                 keys = set(sum([ f.keys() for f in freqs ], []))
@@ -105,7 +105,6 @@ class Stats(object):
                     temp_split.surrogates = []
                     split.surrogates.append(temp_split)
 
-                import ipdb; ipdb.set_trace()
                 split.sub_split_values(ind[split.column_id].metadata)
 
         return split
