@@ -3,6 +3,14 @@ from math import isnan
 from itertools import combinations
 from .mapping_dict import MappingDict
 
+def is_sorted(ndarr, nan_val=None):
+    store = []
+    for arr in ndarr:
+        if arr == []: continue
+        if nan_val is not None and nan_val in arr:
+            arr.remove(nan_val)
+        store.append(arr[-1] - arr[0] == len(arr) - 1)
+    return all(store)
 
 class Column(object):
     """
@@ -49,9 +57,27 @@ class Column(object):
 
     def deep_copy(self):
         """
-        Returns a deep copy.
+        Returns a deep copy
         """
         raise NotImplementedError
+
+    def bell_set(self, collection, ordinal=False):
+        """
+        Calculates the Bell set
+        """
+        if len(collection) == 1:
+            yield [ collection ]
+            return
+
+        first = collection[0]
+        for smaller in self.bell_set(collection[1:]):
+            for n, subset in enumerate(smaller):
+                if ordinal and is_sorted(smaller[:n] + [[ first ] + subset] + smaller[n+1:], self._nan):
+                    yield smaller[:n] + [[ first ] + subset] + smaller[n+1:]
+                else:
+                    yield smaller[:n] + [[ first ] + subset] + smaller[n+1:]
+
+            yield [ [ first ] ] + smaller
 
 
 class NominalColumn(Column):
@@ -123,6 +149,10 @@ class NominalColumn(Column):
 
     def possible_groupings(self):
         return combinations(self._groupings.keys(), 2)
+
+    def all_combinations(self):
+        bell_set = [ i for i in self.bell_set(self._groupings.keys())]
+        return bell_set[1:]
 
     def group(self, x, y):
         self._groupings[x] += self._groupings[y]
@@ -214,6 +244,11 @@ class OrdinalColumn(Column):
                     (key, self._nan) for key in self._groupings.keys() if key != self._nan
                 ]
         return self._possible_groups.__iter__()
+
+    def all_combinations(self):
+        bell_set = [ i for i in self.bell_set(self._groupings.keys(), True)]
+        return bell_set[1:]
+
 
     def group(self, x, y):
         self._possible_groups = None
