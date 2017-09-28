@@ -72,12 +72,11 @@ class Column(object):
         first = collection[0]
         for smaller in self.bell_set(collection[1:]):
             for n, subset in enumerate(smaller):
-                if ordinal and is_sorted(smaller[:n] + [[ first ] + subset] + smaller[n+1:], self._nan):
-                    yield smaller[:n] + [[ first ] + subset] + smaller[n+1:]
-                else:
+                if not ordinal or (ordinal and is_sorted(smaller[:n] + [[ first ] + subset] + smaller[n+1:], self._nan)):
                     yield smaller[:n] + [[ first ] + subset] + smaller[n+1:]
 
-            yield [ [ first ] ] + smaller
+            if not ordinal or (ordinal and is_sorted([ [ first ] ] + smaller, self._nan)):
+                yield [ [ first ] ] + smaller
 
 
 class NominalColumn(Column):
