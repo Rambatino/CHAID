@@ -151,7 +151,7 @@ class NominalColumn(Column):
         return combinations(self._groupings.keys(), 2)
 
     def all_combinations(self):
-        bell_set = [ i for i in self.bell_set(self._groupings.keys())]
+        bell_set = [ i for i in self.bell_set(list(self._groupings.keys()))]
         return bell_set[1:]
 
     def group(self, x, y):
@@ -246,7 +246,7 @@ class OrdinalColumn(Column):
         return self._possible_groups.__iter__()
 
     def all_combinations(self):
-        bell_set = [ i for i in self.bell_set(self._groupings.keys(), True)]
+        bell_set = [ i for i in self.bell_set(list(self._groupings.keys()), True)]
         return bell_set[1:]
 
 

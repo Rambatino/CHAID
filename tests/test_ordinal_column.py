@@ -6,6 +6,16 @@ import numpy as np
 from numpy import nan
 from setup_tests import list_ordered_equal, list_unordered_equal, CHAID
 
+# def test_all_combinations():
+#     arr = np.array([1.0, 2.0, 3.0, 4.0])
+#     nominal = CHAID.OrdinalColumn(arr)
+#     assert nominal.all_combinations() == [[[0.0], [1.0, 2.0, 3.0]],
+#                                           [[0.0, 1.0], [2.0, 3.0]],
+#                                           [[0.0], [1.0], [2.0, 3.0]],
+#                                           [[0.0, 1.0, 2.0], [3.0]],
+#                                           [[0.0], [1.0, 2.0], [3.0]],
+#                                           [[0.0, 1.0], [2.0], [3.0]],
+#                                           [[0.0], [1.0], [2.0], [3.0]]]
 
 class TestOrdinalDeepCopy(TestCase):
     """ Test fixture class for deep copy method """
