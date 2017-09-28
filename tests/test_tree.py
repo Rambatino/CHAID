@@ -144,7 +144,7 @@ def test_new_columns_constructor():
         CHAID.OrdinalColumn(age, name="age", metadata=metadata),
     ]
     tree = CHAID.Tree(cols, CHAID.NominalColumn(income), {'min_child_node_size': 1})
-    assert tree.tree_store[0].split.groupings == "[['6-10'], ['0-5', '11-15']]"
+    assert tree.tree_store[0].split.groupings == "[['0-5'], ['6-10'], ['11-15']]"
 
 
 class TestSurrogate(TestCase):

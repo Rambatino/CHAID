@@ -8,8 +8,8 @@ from setup_tests import list_ordered_equal, list_unordered_equal, CHAID
 
 def test_all_nominal_combinations():
     arr = np.array([1.0, 2.0, 3.0, 4.0])
-    nominal = CHAID.OrdinalColumn(arr)
-    assert nominal.all_combinations() == [[[1], [2, 3, 4]],
+    ordinal = CHAID.OrdinalColumn(arr)
+    assert [ i for i in ordinal.all_combinations()] == [[[1], [2, 3, 4]],
                                           [[1, 2], [3, 4]],
                                           [[1], [2], [3, 4]],
                                           [[1, 2, 3], [4]],

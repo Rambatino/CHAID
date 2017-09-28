@@ -123,7 +123,7 @@ def test_fix_metadata_if_passed_in():
 def test_all_combinations():
     arr = np.array([1.0, 2.0, 3.0, 4.0])
     nominal = CHAID.NominalColumn(arr)
-    assert nominal.all_combinations() == [[[0.0], [1.0, 2.0, 3.0]],
+    assert [ i for i in nominal.all_combinations()] == [[[0.0], [1.0, 2.0, 3.0]],
                                           [[0.0, 1.0], [2.0, 3.0]],
                                           [[1.0], [0.0, 2.0, 3.0]],
                                           [[0.0], [1.0], [2.0, 3.0]],

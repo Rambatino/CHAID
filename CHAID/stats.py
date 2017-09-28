@@ -80,7 +80,7 @@ class Stats(object):
             for comb in ind_var.all_combinations():
                 freqs = [ sum( [ cl.Counter(freq[key]) for key in c ], cl.Counter()) for c in comb ]
                 keys = set(sum([ list(f.keys()) for f in freqs ], []))
-                
+
                 n_ij = np.array(
                     [ [ col.get(k, 0) for k in keys ] for col in freqs ]
                 )

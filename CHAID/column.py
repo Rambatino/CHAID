@@ -150,8 +150,9 @@ class NominalColumn(Column):
         return combinations(self._groupings.keys(), 2)
 
     def all_combinations(self):
-        bell_set = [ i for i in self.bell_set(list(self._groupings.keys()))]
-        return bell_set[1:]
+        bell_set = self.bell_set(list(self._groupings.keys()))
+        next(bell_set)
+        return bell_set
 
     def group(self, x, y):
         self._groupings[x] += self._groupings[y]
@@ -245,8 +246,9 @@ class OrdinalColumn(Column):
         return self._possible_groups.__iter__()
 
     def all_combinations(self):
-        bell_set = [ i for i in self.bell_set(list(self._groupings.keys()), True)]
-        return bell_set[1:]
+        bell_set = self.bell_set(list(self._groupings.keys()), True)
+        next(bell_set)
+        return bell_set
 
 
     def group(self, x, y):
