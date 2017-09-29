@@ -6,7 +6,7 @@ from .mapping_dict import MappingDict
 def is_sorted(ndarr, nan_val=None):
     store = []
     for arr in ndarr:
-        if arr == []: continue
+        if arr == [] or len(arr) == 1: continue
         if nan_val is not None and nan_val in arr:
             arr.remove(nan_val)
         store.append(arr[-1] - arr[0] == len(arr) - 1)
