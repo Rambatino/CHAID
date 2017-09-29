@@ -60,7 +60,7 @@ cols = [
   NominalColumn(ndarr[:,1], name='b')
   NominalColumn(ndarr[:,2], name='c')
 ]
-tree = Tree.from_numpy(cols, NominalColumn(arr, name='d'), {'min_child_node_size': 5})
+tree = Tree(cols, NominalColumn(arr, name='d'), {'min_child_node_size': 5})
 
 >>> tree.print_tree()
 ([], {1: 5, 2: 5}, ('a', p=0.001565402258, score=10.0, groups=[[1], [2]]), dof=1))
