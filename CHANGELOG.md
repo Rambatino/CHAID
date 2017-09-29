@@ -1,5 +1,25 @@
 # Change Log
 
+## [Unreleased](https://github.com/Rambatino/CHAID/tree/HEAD)
+
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.0.2...HEAD)
+
+**Fixed bugs:**
+
+- Valid splits discounted when most significant split is generated below base size [\#81](https://github.com/Rambatino/CHAID/issues/81)
+- Fixing minimum node sizes whereby combined choices aren't selected [\#83](https://github.com/Rambatino/CHAID/pull/83) ([Rambatino](https://github.com/Rambatino))
+
+**Closed issues:**
+
+- Maybe an error in the doc? [\#79](https://github.com/Rambatino/CHAID/issues/79)
+
+## [v5.0.2](https://github.com/Rambatino/CHAID/tree/v5.0.2) (2017-08-24)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.0.1...v5.0.2)
+
+**Fixed bugs:**
+
+- Specs and fix [\#78](https://github.com/Rambatino/CHAID/pull/78) ([Rambatino](https://github.com/Rambatino))
+
 ## [v5.0.1](https://github.com/Rambatino/CHAID/tree/v5.0.1) (2017-08-22)
 [Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.0.0...v5.0.1)
 
@@ -18,6 +38,8 @@
 
 - Continuous independent variables? [\#75](https://github.com/Rambatino/CHAID/issues/75)
 - CHAID tree to json [\#71](https://github.com/Rambatino/CHAID/issues/71)
+- Output Tree as pandas DataFrame [\#69](https://github.com/Rambatino/CHAID/issues/69)
+- Basic clarifications [\#66](https://github.com/Rambatino/CHAID/issues/66)
 
 **Merged pull requests:**
 
@@ -34,6 +56,7 @@
 **Closed issues:**
 
 - Creating tree different from README [\#65](https://github.com/Rambatino/CHAID/issues/65)
+- any working example? [\#64](https://github.com/Rambatino/CHAID/issues/64)
 - User shouldn't have to pass in variables and variable types [\#53](https://github.com/Rambatino/CHAID/issues/53)
 
 ## [v4.0.0-alpha.2](https://github.com/Rambatino/CHAID/tree/v4.0.0-alpha.2) (2017-06-07)
