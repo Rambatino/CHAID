@@ -13,7 +13,6 @@ sys.path = [ROOT_FOLDER] + sys.path
 
 import CHAID
 
-
 def islist(a):
     return isinstance(a, Iterable) and not isinstance(a, str)
 

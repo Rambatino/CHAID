@@ -120,6 +120,24 @@ def test_fix_metadata_if_passed_in():
     nominal = CHAID.NominalColumn(arr, metadata={1.0: 'Cat', 2.0: 'Haz', 3.0: 'Cheezburger'})
     assert [nominal.metadata[x] for x in nominal.arr] == ['Cat', 'Haz', 'Cheezburger']
 
+def test_all_combinations():
+    arr = np.array([1.0, 2.0, 3.0, 4.0])
+    nominal = CHAID.NominalColumn(arr)
+    assert [ i for i in nominal.all_combinations()] == [[[0.0], [1.0, 2.0, 3.0]],
+                                          [[0.0, 1.0], [2.0, 3.0]],
+                                          [[1.0], [0.0, 2.0, 3.0]],
+                                          [[0.0], [1.0], [2.0, 3.0]],
+                                          [[0.0, 1.0, 2.0], [3.0]],
+                                          [[1.0, 2.0], [0.0, 3.0]],
+                                          [[0.0], [1.0, 2.0], [3.0]],
+                                          [[0.0, 2.0], [1.0, 3.0]],
+                                          [[2.0], [0.0, 1.0, 3.0]],
+                                          [[0.0], [2.0], [1.0, 3.0]],
+                                          [[0.0, 1.0], [2.0], [3.0]],
+                                          [[1.0], [0.0, 2.0], [3.0]],
+                                          [[1.0], [2.0], [0.0, 3.0]],
+                                          [[0.0], [1.0], [2.0], [3.0]]]
+
 
 class TestDeepCopy(TestCase):
     """ Test fixture class for deep copy method """

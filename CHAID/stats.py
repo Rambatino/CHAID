@@ -76,68 +76,37 @@ class Stats(object):
             if len(list(ind_var.possible_groupings())) == 0:
                 split.invalid_reason = InvalidSplitReason.PURE_NODE
 
-            while next(ind_var.possible_groupings(), None) is not None:
-                choice, highest_p_join, split_chi = None, None, None
-                for comb in ind_var.possible_groupings():
-                    col1_freq = freq[comb[0]]
-                    col2_freq = freq[comb[1]]
+            choice, highest_p_join, split_chi, dof = None, None, None, None
+            for comb in ind_var.all_combinations():
+                freqs = [ sum( [ cl.Counter(freq[key]) for key in c ], cl.Counter()) for c in comb ]
+                keys = set(sum([ list(f.keys()) for f in freqs ], []))
 
-                    keys = set(col1_freq.keys()).union(col2_freq.keys())
-
-                    n_ij = np.array([
-                        [col1_freq.get(k, 0) for k in keys],
-                        [col2_freq.get(k, 0) for k in keys]
-                    ])
-
-                    chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
-
-                    if choice is None or p_split > highest_p_join or (p_split == highest_p_join and chi > split_chi):
-                        choice, highest_p_join, split_chi = comb, p_split, chi
-
-                invalid_reason = None
-                sufficient_split = highest_p_join < self.alpha_merge
-                if not sufficient_split: invalid_reason = InvalidSplitReason.ALPHA_MERGE
-
-                sufficient_split = sufficient_split and all(
-                    # what if a greater p-value on a different grouping would satisfy alpha merge _and_ min_child_node_size?
-                    sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()
+                n_ij = np.array(
+                    [ [ col.get(k, 0) for k in keys ] for col in freqs ]
                 )
-                if not sufficient_split: invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
 
-                if sufficient_split and len(freq.values()) > 1:
-                    n_ij = np.array([
-                        [f[dep_val] for dep_val in all_dep] for f in freq.values()
-                    ])
+                chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
 
-                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                    chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
+                if (choice is None or p_split < highest_p_join or (p_split == highest_p_join and chi > split_chi)) and (n_ij.sum(axis=1) >= self.min_child_node_size).all() and p_split < self.alpha_merge:
+                    choice, highest_p_join, split_chi = comb, p_split, chi
 
-                    temp_split = Split(i, ind_var.groups(), chi, p_split, dof, split_name=ind_var.name)
-                    better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)
+            temp_split = Split(i, choice, split_chi, highest_p_join, dof, split_name=ind_var.name)
+            better_split = (not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)) and choice is not None
+            if better_split: split, temp_split = temp_split, split
 
-                    if better_split:
-                        split, temp_split = temp_split, split
+            if split.valid() and choice is not None:
+                chi_threshold = self.split_threshold * split.score
 
-                    chi_threshold = self.split_threshold * split.score
+                if temp_split.valid() and temp_split.score >= chi_threshold:
+                    for sur in temp_split.surrogates:
+                        if sur.column_id != i and sur.score >= chi_threshold:
+                            split.surrogates.append(sur)
 
-                    if temp_split.valid() and temp_split.score >= chi_threshold:
-                        for sur in temp_split.surrogates:
-                            if sur.column_id != i and sur.score >= chi_threshold:
-                                split.surrogates.append(sur)
+                    temp_split.surrogates = []
+                    split.surrogates.append(temp_split)
 
-                        temp_split.surrogates = []
-                        split.surrogates.append(temp_split)
+                split.sub_split_values(ind[split.column_id].metadata)
 
-                    break
-                else:
-                    split.invalid_reason = invalid_reason
-
-                ind_var.group(choice[0], choice[1])
-                for val, count in freq[choice[1]].items():
-                    freq[choice[0]][val] += count
-                del freq[choice[1]]
-        if split.valid():
-            split.sub_split_values(ind[split.column_id].metadata)
         return split
 
     def best_con_split(self, ind, dep):

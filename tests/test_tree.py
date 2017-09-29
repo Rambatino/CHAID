@@ -126,7 +126,7 @@ def test_best_split_with_combination():
     assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
     assert split.column_id == 0, 'Identifies correct column to split on'
-    assert list_unordered_equal(split.split_map, [[1], [2], [3]]), 'Correctly identifies catagories'
+    assert list_unordered_equal(split.split_map, [[1], [2, 3]]), 'Correctly identifies categories'
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
     assert split.p < 0.015
 
@@ -138,13 +138,13 @@ def test_new_columns_constructor():
     orientation = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
     age = np.array([0,1,1,0,2,2,2,2,1,1,1,0,0,0,0,0,0,0,0,0])
     income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
-
+    metadata = {0: '0-5', 1: '6-10', 2: '11-15'}
     cols = [
-        CHAID.OrdinalColumn(orientation, name="orientation"),
-        CHAID.OrdinalColumn(age, name="age", metadata={0: '0-5', 1: '6-10', 2: '11-15'}),
+        CHAID.OrdinalColumn(orientation, name="orientation", metadata=metadata),
+        CHAID.OrdinalColumn(age, name="age", metadata=metadata),
     ]
     tree = CHAID.Tree(cols, CHAID.NominalColumn(income), {'min_child_node_size': 1})
-    assert tree.tree_store[0].split.groupings == "[['0-5'], ['6-10', '11-15']]"
+    assert tree.tree_store[0].split.groupings == "[['0-5'], ['6-10'], ['11-15']]"
 
 
 class TestSurrogate(TestCase):
@@ -313,7 +313,11 @@ def test_node_predictions():
     ndarr = np.transpose(np.vstack([gender]))
     tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, max_depth=1,
                       min_child_node_size=1, min_parent_node_size=1)
-    assert (tree.node_predictions() == np.array([1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 3, 3, 3., 3, 3, 3, 3, 3, 2])).all() == True
+
+    assert (tree.node_predictions() == np.array([
+        2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0,
+        2.0, 2.0, 2.0, 2.0, 2.0, 1.0
+    ])).all() == True
 
 class TestTreeGenerated(TestCase):
     """ Test case class to check that the tree is correcly lazy loaded """
@@ -369,7 +373,7 @@ class TestBugFixes(TestCase):
 
     def test_incorrect_weighted_counts(self):
         """
-        Fix bug wherby the weights was using the class weights
+        Fix bug whereby the weights was using the class weights
         and not the sliced weights in node()
         """
         tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_parent_node_size=2, min_child_node_size=0)
@@ -389,6 +393,30 @@ class TestBugFixes(TestCase):
             no_exception = False
         assert no_exception, 'Raised error while printing the tree'
 
+    def test_splits_shouldnt_carry_on_splitting_below_min_child_node_size(self):
+        """
+        Fix bug whereby no splits occur when valid split is segmented below
+        min_child_node_size threshold
+        """
+        region = np.array([
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 2, 3, 2, 2, 2,
+            3, 2, 4, 4, 2, 4, 4, 4, 2, 2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2])
+        age = np.array([
+            3, 4, 4, 3, 2, 4, 2, 3, 3, 2, 2, 3, 4, 3, 4, 2, 2, 3, 2, 3,
+            2, 4, 4, 3, 2, 3, 1, 2, 4, 4, 3, 4, 4, 3, 2, 4, 2, 3, 3, 2,
+            2, 3, 4, 3, 4, 2, 2, 3, 2, 3, 2, 4, 4, 3, 2, 3, 1, 2, 4, 4])
+        gender = np.array([
+            1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 2,
+            2, 2, 2, 1, 2, 1, 2, 1, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 1, 2,
+            2, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 2, 1, 2, 1, 2, 2])
+        lover = np.array([1] * 25 + [0] * 35)
+        tree = CHAID.Tree.from_numpy(
+            np.vstack([region, age, gender]).transpose(),
+            lover,
+            alpha_merge=0.05
+        )
+        assert len(tree.tree_store) == 3
 
 class TestStoppingRules(TestCase):
     """ Testing that stopping rules are being applied correctly """
@@ -403,7 +431,7 @@ class TestStoppingRules(TestCase):
         Check that minimum child node size causes the tree to
         terminate correctly
         """
-        tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11)
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, max_depth=5, min_child_node_size=31)
         assert len(tree.tree_store) == 1
 
     def test_min_child_node_size_does_not_stop_for_unweighted_case(self):
@@ -420,7 +448,8 @@ class TestStoppingRules(TestCase):
         terminate correctly
         """
         tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=10.7)
-        assert len(tree.tree_store) == 4
+        assert len(tree.tree_store) == 3
+        assert round(tree.tree_store[0].split.p, 5) == 0.00029
 
     def test_min_child_node_size_does_not_stop_for_weighted_case(self):
         """
