@@ -122,13 +122,33 @@ def test_best_split_with_combination():
         tree.vectorised_array,
         tree.observed
     )
-
     assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
     assert split.column_id == 0, 'Identifies correct column to split on'
-    assert list_unordered_equal(split.split_map, [[1], [2, 3]]), 'Correctly identifies categories'
+    assert list_unordered_equal(split.split_map, [[1], [2], [3]]), 'Correctly identifies categories'
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
     assert split.p < 0.015
+
+def test_best_split_with_combination_combining_if_too_small():
+    """
+    Test passing in a perfect split data, with a single catagory merges needed
+    """
+    arr = np.array(([1] * 5) + ([2] * 10))
+    orig_arr = arr.copy()
+    ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 3) + ([3, 2, 3] * 5) + [1, 2, 3] * 2).reshape(15, 3)
+    orig_ndarr = ndarr.copy()
+    tree = CHAID.Tree.from_numpy(ndarr, arr, min_child_node_size=5, alpha_merge=0.055)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed
+    )
+    assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
+    assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
+    assert split.column_id == 0, 'Identifies correct column to split on'
+    assert list_unordered_equal(split.split_map, [[1, 2], [3]]), 'Correctly identifies categories'
+    assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
+    assert split.p < 0.055
 
 
 def test_new_columns_constructor():
