@@ -86,9 +86,8 @@ class Stats(object):
                 has_merged = 0
                 data = np.array([ [k, sum(v.values())] for k,v in freq.items() ])
                 data_sorted = data[data[:,1].argsort()]
-                # import ipdb; ipdb.set_trace()
                 # break out of they will never make enough sample, or there's two and any are too small
-                if sum(data_sorted[:, 1]) < self.min_child_node_size or ( len(data_sorted[:, 1]) == 2 and  (data_sorted[0:2, 1] < self.min_child_node_size).any()):
+                if sum(data_sorted[:, 1]) < self.min_child_node_size or ( len(data_sorted[:, 1]) == 2 and (data_sorted[0:2, 1] < self.min_child_node_size).any()):
                     break_out = True
                     break
 
