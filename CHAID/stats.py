@@ -50,11 +50,15 @@ class Stats(object):
         if isinstance(dep, ContinuousColumn):
             return self.best_con_split(ind, dep)
         else:
-            return self.best_cat_split(ind, dep)
+            return self.best_cat_heuristic_split(ind, dep)
 
-    def best_cat_split(self, ind, dep):
-        """ detrmine best categorical variable split """
+    def best_cat_heuristic_split(self, ind, dep):
+        """ determine best categorical variable split using heuristic methods """
         split = Split(None, None, None, None, 0)
+        if len(np.unique(dep.arr)) == 1:
+            split.invalid_reason = InvalidSplitReason.PURE_NODE
+            return split
+
         all_dep = np.unique(dep.arr)
         for i, ind_var in enumerate(ind):
             ind_var = ind_var.deep_copy()
@@ -74,6 +78,33 @@ class Stats(object):
                         freq[col][dep_v] = dep.weights[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
 
 
+            # merge all most similar, too small categories together until have sufficient base size
+            # take the two smallest, if both smaller than min child node size, merge
+            break_out = False
+            has_merged = 1
+            while has_merged == 1:
+                has_merged = 0
+                data = np.array([ [k, sum(v.values())] for k,v in freq.items() ])
+                data_sorted = data[data[:,1].argsort()]
+                # import ipdb; ipdb.set_trace()
+                # break out of they will never make enough sample, or there's two and any are too small
+                if sum(data_sorted[:, 1]) < self.min_child_node_size or ( len(data_sorted[:, 1]) == 2 and  (data_sorted[0:2, 1] < self.min_child_node_size).any()):
+                    break_out = True
+                    break
+
+                if (data_sorted[0:2, 1] < self.min_child_node_size).all():
+                    # want [1, 2, 3] not [3, 1, 2]
+                    first = data_sorted[0, 0]
+                    second = data_sorted[1, 0]
+                    ind_var.group(min(first, second), max(first, second))
+                    for val, count in freq[max(first, second)].items():
+                        freq[min(first, second)][val] += count
+                    del freq[max(first, second)]
+                    has_merged = 1
+
+            if break_out == True:
+                continue
+
             if len(list(ind_var.possible_groupings())) == 0:
                 split.invalid_reason = InvalidSplitReason.PURE_NODE
 
@@ -84,7 +115,6 @@ class Stats(object):
                     col1_freq = freq[comb[0]]
                     col2_freq = freq[comb[1]]
 
-
                     keys = set(col1_freq.keys()).union(col2_freq.keys())
 
                     n_ij = np.array([
@@ -92,35 +122,20 @@ class Stats(object):
                         [col2_freq.get(k, 0) for k in keys]
                     ])
 
-                    chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
+                    if n_ij.shape[1] == 1:
+                        p_split, dof, chi = 1, float('nan'), float('nan')
+                        break
+                    else:
+                        chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
 
                     if choice is None or p_split > highest_p_join or (p_split == highest_p_join and chi > split_chi):
                         choice, highest_p_join, split_chi = comb, p_split, chi
-
-                # if choice is None:
-                #     # no groups could be merged, and thus all are significant
-                #     choice = []
-                #     for cat in freq.keys():
-                #         # must check that they are all greater than min node size, or combine
-                #         if sum( freq[cat].values() ) >= self.min_child_node_size:
-                #             choice.append([cat])
-                #         else:
-                #             "combine"
-                #
-                #     freqs = [ sum( [ cl.Counter(freq[key]) for key in c ], cl.Counter()) for c in choice ]
-                #     keys = set(sum([ list(f.keys()) for f in freqs ], []))
-                #
-                #     n_ij = np.array(
-                #         [ [ col.get(k, 0) for k in keys ] for col in freqs ]
-                #     )
-                #     split_chi, highest_p_join, dof = chisquare(n_ij, dep.weights is not None)
 
                 invalid_reason = None
                 sufficient_split = highest_p_join < self.alpha_merge
                 if not sufficient_split: invalid_reason = InvalidSplitReason.ALPHA_MERGE
 
                 sufficient_split = sufficient_split and all(
-                    # what if a greater p-value on a different grouping would satisfy alpha merge _and_ min_child_node_size?
                     sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()
                 )
                 if not sufficient_split: invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
@@ -153,7 +168,6 @@ class Stats(object):
                 else:
                     split.invalid_reason = invalid_reason
 
-                # import ipdb; ipdb.set_trace()
                 ind_var.group(choice[0], choice[1])
                 for val, count in freq[choice[1]].items():
                     freq[choice[0]][val] += count

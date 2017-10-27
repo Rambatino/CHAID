@@ -164,7 +164,7 @@ def test_new_columns_constructor():
         CHAID.OrdinalColumn(age, name="age", metadata=metadata),
     ]
     tree = CHAID.Tree(cols, CHAID.NominalColumn(income), {'min_child_node_size': 1})
-    assert tree.tree_store[0].split.groupings == "[['0-5'], ['6-10'], ['11-15']]"
+    assert tree.tree_store[0].split.groupings == "[['0-5'], ['6-10', '11-15']]"
 
 
 class TestSurrogate(TestCase):
@@ -334,9 +334,10 @@ def test_node_predictions():
     tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, max_depth=1,
                       min_child_node_size=1, min_parent_node_size=1)
 
+    # brute force has a lower p, but a lower chi. Confusing. Will leave as the heursitic approach
     assert (tree.node_predictions() == np.array([
-        2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0,
-        2.0, 2.0, 2.0, 2.0, 2.0, 1.0
+        1.,  1.,  2.,  2.,  1.,  1.,  2.,  2.,  1.,  1.,  2.,  3.,  3.,
+        3.,  3.,  3.,  3.,  3.,  3.,  2.
     ])).all() == True
 
 class TestTreeGenerated(TestCase):
@@ -468,8 +469,8 @@ class TestStoppingRules(TestCase):
         terminate correctly
         """
         tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=10.7)
-        assert len(tree.tree_store) == 3
-        assert round(tree.tree_store[0].split.p, 5) == 0.00029
+        assert len(tree.tree_store) == 4
+        assert round(tree.tree_store[0].split.p, 5) == 0.08781
 
     def test_min_child_node_size_does_not_stop_for_weighted_case(self):
         """
