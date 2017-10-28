@@ -93,12 +93,12 @@ class Stats(object):
 
                 if (data_sorted[0:2, 1] < self.min_child_node_size).all():
                     # want [1, 2, 3] not [3, 1, 2]
-                    first = data_sorted[0, 0]
-                    second = data_sorted[1, 0]
-                    ind_var.group(min(first, second), max(first, second))
-                    for val, count in freq[max(first, second)].items():
-                        freq[min(first, second)][val] += count
-                    del freq[max(first, second)]
+                    first = min(data_sorted[0, 0], data_sorted[1, 0])
+                    second = max(data_sorted[0, 0], data_sorted[1, 0])
+                    ind_var.group(first, second)
+                    for val, count in freq[second].items():
+                        freq[first][val] += count
+                    del freq[second]
                     has_merged = 1
 
             if break_out == True:
