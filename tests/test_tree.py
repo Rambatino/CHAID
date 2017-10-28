@@ -294,7 +294,8 @@ def test_min_child_node_size_is_30():
     ndarr = np.transpose(np.vstack([gender]))
 
     tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9)
-
+    invalid_split_reason = 'splitting would create nodes with less than the minimum child node size'
+    assert str(tree.tree_store[0].split.invalid_reason) == invalid_split_reason
     assert len(tree.tree_store) == 1
 
 def test_to_tree_returns_a_tree():

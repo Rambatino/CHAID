@@ -102,6 +102,7 @@ class Stats(object):
                     has_merged = 1
 
             if break_out == True:
+                split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
                 continue
 
             if len(list(ind_var.possible_groupings())) == 0:
