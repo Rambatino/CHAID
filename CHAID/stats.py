@@ -118,7 +118,10 @@ class Stats(object):
 
                     if n_ij.shape[1] == 1:
                         p_split, dof, chi = 1, NaN, NaN
-                        # could be the only valid combination
+                        # could be the only valid combination, as we skip
+                        # ones that result in other nodes that give min child node sizes
+                        # this solves [[20], [10, 11]] even though 10 & 11 are exact,
+                        # this must be the choice of this iteration
                         choice = comb
                         continue
                     else:
