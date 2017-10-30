@@ -136,7 +136,7 @@ class Stats(object):
                     if choice is None or p_split > highest_p_join or (p_split == highest_p_join and chi > split_chi):
                         choice, highest_p_join, split_chi = comb, p_split, chi
 
-                sufficient_split = highest_p_join < self.alpha_merge
+                sufficient_split = not highest_p_join or highest_p_join < self.alpha_merge
                 if not sufficient_split:
                   split.invalid_reason = InvalidSplitReason.ALPHA_MERGE
                 else:
