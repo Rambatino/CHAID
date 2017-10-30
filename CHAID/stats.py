@@ -56,19 +56,21 @@ class Stats(object):
     def best_cat_heuristic_split(self, ind, dep):
         """ determine best categorical variable split using heuristic methods """
         split = Split(None, None, None, None, 0)
-        if len(np.unique(dep.arr)) == 1:
+        min_child_node_size = self.min_child_node_size
+
+        all_dep = np.unique(dep.arr)
+        if len(all_dep) == 1:
             split.invalid_reason = InvalidSplitReason.PURE_NODE
             return split
-        elif len(dep.arr) < self.min_child_node_size and dep.weights is None:
+        elif len(dep.arr) < min_child_node_size and dep.weights is None:
             # if not weights and too small, skip
             split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
             return split
-        elif dep.weights is not None and len(dep.weights) < self.min_child_node_size:
+        elif dep.weights is not None and len(dep.weights) < min_child_node_size:
             # if weighted count is too small, skip
             split.invalid_reason = InvalidSplitReason.PURE_NODE
             return split
 
-        all_dep = np.unique(dep.arr)
         for i, ind_var in enumerate(ind):
             split.invalid_reason = None # must reset because using invalid reason to break
             ind_var = ind_var.deep_copy()
@@ -91,6 +93,11 @@ class Stats(object):
             if split.invalid_reason == InvalidSplitReason.MIN_CHILD_NODE_SIZE:
                 continue
 
+            if dep.weights is not None:
+                row_count = dep.weights.sum()
+            else:
+                row_count = len(dep.arr)
+
             if len(list(ind_var.possible_groupings())) == 0:
                 split.invalid_reason = InvalidSplitReason.PURE_NODE
             while next(ind_var.possible_groupings(), None) is not None:
@@ -100,21 +107,20 @@ class Stats(object):
                     col1_freq = freq[comb[0]]
                     col2_freq = freq[comb[1]]
 
-                    # check to see if min_child_node_size permits this direction
-                    # 31 can't merge with 10 if it only leaves 27 for the other node(s)
-                    # but if these are the only two, can't skip, because the level can be defined
-                    # as these two nodes
-
-                    other_splits = sum ( [ sum (v.values()) for k,v in freq.items() if k not in comb] )
-                    if other_splits < self.min_child_node_size and other_splits != 0:
-                        p_split, dof, chi = 1, NaN, NaN
-                        continue
-
                     keys = set(col1_freq.keys()).union(col2_freq.keys())
                     n_ij = np.array([
                         [col1_freq.get(k, 0) for k in keys],
                         [col2_freq.get(k, 0) for k in keys]
                     ])
+
+                    # check to see if min_child_node_size permits this direction
+                    # 31 can't merge with 10 if it only leaves 27 for the other node(s)
+                    # but if these are the only two, can't skip, because the level can be defined
+                    # as these two nodes
+                    other_splits = row_count - n_ij.sum()
+                    if other_splits < min_child_node_size and other_splits != 0:
+                        p_split, dof, chi = 1, NaN, NaN
+                        continue
 
                     if n_ij.shape[1] == 1:
                         p_split, dof, chi = 1, NaN, NaN
@@ -123,7 +129,7 @@ class Stats(object):
                         # this solves [[20], [10, 11]] even though 10 & 11 are exact,
                         # this must be the choice of this iteration
                         choice = comb
-                        continue
+                        break
                     else:
                         chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
 
@@ -133,36 +139,39 @@ class Stats(object):
                 sufficient_split = highest_p_join < self.alpha_merge
                 if not sufficient_split:
                   split.invalid_reason = InvalidSplitReason.ALPHA_MERGE
-                elif any( sum(node_v.values()) < self.min_child_node_size for node_v in freq.values() ):
-                  split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
-                elif sufficient_split and len(freq.values()) > 1:
-                    # calculate the exact chi-score and p value for that split
-                    # need to see if any split with three can be broken up
-
+                else:
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
                     ])
 
-                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                    chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
+                    if n_ij.shape[0] < 8 and (n_ij.sum(axis=1) < min_child_node_size).any():
+                      # heuristic unlikely to create more than 8 splits, so why
+                      # iteratively do the summing of the matrix
+                      split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
+                    else:
+                        # calculate the exact chi-score and p value for that split
+                        # need to see if any split with three can be broken up
 
-                    temp_split = Split(i, ind_var.groups(), chi, p_split, dof, split_name=ind_var.name)
-                    better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)
+                        dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
+                        chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
 
-                    if better_split:
-                        split, temp_split = temp_split, split
+                        temp_split = Split(i, ind_var.groups(), chi, p_split, dof, split_name=ind_var.name)
+                        better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)
 
-                    chi_threshold = self.split_threshold * split.score
+                        if better_split:
+                            split, temp_split = temp_split, split
 
-                    if temp_split.valid() and temp_split.score >= chi_threshold:
-                        for sur in temp_split.surrogates:
-                            if sur.column_id != i and sur.score >= chi_threshold:
-                                split.surrogates.append(sur)
+                        chi_threshold = self.split_threshold * split.score
 
-                        temp_split.surrogates = []
-                        split.surrogates.append(temp_split)
+                        if temp_split.valid() and temp_split.score >= chi_threshold:
+                            for sur in temp_split.surrogates:
+                                if sur.column_id != i and sur.score >= chi_threshold:
+                                    split.surrogates.append(sur)
 
-                    break
+                            temp_split.surrogates = []
+                            split.surrogates.append(temp_split)
+
+                        break
 
                 # all combinations created don't suffice. i.e. what's left is below min_child_node_size
                 if choice is None:
