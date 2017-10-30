@@ -90,9 +90,6 @@ class Stats(object):
                         freq[col][dep_v] = dep.weights[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
 
 
-            if split.invalid_reason == InvalidSplitReason.MIN_CHILD_NODE_SIZE:
-                continue
-
             if dep.weights is not None:
                 row_count = dep.weights.sum()
             else:
@@ -144,7 +141,7 @@ class Stats(object):
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
                     ])
 
-                    if n_ij.shape[0] < 8 and (n_ij.sum(axis=1) < min_child_node_size).any():
+                    if (n_ij.sum(axis=1) < min_child_node_size).any():
                       # heuristic unlikely to create more than 8 splits, so why
                       # iteratively do the summing of the matrix
                       split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
