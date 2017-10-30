@@ -4,6 +4,7 @@ from .split import Split
 import numpy as np
 from scipy import stats
 from .invalid_split_reason import InvalidSplitReason
+from numpy import nan as NaN
 
 def chisquare(n_ij, weighted):
     """
@@ -61,6 +62,7 @@ class Stats(object):
 
         all_dep = np.unique(dep.arr)
         for i, ind_var in enumerate(ind):
+            split.invalid_reason = None # must reset because using invalid reason to break
             ind_var = ind_var.deep_copy()
             unique = np.unique(ind_var.arr)
 
@@ -80,29 +82,30 @@ class Stats(object):
 
             # merge all most similar, too small categories together until have sufficient base size
             # take the two smallest, if both smaller than min child node size, merge
-            break_out = False
-            has_merged = 1
-            while has_merged == 1:
-                has_merged = 0
-                data = np.array([ [k, sum(v.values())] for k,v in freq.items() ])
-                data_sorted = data[data[:,1].argsort()]
-                # break out of they will never make enough sample, or there's two and any are too small
-                if sum(data_sorted[:, 1]) < self.min_child_node_size or ( len(data_sorted[:, 1]) == 2 and (data_sorted[0:2, 1] < self.min_child_node_size).any()):
-                    break_out = True
-                    break
+            while True:
+              data = np.array([ [k, sum(v.values())] for k,v in freq.items() ])
+              data_sorted = data[data[:,1].argsort()]
 
-                if (data_sorted[0:2, 1] < self.min_child_node_size).all():
-                    # want [1, 2, 3] not [3, 1, 2]
-                    first = min(data_sorted[0, 0], data_sorted[1, 0])
-                    second = max(data_sorted[0, 0], data_sorted[1, 0])
-                    ind_var.group(first, second)
-                    for val, count in freq[second].items():
-                        freq[first][val] += count
-                    del freq[second]
-                    has_merged = 1
+              too_few_respondents =  sum(data_sorted[:, 1]) < self.min_child_node_size
+              nodes_below_min = data_sorted[0:2, 1] < self.min_child_node_size
+              no_splits_available = len(data_sorted[:, 1]) == 2 and nodes_below_min.any()
 
-            if break_out == True:
+              if too_few_respondents or no_splits_available:
                 split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
+                break
+
+              if not nodes_below_min.all():
+                break
+
+              first  = min(data_sorted[0, 0], data_sorted[1, 0])
+              # want [1, 2, 3] not [3, 1, 2]
+              second = max(data_sorted[0, 0], data_sorted[1, 0])
+              ind_var.group(first, second)
+              for val, count in freq[second].items():
+                  freq[first][val] += count
+              del freq[second]
+
+            if split.invalid_reason == InvalidSplitReason.MIN_CHILD_NODE_SIZE:
                 continue
 
             if len(list(ind_var.possible_groupings())) == 0:
@@ -123,7 +126,7 @@ class Stats(object):
                     ])
 
                     if n_ij.shape[1] == 1:
-                        p_split, dof, chi = 1, float('nan'), float('nan')
+                        p_split, dof, chi = 1, NaN, NaN
                         break
                     else:
                         chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
@@ -133,14 +136,12 @@ class Stats(object):
 
                 invalid_reason = None
                 sufficient_split = highest_p_join < self.alpha_merge
-                if not sufficient_split: invalid_reason = InvalidSplitReason.ALPHA_MERGE
+                if highest_p_join >= self.alpha_merge:
+                  split.invalid_reason = InvalidSplitReason.ALPHA_MERGE
+                elif any( sum(node_v.values()) < self.min_child_node_size for node_v in freq.values() ):
+                  split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
+                elif sufficient_split and len(freq.values()) > 1:
 
-                sufficient_split = sufficient_split and all(
-                    sum(node_v.values()) >= self.min_child_node_size for node_v in freq.values()
-                )
-                if not sufficient_split: invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
-
-                if sufficient_split and len(freq.values()) > 1:
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
                     ])
