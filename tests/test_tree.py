@@ -146,7 +146,7 @@ def test_best_split_with_combination_combining_if_too_small():
     assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
     assert split.column_id == 0, 'Identifies correct column to split on'
-    assert list_unordered_equal(split.split_map, [[1, 2], [3]]), 'Correctly identifies categories'
+    assert list_unordered_equal(split.split_map, [[1], [2, 3]]), 'Correctly identifies categories'
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
     assert split.p < 0.055
 

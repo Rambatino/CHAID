@@ -59,6 +59,14 @@ class Stats(object):
         if len(np.unique(dep.arr)) == 1:
             split.invalid_reason = InvalidSplitReason.PURE_NODE
             return split
+        elif len(dep.arr) < self.min_child_node_size and dep.weights is None:
+            # if not weights and too small, skip
+            split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
+            return split
+        elif dep.weights is not None and len(dep.weights) < self.min_child_node_size:
+            # if weighted count is too small, skip
+            split.invalid_reason = InvalidSplitReason.PURE_NODE
+            return split
 
         all_dep = np.unique(dep.arr)
         for i, ind_var in enumerate(ind):
@@ -80,37 +88,11 @@ class Stats(object):
                         freq[col][dep_v] = dep.weights[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
 
 
-            # merge all most similar, too small categories together until have sufficient base size
-            # take the two smallest, if both smaller than min child node size, merge
-            while True:
-              data = np.array([ [k, sum(v.values())] for k,v in freq.items() ])
-              data_sorted = data[data[:,1].argsort()]
-
-              too_few_respondents =  sum(data_sorted[:, 1]) < self.min_child_node_size
-              nodes_below_min = data_sorted[0:2, 1] < self.min_child_node_size
-              no_splits_available = len(data_sorted[:, 1]) == 2 and nodes_below_min.any()
-
-              if too_few_respondents or no_splits_available:
-                split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
-                break
-
-              if not nodes_below_min.all():
-                break
-
-              first  = min(data_sorted[0, 0], data_sorted[1, 0])
-              # want [1, 2, 3] not [3, 1, 2]
-              second = max(data_sorted[0, 0], data_sorted[1, 0])
-              ind_var.group(first, second)
-              for val, count in freq[second].items():
-                  freq[first][val] += count
-              del freq[second]
-
             if split.invalid_reason == InvalidSplitReason.MIN_CHILD_NODE_SIZE:
                 continue
 
             if len(list(ind_var.possible_groupings())) == 0:
                 split.invalid_reason = InvalidSplitReason.PURE_NODE
-
             while next(ind_var.possible_groupings(), None) is not None:
                 choice, highest_p_join, split_chi = None, None, None
 
@@ -118,8 +100,16 @@ class Stats(object):
                     col1_freq = freq[comb[0]]
                     col2_freq = freq[comb[1]]
 
-                    keys = set(col1_freq.keys()).union(col2_freq.keys())
+                    # check to see if min_child_node_size permits this direction
+                    # 31 can't merge with 10 if it only leaves 27 for the other node(s)
+                    # but if these are the only two, can't skip, becase the level can be defined
+                    # by these two nodes splitting
+                    other_splits = sum ( [ sum (v.values()) for k,v in freq.items() if k not in comb] )
+                    if other_splits < self.min_child_node_size and other_splits != 0:
+                        p_split, dof, chi = 1, NaN, NaN
+                        continue
 
+                    keys = set(col1_freq.keys()).union(col2_freq.keys())
                     n_ij = np.array([
                         [col1_freq.get(k, 0) for k in keys],
                         [col2_freq.get(k, 0) for k in keys]
@@ -127,20 +117,23 @@ class Stats(object):
 
                     if n_ij.shape[1] == 1:
                         p_split, dof, chi = 1, NaN, NaN
-                        break
+                        # could be the only valid combination
+                        choice = comb
+                        continue
                     else:
                         chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
 
                     if choice is None or p_split > highest_p_join or (p_split == highest_p_join and chi > split_chi):
                         choice, highest_p_join, split_chi = comb, p_split, chi
 
-                invalid_reason = None
                 sufficient_split = highest_p_join < self.alpha_merge
-                if highest_p_join >= self.alpha_merge:
+                if not sufficient_split:
                   split.invalid_reason = InvalidSplitReason.ALPHA_MERGE
                 elif any( sum(node_v.values()) < self.min_child_node_size for node_v in freq.values() ):
                   split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
                 elif sufficient_split and len(freq.values()) > 1:
+                    # calculate the exact chi-score and p value for that split
+                    # need to see if any split with three can be broken up
 
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
@@ -166,13 +159,15 @@ class Stats(object):
                         split.surrogates.append(temp_split)
 
                     break
-                else:
-                    split.invalid_reason = invalid_reason
 
-                ind_var.group(choice[0], choice[1])
-                for val, count in freq[choice[1]].items():
-                    freq[choice[0]][val] += count
-                del freq[choice[1]]
+                # all combinations created don't suffice. i.e. what's left is below min_child_node_size
+                if choice is None:
+                    break
+                else:
+                    ind_var.group(choice[0], choice[1])
+                    for val, count in freq[choice[1]].items():
+                        freq[choice[0]][val] += count
+                    del freq[choice[1]]
         if split.valid():
             split.sub_split_values(ind[split.column_id].metadata)
         return split
