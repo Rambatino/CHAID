@@ -102,8 +102,9 @@ class Stats(object):
 
                     # check to see if min_child_node_size permits this direction
                     # 31 can't merge with 10 if it only leaves 27 for the other node(s)
-                    # but if these are the only two, can't skip, becase the level can be defined
-                    # by these two nodes splitting
+                    # but if these are the only two, can't skip, because the level can be defined
+                    # as these two nodes
+
                     other_splits = sum ( [ sum (v.values()) for k,v in freq.items() if k not in comb] )
                     if other_splits < self.min_child_node_size and other_splits != 0:
                         p_split, dof, chi = 1, NaN, NaN
