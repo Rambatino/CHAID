@@ -136,39 +136,33 @@ class Stats(object):
                 sufficient_split = not highest_p_join or highest_p_join < self.alpha_merge
                 if not sufficient_split:
                   split.invalid_reason = InvalidSplitReason.ALPHA_MERGE
+                elif (n_ij.sum(axis=1) < min_child_node_size).any():
+                  split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
                 else:
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
                     ])
 
-                    if (n_ij.sum(axis=1) < min_child_node_size).any():
-                      # heuristic unlikely to create more than 8 splits, so why
-                      # iteratively do the summing of the matrix
-                      split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
-                    else:
-                        # calculate the exact chi-score and p value for that split
-                        # need to see if any split with three can be broken up
+                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
+                    chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
 
-                        dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                        chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
+                    temp_split = Split(i, ind_var.groups(), chi, p_split, dof, split_name=ind_var.name)
+                    better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)
 
-                        temp_split = Split(i, ind_var.groups(), chi, p_split, dof, split_name=ind_var.name)
-                        better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)
+                    if better_split:
+                        split, temp_split = temp_split, split
 
-                        if better_split:
-                            split, temp_split = temp_split, split
+                    chi_threshold = self.split_threshold * split.score
 
-                        chi_threshold = self.split_threshold * split.score
+                    if temp_split.valid() and temp_split.score >= chi_threshold:
+                        for sur in temp_split.surrogates:
+                            if sur.column_id != i and sur.score >= chi_threshold:
+                                split.surrogates.append(sur)
 
-                        if temp_split.valid() and temp_split.score >= chi_threshold:
-                            for sur in temp_split.surrogates:
-                                if sur.column_id != i and sur.score >= chi_threshold:
-                                    split.surrogates.append(sur)
+                        temp_split.surrogates = []
+                        split.surrogates.append(temp_split)
 
-                            temp_split.surrogates = []
-                            split.surrogates.append(temp_split)
-
-                        break
+                    break
 
                 # all combinations created don't suffice. i.e. what's left is below min_child_node_size
                 if choice is None:
