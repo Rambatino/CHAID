@@ -122,13 +122,33 @@ def test_best_split_with_combination():
         tree.vectorised_array,
         tree.observed
     )
+    assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
+    assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
+    assert split.column_id == 0, 'Identifies correct column to split on'
+    assert list_unordered_equal(split.split_map, [[1], [2], [3]]), 'Correctly identifies categories'
+    assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
+    assert split.p < 0.015
 
+def test_best_split_with_combination_combining_if_too_small():
+    """
+    Test passing in a perfect split data, with a single catagory merges needed
+    """
+    arr = np.array(([1] * 5) + ([2] * 10))
+    orig_arr = arr.copy()
+    ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 3) + ([3, 2, 3] * 5) + [1, 2, 3] * 2).reshape(15, 3)
+    orig_ndarr = ndarr.copy()
+    tree = CHAID.Tree.from_numpy(ndarr, arr, min_child_node_size=5, alpha_merge=0.055)
+
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed
+    )
     assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
     assert split.column_id == 0, 'Identifies correct column to split on'
     assert list_unordered_equal(split.split_map, [[1], [2, 3]]), 'Correctly identifies categories'
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
-    assert split.p < 0.015
+    assert split.p < 0.055
 
 
 def test_new_columns_constructor():
@@ -144,7 +164,7 @@ def test_new_columns_constructor():
         CHAID.OrdinalColumn(age, name="age", metadata=metadata),
     ]
     tree = CHAID.Tree(cols, CHAID.NominalColumn(income), {'min_child_node_size': 1})
-    assert tree.tree_store[0].split.groupings == "[['0-5'], ['6-10'], ['11-15']]"
+    assert tree.tree_store[0].split.groupings == "[['0-5'], ['6-10', '11-15']]"
 
 
 class TestSurrogate(TestCase):
@@ -274,7 +294,8 @@ def test_min_child_node_size_is_30():
     ndarr = np.transpose(np.vstack([gender]))
 
     tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9)
-
+    invalid_split_reason = 'splitting would create nodes with less than the minimum child node size'
+    assert str(tree.tree_store[0].split.invalid_reason) == invalid_split_reason
     assert len(tree.tree_store) == 1
 
 def test_to_tree_returns_a_tree():
@@ -314,9 +335,10 @@ def test_node_predictions():
     tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, max_depth=1,
                       min_child_node_size=1, min_parent_node_size=1)
 
+    # brute force has a lower p, but a lower chi. Confusing. Will leave as the heursitic approach
     assert (tree.node_predictions() == np.array([
-        2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0,
-        2.0, 2.0, 2.0, 2.0, 2.0, 1.0
+        1.,  1.,  2.,  2.,  1.,  1.,  2.,  2.,  1.,  1.,  2.,  3.,  3.,
+        3.,  3.,  3.,  3.,  3.,  3.,  2.
     ])).all() == True
 
 class TestTreeGenerated(TestCase):
@@ -448,8 +470,8 @@ class TestStoppingRules(TestCase):
         terminate correctly
         """
         tree = CHAID.Tree.from_numpy(self.ndarr, self.arr, alpha_merge=0.999, weights=self.wt, max_depth=5, min_child_node_size=10.7)
-        assert len(tree.tree_store) == 3
-        assert round(tree.tree_store[0].split.p, 5) == 0.00029
+        assert len(tree.tree_store) == 4
+        assert round(tree.tree_store[0].split.p, 5) == 0.08781
 
     def test_min_child_node_size_does_not_stop_for_weighted_case(self):
         """
