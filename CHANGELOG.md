@@ -1,8 +1,14 @@
 # Change Log
 
-## [Unreleased](https://github.com/Rambatino/CHAID/tree/HEAD)
+## [v5.0.4](https://github.com/Rambatino/CHAID/tree/v5.0.4) (2017-12-20)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.0.3...v5.0.4)
 
-[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.0.2...HEAD)
+**Merged pull requests:**
+
+- Reverted back heuristic approach [\#84](https://github.com/Rambatino/CHAID/pull/84) ([Rambatino](https://github.com/Rambatino))
+
+## [v5.0.3](https://github.com/Rambatino/CHAID/tree/v5.0.3) (2017-09-29)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.0.2...v5.0.3)
 
 **Fixed bugs:**
 
