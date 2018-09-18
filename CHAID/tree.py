@@ -221,7 +221,7 @@ class Tree(object):
 
     def print_tree(self):
         """ prints the tree out """
-        self.to_tree().show()
+        self.to_tree().show(line_type='ascii')
 
     def node_predictions(self):
         """ Determines which rows fall into which node """
@@ -264,7 +264,7 @@ class Tree(object):
         """
         if isinstance(self.observed, ContinuousColumn):
             return ValueError("Cannot make model predictions on a continuous scale")
-        pred = np.zeros(self.data_size)
+        pred = np.zeros(self.data_size).astype('object')
         for node in self:
             if node.is_terminal:
                 pred[node.indices] = max(node.members, key=node.members.get)
@@ -275,4 +275,5 @@ class Tree(object):
         Calculates the fraction of risk associated
         with the model predictions
         """
-        return 1 - float((self.model_predictions() == self.observed.arr).sum()) / self.data_size
+        sub_observed = np.array([self.observed.metadata[i] for i in self.observed.arr])
+        return 1 - float((self.model_predictions() == sub_observed).sum()) / self.data_size

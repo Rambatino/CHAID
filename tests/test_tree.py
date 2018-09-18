@@ -570,3 +570,41 @@ class TestContinuousDependentVariable(TestCase):
         tree = CHAID.Tree.from_numpy(self.ndarr, self.normal_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
         assert round(tree.tree_store[0].p, 4) == 0.3681
         assert len(tree.tree_store) == 5
+
+
+class TestStringCategoricalDependentVariableForModelPrediction(TestCase):
+    """ Test to make sure we can handle string categorical dependent varaibles """
+    def setUp(self):
+        """
+        Setup data for test case
+        """
+        self.region = np.array([
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 2, 3, 2, 2, 2,
+            3, 2, 4, 4, 2, 4, 4, 4, 2, 2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2])
+        self.age = np.array([
+            3, 4, 4, 3, 2, 4, 2, 3, 3, 2, 2, 3, 4, 3, 4, 2, 2, 3, 2, 3,
+            2, 4, 4, 3, 2, 3, 1, 2, 4, 4, 3, 4, 4, 3, 2, 4, 2, 3, 3, 2,
+            2, 3, 4, 3, 4, 2, 2, 3, 2, 3, 2, 4, 4, 3, 2, 3, 1, 2, 4, 4])
+        self.gender = np.array([
+            1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 2,
+            2, 2, 2, 1, 2, 1, 2, 1, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 1, 2,
+            2, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 2, 1, 2, 1, 2, 2])
+        self.lover = np.array(['lover'] * 25 + ['non-lover'] * 35)
+        self.tree = CHAID.Tree.from_numpy(
+            np.vstack([self.region, self.age, self.gender]).transpose(),
+            self.lover,
+            alpha_merge=0.05
+        )
+
+    def test_string_dependent_categorical_variable_for_model_prediction(self):
+        assert (self.tree.model_predictions() ==  np.array(['lover'] * 30 + ['non-lover'] * 30)).all()
+
+    def test_risk_still_works(self):
+        int_lover = np.array([1] * 25 + [0] * 35)
+        other_tree = CHAID.Tree.from_numpy(
+            np.vstack([self.region, self.age, self.gender]).transpose(),
+            int_lover,
+            alpha_merge=0.05
+        )
+        assert self.tree.risk() == other_tree.risk()
