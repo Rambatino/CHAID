@@ -1,5 +1,22 @@
 # Change Log
 
+## [v5.0.5](https://github.com/Rambatino/CHAID/tree/v5.0.5) (2018-09-19)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.0.4...v5.0.5)
+
+**Fixed bugs:**
+
+- Created passing unit test case for issue in \#87 [\#88](https://github.com/Rambatino/CHAID/pull/88) ([Rambatino](https://github.com/Rambatino))
+
+**Closed issues:**
+
+- model\_predictions fails with categorical dependant variables [\#87](https://github.com/Rambatino/CHAID/issues/87)
+- Couple questions [\#85](https://github.com/Rambatino/CHAID/issues/85)
+- Why isn't there a predict function ? [\#72](https://github.com/Rambatino/CHAID/issues/72)
+
+**Merged pull requests:**
+
+- House keeping [\#86](https://github.com/Rambatino/CHAID/pull/86) ([Rambatino](https://github.com/Rambatino))
+
 ## [v5.0.4](https://github.com/Rambatino/CHAID/tree/v5.0.4) (2017-12-20)
 [Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.0.3...v5.0.4)
 
