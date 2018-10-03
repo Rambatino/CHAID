@@ -3,7 +3,6 @@ This package provides a python implementation of the Chi-Squared Automatic
 Inference Detection (CHAID) decision tree.
 """
 import argparse
-import savReaderWriter as spss
 from .tree import Tree
 import pandas as pd
 import numpy as np
@@ -49,6 +48,7 @@ def main():
     if nspace.file[-4:] == '.csv':
         data = pd.read_csv(nspace.file)
     elif nspace.file[-4:] == '.sav':
+        import savReaderWriter as spss
         raw_data = spss.SavReader(nspace.file, returnHeader=True)
         raw_data_list = list(raw_data)
         data = pd.DataFrame(raw_data_list)
@@ -96,6 +96,7 @@ def main():
         print('\n'.join(str(x) for x in tree.classification_rules()))
     else:
         tree.print_tree()
+        print('Accuracy: ', tree.accuracy())
 
 
 if __name__ == "__main__":

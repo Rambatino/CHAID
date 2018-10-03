@@ -312,6 +312,20 @@ def test_to_tree_returns_a_tree():
     assert isinstance(tree.to_tree(), TreeLibTree), 'A TreeLib object is returned'
     assert len(tree.tree_store) == len(tree.to_tree().nodes), 'The tree contains the correct number of nodes'
 
+def test_accuracy():
+    """
+    Test that accuracy returns correct percentage
+    """
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9,
+                      min_child_node_size=1, min_parent_node_size=1)
+
+    assert tree.accuracy() == 0.85
+    assert tree.accuracy() == 1 - tree.risk()
+
 def test_max_depth_returns_correct_invalid_message():
     """
     Test when max_depth reached, it has the correct invalid message
