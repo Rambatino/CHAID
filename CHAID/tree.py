@@ -275,5 +275,13 @@ class Tree(object):
         Calculates the fraction of risk associated
         with the model predictions
         """
+        return 1 - self.accuracy()
+
+    def accuracy(self):
+        """
+        Calculates the accuracy of the tree by comparing
+        the model predictions to the dataset
+        (TP + TN) / (TP + TN + FP + FN) == (T / (T + F))
+        """
         sub_observed = np.array([self.observed.metadata[i] for i in self.observed.arr])
-        return 1 - float((self.model_predictions() == sub_observed).sum()) / self.data_size
+        return float((self.model_predictions() == sub_observed).sum()) / self.data_size
