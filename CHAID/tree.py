@@ -118,7 +118,7 @@ class Tree(object):
         df : pandas.DataFrame
             the dataframe with the dependent and independent variables in which
             to slice from
-        i_variables : dict
+        i_variables : list|dict
             dict of instance variable names with their variable types. Supported
             variable types are the strings 'nominal' or 'ordinal' in lower case
         d_variable : string
@@ -143,6 +143,8 @@ class Tree(object):
             the type of dependent variable. Supported variable types are 'categorical' or
             'continuous'
         """
+        if isinstance(i_variables, list):
+            i_variables = { i:'nominal' for i in i_variables }
         ind_df = df[list(i_variables.keys())]
         ind_values = ind_df.values
         dep_values = df[d_variable].values
@@ -248,7 +250,8 @@ class Tree(object):
                         {
                             # 'type': self.vectorised_array[x.tag.split.column_id].type,
                             'variable': self.get_node(ancestor.parent).split_variable,
-                            'data': ancestor.choices
+                            'data': ancestor.choices,
+                            'index': self.get_node(ancestor.parent).split.column_id,
                         } for ancestor in stack[:-1]
                     ]
                 }
@@ -285,3 +288,26 @@ class Tree(object):
         """
         sub_observed = np.array([self.observed.metadata[i] for i in self.observed.arr])
         return float((self.model_predictions() == sub_observed).sum()) / self.data_size
+
+    def predict(self, ind_vars):
+        if len(self.tree_store) == 1:
+            return None
+        ind_vars_pred = np.full(ind_vars.shape[0], np.nan)
+        cols = [ NominalColumn(x) for x in ind_vars.T ]
+        mask = np.array(range(0, ind_vars.shape[0]))
+        for class_rule in self.classification_rules():
+            pred = self.tree_store[class_rule['node']].members
+            max_pred = max(pred, key=lambda key: pred[key])
+            and_store = []
+            for rule in class_rule['rules']:
+                or_store = np.array([])
+                for data in rule['data']:
+                    if data == '<missing>':
+                        or_store = np.r_[or_store, np.where(cols[rule['index']].arr == -1)[0]]
+                    else:
+                        or_store = np.r_[or_store, np.where(ind_vars[:, rule['index']] == data)[0]]
+                and_store.append(or_store.flatten())
+            match = set(and_store[0]).intersection(*and_store[1:])
+            sub_mask = np.in1d(mask, list(match))
+            ind_vars_pred[sub_mask] = max_pred
+        return ind_vars_pred

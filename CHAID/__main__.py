@@ -4,6 +4,7 @@ Inference Detection (CHAID) decision tree.
 """
 import argparse
 from .tree import Tree
+from .best_tree import BestTree
 import pandas as pd
 import numpy as np
 
@@ -33,6 +34,7 @@ def main():
     parser.add_argument('--min-child-node-size', type=int, help='Minimum number of '
                         'samples required to split the child node')
     parser.add_argument('--alpha-merge', type=float, help='Alpha Merge')
+    parser.add_argument('--n', type=int, help='The iteration count when finding the best tree')
     group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument('--classify', action='store_true', help='Add column to'
                        ' input with the node id of the node that that '
@@ -41,6 +43,7 @@ def main():
                        'input with the value of the  dependent variable that '
                        'the majority of respondents in that node selected')
     group.add_argument('--rules', action='store_true')
+    group.add_argument('--find-best', action='store_true')
 
 
     nspace = parser.parse_args()
@@ -79,8 +82,17 @@ def main():
     if len(independent_variables) == 0:
         print('Need to provide at least one independent variable')
         exit(1)
-    tree = Tree.from_pandas_df(data, types, nspace.dependent_variable[0],
-                               **config)
+
+    if nspace.find_best:
+        best_config = BestTree(data[list(types.keys())].values, data[nspace.dependent_variable[0]].values, nspace.n or 30,
+                        split_titles=list(types.keys())).calculate()
+        tree = Tree.from_pandas_df(data, types, nspace.dependent_variable[0],
+                                   **best_config)
+
+        print("Best config: ", best_config)
+    else:
+        tree = Tree.from_pandas_df(data, types, nspace.dependent_variable[0],
+                                   **config)
 
     if nspace.classify:
         predictions = pd.Series(tree.node_predictions())
