@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from hyperopt import hp, tpe, fmin
 from tqdm import tqdm
-import pickle
 from .tree import Tree
 
 
