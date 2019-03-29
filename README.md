@@ -203,9 +203,15 @@ How to Read the Tree
 
 We'll start with a real world example using the titanic dataset.
 
+First make sure to install all required packages:
+
+``` bash
+python setup.py install && pip install ipdb
+```
+
 Run `python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05` after placing an ipdb statement on like 55 on \_\_main\_\_.py as in the example below. The parameters mean max depth two 4 levels, a minimum parent node size threshold to 2 and merge the groups if the p-value is greater than 0.05 when comparing the groups.
 
-```
+```python
 82        tree = Tree.from_pandas_df(data, independent_variables,
 83                                   nspace.dependent_variable[0],
 84                                   variable_types=types, **config)
