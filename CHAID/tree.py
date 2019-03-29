@@ -5,6 +5,7 @@ from .split import Split
 from .column import NominalColumn, OrdinalColumn, ContinuousColumn
 from .stats import Stats
 from .invalid_split_reason import InvalidSplitReason
+from .graph import Graph
 
 class Tree(object):
     def __init__(self, independent_columns, dependent_column, config={}):
@@ -285,3 +286,6 @@ class Tree(object):
         """
         sub_observed = np.array([self.observed.metadata[i] for i in self.observed.arr])
         return float((self.model_predictions() == sub_observed).sum()) / self.data_size
+
+    def render(self, path=None, view=False):
+        Graph(self).render(path, view)
