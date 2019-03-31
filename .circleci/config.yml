@@ -20,7 +20,8 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            python -m pip install --user --upgrade pip
+            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+            sudo python get-pip.py --force-reinstall
             python -m venv venv || virtualenv venv
             . venv/bin/activate
             pip install -e .[dev]
