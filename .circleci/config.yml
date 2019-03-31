@@ -20,6 +20,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
+            python3 -m pip install --user --upgrade pip
             python -m venv venv || virtualenv venv
             . venv/bin/activate
             pip install -e .[dev]
@@ -49,6 +50,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
+            python2 -m pip install --user --upgrade pip
             python -m enum34
             pip install -e .[dev]
       - save_cache:
