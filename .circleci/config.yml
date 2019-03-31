@@ -22,6 +22,7 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv
             . venv/bin/activate
+            python3 -m pip install --user --upgrade pip
             pip install -e .[dev]
       - save_cache:
           paths:
