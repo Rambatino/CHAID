@@ -1,0 +1,29 @@
+version: 2 # use CircleCI 2.0
+jobs: # A basic unit of work in a run
+  build: # runs not using Workflows must have a `build` job as entry point
+    # directory where steps are run
+    working_directory: ~/CHAID
+    docker: # run the steps with Docker
+      # CircleCI Python images available at: https://hub.docker.com/r/circleci/python/
+      - image: circleci/python:3.6.4
+    steps: # steps that comprise the `build` job
+      - checkout # check out source code to working directory
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages
+      - run:
+          command: |
+            pip install tox tox-pyenv detox
+            pyenv local 2.7.12 3.4.4 3.5.2 3.6.1
+            if [[ ! -e .tox ]]; then tox --notest; fi
+            ls .tox | tr " " "\n" | awk 'NR>1' | xargs -I {} -P 5 sh -c '.tox/{}/bin/pip install .[test]'
+      - save_cache: # cache Python dependencies using checksum of Pipfile as the cache-key
+          paths:
+            - ".tox"
+      - run:
+          command: |
+            detox
+      - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
+          path: test-results
+      - store_artifacts: # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
+          path: test-results
+          destination: tr1
