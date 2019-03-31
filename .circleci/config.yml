@@ -17,6 +17,7 @@ jobs: # A basic unit of work in a run
             if [[ ! -e .tox ]]; then tox --notest; fi
             ls .tox | tr " " "\n" | awk 'NR>1' | xargs -I {} -P 5 sh -c '.tox/{}/bin/pip install .[test]'
       - save_cache: # cache Python dependencies using checksum of Pipfile as the cache-key
+          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
             - ".tox"
       - run:
