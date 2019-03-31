@@ -50,7 +50,7 @@ setup(
     ],
     keywords='CHAID pandas numpy scipy statistics statistical analysis',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['cython', 'numpy', 'pandas', 'treelib', 'pytest', 'scipy', 'savReaderWriter'],
+    install_requires=['cython', 'numpy', 'pandas', 'treelib', 'pytest', 'scipy', 'savReaderWriter', 'enum34'],
     extras_require={
         'test': ['codecov', 'tox', 'tox-pyenv', 'detox', 'pytest', 'pytest-cov'],
     }
