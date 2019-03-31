@@ -4,8 +4,6 @@ workflows:
   test:
     jobs:
       - test-3.6
-      - test-3.5
-      - test-2.7
 jobs:
   test-3.6: &test-template
     docker:
@@ -23,35 +21,6 @@ jobs:
             python3 -m pip install --user --upgrade pip
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            pip install -e .[dev]
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "setup.py" }}
-      - run:
-          name: Run tests
-          command: |
-            . venv/bin/activate
-            pytest
-  test-3.5:
-    <<: *test-template
-    docker:
-      - image: circleci/python:3.5-jessie
-  test-2.7:
-    docker:
-      - image: circleci/python:2.7-jessie
-    working_directory: ~/repo
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "setup.py" }}
-          - v1-dependencies-
-      - run:
-          name: Install dependencies
-          command: |
-            python2 -m pip install --user --upgrade pip
-            python -m enum34
             pip install -e .[dev]
       - save_cache:
           paths:
