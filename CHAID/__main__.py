@@ -41,6 +41,8 @@ def main():
                        'input with the value of the  dependent variable that '
                        'the majority of respondents in that node selected')
     group.add_argument('--rules', action='store_true')
+    group.add_argument('--export', action='store_true', help='Whether to export the chart to pdf/dot')
+    group.add_argument('--export-path', type=str, help='Path to store chart output')
 
 
     nspace = parser.parse_args()
@@ -81,6 +83,9 @@ def main():
         exit(1)
     tree = Tree.from_pandas_df(data, types, nspace.dependent_variable[0],
                                **config)
+
+    if nspace.export or nspace.export_path:
+        tree.render(nspace.export_path, True)
 
     if nspace.classify:
         predictions = pd.Series(tree.node_predictions())

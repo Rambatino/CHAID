@@ -209,7 +209,12 @@ First make sure to install all required packages:
 python setup.py install && pip install ipdb
 ```
 
-Run `python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05` after placing an ipdb statement on like 55 on \_\_main\_\_.py as in the example below. The parameters mean max depth two 4 levels, a minimum parent node size threshold to 2 and merge the groups if the p-value is greater than 0.05 when comparing the groups.
+Run:
+```bash
+python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05
+```
+
+after placing an ipdb statement on like 55 on \_\_main\_\_.py as in the example below. The parameters mean max depth two 4 levels, a minimum parent node size threshold to 2 and merge the groups if the p-value is greater than 0.05 when comparing the groups.
 
 ```python
 82        tree = Tree.from_pandas_df(data, independent_variables,
@@ -290,6 +295,39 @@ ipdb> split.groupings
 Therefore, in this example, the root node is split on the column 'sex' in the data, splitting up the females and males. These females and males each form a new node and further down, the all male and all female nodes are split on the column 'embarked' (although they needn't split on the same column). A `<Invalid Chaid Split>` is reached when either the node is pure (only one dependent variable remains) or when a terminating parameter is met (e.g. min node size, or max depth [see tree parameters above])
 
 The conclusion drawn from this tree is that: "Gender was the most important factor driving the survival of people on the titanic. Whereby females had a much higher likelihood of surviving (survival = 1 in the survival column and 0 means they died). Of those females, those who embarked first class (class 'C', node 2) had a much higher likelihood of surviving."
+
+Exporting the tree
+-------
+
+If you want to export the tree to a dot file, then use:
+
+```python
+tree.to_tree()
+```
+
+This creates a [treelib](https://github.com/caesar0301/treelib/blob/master/treelib) which has a `.to_graphviz()` method [here](https://github.com/caesar0301/treelib/blob/master/treelib/tree.py#L865).
+
+Alternatively, you can export the tree to .gv and png using:
+
+```python
+tree.render(path=None, view=False)
+```
+
+Which will save it to a file specified at `path` and can be instantly viewed when view=True.
+
+This can also be triggered from the command line using `--export` or `--export-path`. The former causes it to be stored in a newly created `trees` folder and the latter specifies the location of the file. Both will trigger an auto-viewing of the tree. E.g:
+
+```bash
+python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05 --export
+```
+
+```bash
+python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min-parent-node-size 2 --alpha-merge 0.05 --export-path YOUR_PATH.gv
+```
+
+The output will look like:
+
+![](docs/2019-04-01 11:45:43.gv.png?raw=true "CHAID Tree")
 
 Testing
 -------
