@@ -217,7 +217,7 @@ python -m CHAID tests/data/titanic.csv survived sex embarked --max-depth 4 --min
 after placing an ipdb statement on like 55 on \_\_main\_\_.py as in the example below. The parameters mean max depth two 4 levels, a minimum parent node size threshold to 2 and merge the groups if the p-value is greater than 0.05 when comparing the groups.
 
 ```python
-82        tree = Tree.from_pandtas_df(data, independent_variables,
+82        tree = Tree.from_pandas_df(data, independent_variables,
 83                                   nspace.dependent_variable[0],
 84                                   variable_types=types, **config)
 ---> 85   import ipdb; ipdb.set_trace()
