@@ -344,8 +344,6 @@ Caveats
 
 * Unlike SPSS, this library doesn't modify the data internally. This means that weight variables aren't rounded as they are in SPSS.
 * Every row is valid, even if all values are NaN or undefined. This is different to SPSS where in the weighted case it will strip out all rows if all the independent variables are NaN
-* All columns are currently treated as nominal
-
 
 Upcoming Features
 -------
