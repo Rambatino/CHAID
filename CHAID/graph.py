@@ -93,10 +93,13 @@ class Graph(object):
             domain={"x": [0.3, 0.7], "y": [0, 0.37]},
             header={"height": 0, "line": {"color": "white"}, "fill": {"color": "white"}},
             cells={
-                "values": [["<i>p</i>", "score", "splitting on"], [p, score, node.split.column],
+                "values": [
+                    ["<i>p</i>", "score", "splitting on"],
+                    [p, score, node.split.column],
+                ],
                 "line": {"color": "#FFF"},
                 "align": ["left"] * 5,
-                "font": {"color": ["rgb(40, 40, 40)"] * 5, "size": 12,},
+                "font": {"color": ["rgb(40, 40, 40)"] * 5, "size": 12},
                 "height": 27,
                 "fill": {"color": ["rgb(235, 193, 238)", "rgba(228, 222, 249, 0.65)"]},
             },
