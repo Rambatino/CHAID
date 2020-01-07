@@ -45,7 +45,7 @@ class Graph(object):
             )
             for node in self.tree:
                 image = self.bar_chart(node)
-                g.node(str(node.node_id), attributes={"image": image})
+                g.node(str(node.node_id), image=image)
                 if node.parent is not None:
                     edge_label = "   ( {})".format(', '.join(node.choices))
                     g.edge(str(node.parent), str(node.node_id), label=edge_label)
