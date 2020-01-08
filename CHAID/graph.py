@@ -47,8 +47,8 @@ class Graph(object):
                 image = self.bar_chart(node)
                 g.node(str(node.node_id), image=image)
                 if node.parent is not None:
-                    edge_label = "   ( {})".format(', '.join(node.choices))
-                    g.edge(str(node.parent), str(node.node_id), label=edge_label)
+                    edge_label = "   ({})   \n ".format(', '.join(node.choices))
+                    g.edge(str(node.parent), str(node.node_id), xlabel=edge_label)
             g.render(path, view=view)
 
     def bar_chart(self, node):
