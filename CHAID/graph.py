@@ -24,18 +24,15 @@ except ImportError:
 
 FIG_BASE = {
     "layout": {
-        "margin": {"t": 50},
-        "annotations": [
-            {"font": {"size": 18}, "showarrow": False, "text": "", "x": 0.5, "y": 0.5},
-            {"y": {"domain": [0, 0.2]}},
-        ],
+        "margin_t": 50,
+        "annotations": [{"font_size": 18, "x": 0.5, "y": 0.5}, {"y": [0, 0.2]}],
     },
 }
 FIG_BASE_DATA = {
     "domain": {"x": [0, 1], "y": [0.4, 1.0]},
     "hole": 0.4,
     "type": "pie",
-    "marker": {"colors": cl.scales["5"]["qual"]["Set1"]},
+    "marker_colors": cl.scales["5"]["qual"]["Set1"],
 }
 TABLE_HEADER = ["<i>p</i>", "score", "splitting on"]
 TABLE_CONFIG = {
