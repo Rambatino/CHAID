@@ -22,6 +22,34 @@ except ImportError:
         def __exit__(self, *args):
             shutil.rmtree(self.name, ignore_errors=True)
 
+FIG_BASE = {
+    "layout": {
+        "margin": {"t": 50},
+        "annotations": [
+            {"font": {"size": 18}, "showarrow": False, "text": "", "x": 0.5, "y": 0.5},
+            {"y": {"domain": [0, 0.2]}},
+        ],
+    },
+}
+FIG_BASE_DATA = {
+    "domain": {"x": [0, 1], "y": [0.4, 1.0]},
+    "hole": 0.4,
+    "type": "pie",
+    "marker": {"colors": cl.scales["5"]["qual"]["Set1"]},
+}
+TABLE_HEADER = ["<i>p</i>", "score", "splitting on"]
+TABLE_CONFIG = {
+    "domain": {"x": [0.3, 0.7], "y": [0, 0.37]},
+    "header": {"fill_color": "#FFF"},
+}
+TABLE_CELLS_CONFIG = {
+    "line_color": "#FFF",
+    "align": "left",
+    "font_color": "#282828",
+    "height": 27,
+    "fill_color": ["#EBC1EE", "#EDEAFB"],
+}
+
 class Graph(object):
     """
     Visualisation of the tree
@@ -52,32 +80,17 @@ class Graph(object):
             g.render(path, view=view)
 
     def bar_chart(self, node):
-        fig = {
-            "data": [
-                {
-                    "values": list(node.members.values()),
-                    "labels": list(node.members),
-                    "domain": {"x": [0, 1], "y": [0.4, 1.0]},
-                    "hole": 0.4,
-                    "type": "pie",
-                    "showlegend": node.node_id == 0,
-                    "marker": {"colors": cl.scales["5"]["qual"]["Set1"]},
-                }
+        fig = dict(
+            data=[
+                dict(
+                    values=list(node.members.values()),
+                    labels=list(node.members),
+                    showlegend=(node.node_id == 0),
+                    **FIG_BASE_DATA
+                )
             ],
-            "layout": {
-                "margin": {"t": 50},
-                "annotations": [
-                    {
-                        "font": {"size": 18},
-                        "showarrow": False,
-                        "text": "",
-                        "x": 0.5,
-                        "y": 0.5,
-                    },
-                    {"y": {"domain": [0, 0.2]}},
-                ],
-            },
-        }
+            **FIG_BASE
+        )
 
         if not node.is_terminal:
             fig["data"].append(self._table(node))
@@ -89,18 +102,8 @@ class Graph(object):
     def _table(self, node):
         p = None if node.p is None else format(node.p, ".5f")
         score = None if node.score is None else format(node.score, ".2f")
+        values = [p, score, node.split.column]
         return go.Table(
-            domain={"x": [0.3, 0.7], "y": [0, 0.37]},
-            header={"fill_color": "#FFF"},
-            cells={
-                "values": [
-                    ["<i>p</i>", "score", "splitting on"],
-                    [p, score, node.split.column],
-                ],
-                "line_color": "#FFF",
-                "align": "left",
-                "font_color": "#282828",
-                "height": 27,
-                "fill_color": ["#EBC1EE", "#EDEAFB"],
-            },
+            cells=dict(values=[TABLE_HEADER, values], **TABLE_CELLS_CONFIG),
+            **TABLE_CONFIG
         )
