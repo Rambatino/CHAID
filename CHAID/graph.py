@@ -8,12 +8,12 @@ from graphviz import Digraph
 
 try:
     # Python 3.2 and newer
-    from tempfile import mkstemp, TemporaryDirectory
+    from tempfile import TemporaryDirectory
 except ImportError:
     # minimal backport of TemporaryDirectory for Python 2.7, sufficient
     # for use with this module.
     import shutil
-    from tempfile import mkdtemp, mkstemp
+    from tempfile import mkdtemp
     class TemporaryDirectory(object):
         def __init__(self):
             self.name = mkdtemp()
