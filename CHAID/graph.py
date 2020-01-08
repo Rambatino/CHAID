@@ -82,7 +82,7 @@ class Graph(object):
         if not node.is_terminal:
             fig["data"].append(self._table(node))
 
-        filename = mkstemp(suffix=".png", dir=self.tempdir)[1]
+        filename = os.path.join(self.tempdir, "node-{}.png".format(node.node_id))
         pio.write_image(fig, file=filename, format="png")
         return filename
 
