@@ -91,16 +91,16 @@ class Graph(object):
         score = None if node.score is None else format(node.score, ".2f")
         return go.Table(
             domain={"x": [0.3, 0.7], "y": [0, 0.37]},
-            header={"height": 0, "line": {"color": "white"}, "fill": {"color": "white"}},
+            header={"fill_color": "#FFF"},
             cells={
                 "values": [
                     ["<i>p</i>", "score", "splitting on"],
                     [p, score, node.split.column],
                 ],
-                "line": {"color": "#FFF"},
-                "align": ["left"] * 5,
-                "font": {"color": ["rgb(40, 40, 40)"] * 5, "size": 12},
+                "line_color": "#FFF",
+                "align": "left",
+                "font_color": "#282828",
                 "height": 27,
-                "fill": {"color": ["rgb(235, 193, 238)", "rgba(228, 222, 249, 0.65)"]},
+                "fill_color": ["#EBC1EE", "#EDEAFB"],
             },
         )
