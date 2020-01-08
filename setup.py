@@ -50,7 +50,19 @@ setup(
     ],
     keywords='CHAID pandas numpy scipy statistics statistical analysis',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['cython', 'numpy', 'pandas', 'treelib', 'pytest', 'scipy', 'savReaderWriter', 'graphviz', 'plotly', 'colorlover'],
+    install_requires=[
+        'cython',
+        'numpy',
+        'pandas',
+        'treelib',
+        'pytest',
+        'scipy',
+        'savReaderWriter',
+        'graphviz',
+        'plotly',
+        'colorlover',
+        'enum34; python_version == "2.7"'
+    ],
     extras_require={
         'test': ['codecov', 'tox', 'tox-pyenv', 'detox', 'pytest', 'pytest-cov'],
     }
