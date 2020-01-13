@@ -20,6 +20,8 @@ Alternatively, you can clone the repository and install via
 pip install -e path/to/your/checkout
 ```
 
+N.B. although we've made some attempt at supporting python 2.7 see [here](https://github.com/Rambatino/CHAID/pull/103), we don't encourage the use of it as it's reached it's [End Of Life (EOL)](https://www.python.org/doc/sunset-python-2˜).
+
 Creating a CHAID Tree
 ---------------
 
@@ -306,6 +308,11 @@ tree.to_tree()
 ```
 
 This creates a [treelib](https://github.com/caesar0301/treelib/blob/master/treelib) which has a `.to_graphviz()` method [here](https://github.com/caesar0301/treelib/blob/master/treelib/tree.py#L865).
+
+In order to use visually graph the CHAID tree, you'll need to install two more libraries that aren't distributed via pypi:
+
+graphviz - see [here](https://stackoverflow.com/questions/35064304/runtimeerror-make-sure-the-graphviz-executables-are-on-your-systems-path-aft) for platform specific installations
+orca - see [the README.md](https://github.com/plotly/orca) for platform specific installations
 
 Alternatively, you can export the tree to .gv and png using:
 
