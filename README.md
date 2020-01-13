@@ -307,7 +307,7 @@ If you want to export the tree to a dot file, then use:
 tree.to_tree()
 ```
 
-This creates a [treelib](https://github.com/caesar0301/treelib/blob/master/treelib) which has a `.to_graphviz()` method [here](https://github.com/caesar0301/treelib/blob/master/treelib/tree.py#L865).
+This creates a [treelib](https://github.com/caesar0301/treelib/blob/master/treelib) which has a `.to_graphviz()` method [here](https://github.com/caesar0301/treelib/blob/master/treelib/tree.py#L894).
 
 
 In order to use visually graph the CHAID tree, you'll need to install two more libraries that aren't distributed via pypi:
