@@ -20,6 +20,8 @@ Alternatively, you can clone the repository and install via
 pip install -e path/to/your/checkout
 ```
 
+N.B. although we've made some attempt at supporting python 2.7 see [here](https://github.com/Rambatino/CHAID/pull/103), we don't encourage the use of it as it's reached it's [End Of Life (EOL)](https://www.python.org/doc/sunset-python-2˜).
+
 Creating a CHAID Tree
 ---------------
 
