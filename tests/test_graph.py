@@ -15,8 +15,8 @@ def test_graph_is_created_properly():
     orig_ndarr = ndarr.copy()
     tree = CHAID.Tree.from_numpy(ndarr, arr, min_child_node_size=0)
 
-    expected_path = ROOT_FOLDER + "/tests/expected_graph/test"
-    output_path = ROOT_FOLDER + "/tests/graph/test"
+    expected_path = os.path.join(ROOT_FOLDER, "tests", "expected_graph", "test")
+    output_path = os.path.join(ROOT_FOLDER, "tests", "graph", "test")
 
     tree.render(path=output_path, view=False)
 
