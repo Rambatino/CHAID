@@ -7,12 +7,8 @@ import os
 import sys
 from math import isnan
 import numpy as np
-import platform
 
-if platform.system() == 'Windows':
-    ROOT_FOLDER = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '..')
-else:
-    ROOT_FOLDER = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '/../')
+ROOT_FOLDER = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 sys.path = [ROOT_FOLDER] + sys.path
 np.seterr(divide='ignore', invalid='ignore')
