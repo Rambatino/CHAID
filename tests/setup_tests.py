@@ -6,10 +6,12 @@ from collections import Iterable
 import os
 import sys
 from math import isnan
+import numpy as np
 
 ROOT_FOLDER = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '/../')
 
 sys.path = [ROOT_FOLDER] + sys.path
+np.seterr(divide='ignore', invalid='ignore')
 
 import CHAID
 
