@@ -52,7 +52,7 @@ jobs:
             sudo apt-get install graphviz wget
             wget https://sourceforge.net/projects/orca-robotics/files/latest/download -O ./orca.tar.gz
             tar -zxf orca.tar.gz
-            cd $(ls -d */ | grep orca) && cmake . && make && make install
+            cd $(ls -d */ | grep orca) && cmake . && make && make install && cd ..
             python3 -m pip install --user --upgrade pip
             python -m venv venv || virtualenv venv
             . venv/bin/activate
