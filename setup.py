@@ -64,6 +64,6 @@ setup(
         'enum34; python_version == "2.7"'
     ],
     extras_require={
-        'test': ['codecov', 'tox', 'tox-pyenv', 'detox', 'pytest', 'pytest-cov'],
+        'test': ['codecov', 'tox', 'tox-pyenv', 'detox', 'pytest', 'pytest-cov', 'psutil'],
     }
 )

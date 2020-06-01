@@ -20,6 +20,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
+            sudo apt-get update
+            sudo apt-get install graphviz nodejs npm libnss3 libgtk-3-0 libasound2
+            sudo npm install yarn -g
+            sudo yarn global add electron@6.1.4 orca
             python3 -m pip install --user --upgrade pip
             python -m venv venv || virtualenv venv
             . venv/bin/activate
@@ -47,6 +51,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
+            sudo apt-get update
+            sudo apt-get install graphviz nodejs npm libnss3 libgtk-3-0 libasound2
+            sudo npm install yarn -g
+            sudo yarn global add electron@6.1.4 orca
             python3 -m pip install --user --upgrade pip
             python -m venv venv || virtualenv venv
             . venv/bin/activate
@@ -62,7 +70,7 @@ jobs:
             pytest
   test-3.6: &test-template
     docker:
-      - image: circleci/python:3.6.9-stretch
+      - image: circleci/python:3.6.9-buster
     working_directory: ~/repo
     steps:
       - checkout
@@ -73,6 +81,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
+            sudo apt-get update
+            sudo apt-get install graphviz nodejs npm libnss3 libgtk-3-0 libasound2
+            sudo npm install yarn -g
+            sudo yarn global add electron@6.1.4 orca
             python3 -m pip install --user --upgrade pip
             python -m venv venv || virtualenv venv
             . venv/bin/activate
