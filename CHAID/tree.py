@@ -24,7 +24,8 @@ class Tree(object):
                 max_depth=2,
                 min_parent_node_size=30,
                 min_child_node_size=30,
-                split_threshold=0
+                split_threshold=0,
+                is_exhaustive=False
             }
         """
         self.max_depth = config.get('max_depth', 2)
@@ -39,13 +40,13 @@ class Tree(object):
             config.get('min_child_node_size', 30),
             config.get('split_threshold', 0),
             dependent_column.arr,
-            config.get('is_exhaustive', True)
+            config.get('is_exhaustive', False)
         )
 
     @staticmethod
     def from_numpy(ndarr, arr, alpha_merge=0.05, max_depth=2, min_parent_node_size=30,
                  min_child_node_size=30, split_titles=None, split_threshold=0, weights=None,
-                 variable_types=None, dep_variable_type='categorical'):
+                 variable_types=None, dep_variable_type='categorical', is_exhaustive=False):
         """
         Create a CHAID object from numpy
 
@@ -93,7 +94,8 @@ class Tree(object):
         else:
             raise NotImplementedError('Unknown dependent variable type ' + dep_variable_type)
         config = { 'alpha_merge': alpha_merge, 'max_depth': max_depth, 'min_parent_node_size': min_parent_node_size,
-                   'min_child_node_size': min_child_node_size, 'split_threshold': split_threshold }
+                   'min_child_node_size': min_child_node_size, 'split_threshold': split_threshold,
+                   'is_exhaustive': is_exhaustive }
         return Tree(vectorised_array, observed, config)
 
     def build_tree(self):
@@ -110,7 +112,7 @@ class Tree(object):
     @staticmethod
     def from_pandas_df(df, i_variables, d_variable, alpha_merge=0.05, max_depth=2,
                        min_parent_node_size=30, min_child_node_size=30, split_threshold=0,
-                       weight=None, dep_variable_type='categorical'):
+                       weight=None, dep_variable_type='categorical', is_exhaustive=False):
         """
         Helper method to pre-process a pandas data frame in order to run CHAID
         analysis
@@ -151,7 +153,7 @@ class Tree(object):
         weights = df[weight] if weight is not None else None
         return Tree.from_numpy(ind_values, dep_values, alpha_merge, max_depth, min_parent_node_size,
                     min_child_node_size, list(ind_df.columns.values), split_threshold, weights,
-                    list(i_variables.values()), dep_variable_type)
+                    list(i_variables.values()), dep_variable_type, is_exhaustive)
 
     def node(self, rows, ind, dep, depth=0, parent=None, parent_decisions=None):
         """ internal method to create a node in the tree """
