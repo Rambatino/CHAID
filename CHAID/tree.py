@@ -38,7 +38,8 @@ class Tree(object):
             config.get('alpha_merge', 0.05),
             config.get('min_child_node_size', 30),
             config.get('split_threshold', 0),
-            dependent_column.arr
+            dependent_column.arr,
+            config.get('is_exhaustive', True)
         )
 
     @staticmethod
@@ -284,6 +285,8 @@ class Tree(object):
         the model predictions to the dataset
         (TP + TN) / (TP + TN + FP + FN) == (T / (T + F))
         """
+        if not self.observed.metadata: return float('nan') 
+
         sub_observed = np.array([self.observed.metadata[i] for i in self.observed.arr])
         return float((self.model_predictions() == sub_observed).sum()) / self.data_size
 
