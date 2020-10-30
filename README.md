@@ -3,7 +3,7 @@
 Chi-Squared Automatic Inference Detection
 =========================================
 
-This package provides a python implementation of the [Chi-Squared Automatic Inference Detection (CHAID) decision tree](https://en.wikipedia.org/wiki/CHAID)
+This package provides a python implementation of the [Chi-Squared Automatic Inference Detection (CHAID) decision tree](https://en.wikipedia.org/wiki/CHAID) as well as [exhaustive CHAID](https://github.com/Rambatino/CHAID/issues/112)
 
 
 Installation
