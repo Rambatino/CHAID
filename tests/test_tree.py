@@ -569,13 +569,14 @@ class TestContinuousDependentVariable(TestCase):
         assert round(tree.tree_store[0].p, 4) == 0.4119
         assert len(tree.tree_store) == 9
 
-    def test_continuous_dependent_variable_with_weighting(self):
+    def test_continuous_dependent_variable_exhaustive_with_weighting(self):
         """
         Check that a tree can be built with a continuous dependent variable
         """
-        tree = CHAID.Tree.from_numpy(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt)
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous', weights=self.wt, is_exhaustive=True)
         assert round(tree.tree_store[0].p, 4) == 0.1594
         assert len(tree.tree_store) == 9
+        assert len(tree.tree_store[len(tree.tree_store) - 1].choices) == 2
 
     def test_bartlett_significance(self):
         """
