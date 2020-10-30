@@ -1,5 +1,5 @@
 import collections as cl
-from .column import NominalColumn, OrdinalColumn, ContinuousColumn
+from .column import ContinuousColumn
 from .split import Split
 import numpy as np
 from scipy import stats
@@ -40,11 +40,12 @@ class Stats(object):
     """
     Stats class that determines the correct statistical method to apply
     """
-    def __init__(self, alpha_merge, min_child_node_size, split_threshold, dep_population):
+    def __init__(self, alpha_merge, min_child_node_size, split_threshold, dep_population, is_exhaustive=False):
         self.split_threshold = 1 - split_threshold
         self.alpha_merge = alpha_merge
         self.min_child_node_size = min_child_node_size
         self.dep_population = dep_population
+        self.is_exhaustive = is_exhaustive
 
     def best_split(self, ind, dep):
         """ determine which splitting function to apply """
@@ -138,6 +139,8 @@ class Stats(object):
                   split.invalid_reason = InvalidSplitReason.ALPHA_MERGE
                 elif (n_ij.sum(axis=1) < min_child_node_size).any():
                   split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
+                elif self.is_exhaustive and len(freq.values()) > 2:
+                  split.invalid_reason = InvalidSplitReason.NODE_NOT_EXHAUSTIVE
                 else:
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
@@ -216,10 +219,12 @@ class Stats(object):
                 sufficient_split = sufficient_split and all(
                     len(node_v) >= self.min_child_node_size for node_v in keyed_set.values()
                 )
-
-                if not sufficient_split: invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
-
-                if sufficient_split and len(keyed_set.values()) > 1:
+                
+                if not sufficient_split: 
+                    split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
+                elif self.is_exhaustive and len(list(ind_var.possible_groupings())) != 1: 
+                    invalid_reason = InvalidSplitReason.NODE_NOT_EXHAUSTIVE
+                elif sufficient_split and len(keyed_set.values()) > 1:
                     dof = len(np.concatenate(list(keyed_set.values()))) - 2
                     score, p_split = sig_test(*keyed_set.values())
 
