@@ -29,6 +29,18 @@ class Node(object):
         Whether the node is terminal
     """
     def __init__(self, choices=None, split=None, indices=None, node_id=0, parent=None, dep_v=None):
+        """
+        Initialize the node.
+
+        Args:
+            self: (todo): write your description
+            choices: (todo): write your description
+            split: (int): write your description
+            indices: (list): write your description
+            node_id: (str): write your description
+            parent: (todo): write your description
+            dep_v: (todo): write your description
+        """
         indices = [] if indices is None else indices
         self.choices = list(choices or [])
         self.split = split or Split(None, None, None, None, 0)
@@ -39,39 +51,95 @@ class Node(object):
         self._members = None
 
     def __hash__(self):
+        """
+        Returns the hash of the hash.
+
+        Args:
+            self: (todo): write your description
+        """
         return hash(self.__dict__)
 
     def __eq__(self, other):
+        """
+        Determine if two objects.
+
+        Args:
+            self: (todo): write your description
+            other: (todo): write your description
+        """
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
         else:
             return False
 
     def __repr__(self):
+        """
+        Return a human - readable representation of this object.
+
+        Args:
+            self: (todo): write your description
+        """
         format_str = u'({0.choices}, {0.members}, {0.split})'
         return format_str.format(self)
 
     def __lt__(self, other):
+        """
+        Return true if other nodes of the same.
+
+        Args:
+            self: (todo): write your description
+            other: (todo): write your description
+        """
         return self.node_id < other.node_id
 
     @property
     def score(self):
+        """
+        Returns the score of the model.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.split.score
 
     @property
     def p(self):
+        """
+        Returns the p : p : pd. p.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.split.p
 
     @property
     def split_variable(self):
+        """
+        Split variable into two variable variable.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.split.column
 
     @property
     def is_terminal(self):
+        """
+        Returns true if the terminal is a terminal.
+
+        Args:
+            self: (todo): write your description
+        """
         return not self.split.valid()
 
     @property
     def members(self):
+        """
+        Returns the members of the model.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._members is None:
             dep_v = self.dep_v
             if isinstance(dep_v, ContinuousColumn):

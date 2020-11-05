@@ -116,11 +116,21 @@ def test_column_stores_weights():
     assert (continuous.weights == wt).all()
 
 def test_fix_metadata_if_passed_in():
+    """
+    Test if the metadata.
+
+    Args:
+    """
     arr = np.array([1.0, 2.0, 3.0])
     nominal = CHAID.NominalColumn(arr, metadata={1.0: 'Cat', 2.0: 'Haz', 3.0: 'Cheezburger'})
     assert [nominal.metadata[x] for x in nominal.arr] == ['Cat', 'Haz', 'Cheezburger']
 
 def test_all_combinations():
+    """
+    Test if all the columns.
+
+    Args:
+    """
     arr = np.array([1.0, 2.0, 3.0, 4.0])
     nominal = CHAID.NominalColumn(arr)
     assert [ i for i in nominal.all_combinations()] == [[[0.0], [1.0, 2.0, 3.0]],

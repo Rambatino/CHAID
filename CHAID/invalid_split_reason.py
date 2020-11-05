@@ -14,4 +14,10 @@ class InvalidSplitReason(Enum):
     NODE_NOT_EXHAUSTIVE =  'the node is not exhaustive'
 
     def __str__(self):
+        """
+        Returns the string representation of the string.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.value

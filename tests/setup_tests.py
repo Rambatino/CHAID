@@ -16,10 +16,22 @@ np.seterr(divide='ignore', invalid='ignore')
 import CHAID
 
 def islist(a):
+    """
+    Returns true if a and b is an iterable.
+
+    Args:
+        a: (int): write your description
+    """
     return isinstance(a, Iterable) and not isinstance(a, str)
 
 
 def str_ndlist(a):
+    """
+    Convert a list of strings as a list.
+
+    Args:
+        a: (todo): write your description
+    """
     return [str_ndlist(i) for i in a]  if islist(a) else str(a)
 
 

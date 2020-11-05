@@ -7,6 +7,11 @@ from numpy import nan
 from setup_tests import list_ordered_equal, list_unordered_equal, CHAID
 
 def test_all_ordinal_combinations():
+    """
+    Determine all the weighted lengths of the same length.
+
+    Args:
+    """
     arr = np.array([1.0, 2.0, 3.0, 4.0])
     ordinal = CHAID.OrdinalColumn(arr)
     assert [
@@ -20,6 +25,11 @@ def test_all_ordinal_combinations():
          [[1], [2], [3], [4]]]
 
 def test_all_ordinal_combinations_with_nan():
+    """
+    Test if all the ordinal values.
+
+    Args:
+    """
     arr = np.array([1.0, 2.0, 3.0, np.nan])
     ordinal = CHAID.OrdinalColumn(arr)
     nan_val = np.array([np.nan]).astype(int)[0]
@@ -289,10 +299,28 @@ class TestOrdinalConstructor(TestCase):
         self.col_with_nan = CHAID.OrdinalColumn(arr_with_nan, {1.0: 'first', 2.0: 'second', 3.0: 'third'})
 
     def test_correctly_subs_nan_values(self):
+        """
+        Test whether the values are nan values are nan.
+
+        Args:
+            self: (todo): write your description
+        """
         assert self.col_with_nan.arr[2] == self.col_with_nan._nan
 
     def test_correctly_subs_floats_for_ints(self):
+        """
+        Test if the sub - arrays of - sub - arrays.
+
+        Args:
+            self: (todo): write your description
+        """
         assert np.issubdtype(self.col_with_nan.arr.dtype, np.integer)
 
     def test_correctly_subs_floated_metadata(self):
+        """
+        Determine metadata is_correct.
+
+        Args:
+            self: (todo): write your description
+        """
         assert self.col_with_nan.metadata == {self.col_with_nan._nan: '<missing>', 1: 'first', 2: 'second', 3: 'third'}
