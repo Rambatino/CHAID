@@ -10,6 +10,12 @@ import os
 
 class TestClassificationRules(TestCase):
     def setUp(self):
+        """
+        Parses the current node asvalidation.
+
+        Args:
+            self: (todo): write your description
+        """
         invalid_split = CHAID.Split(None, None, 0, 1, 0)
         self.tree = CHAID.Tree.from_numpy(np.array([[1]]), np.array([1]))
         self.tree._tree_store = [
@@ -34,6 +40,12 @@ class TestClassificationRules(TestCase):
         self.tree._tree_store.append(self.last_node)
 
     def test_single_path(self):
+        """
+        Test for the test path.
+
+        Args:
+            self: (todo): write your description
+        """
         expected_rules = [
             {
                 'node': 3,
@@ -46,6 +58,12 @@ class TestClassificationRules(TestCase):
         assert list_unordered_equal(self.tree.classification_rules(self.last_node), expected_rules), "Couldn't find path to determine rules from specified node"
 
     def test_all_paths(self):
+        """
+        Return a list of test paths.
+
+        Args:
+            self: (todo): write your description
+        """
         expected_rules = [
             {
                 'node': 3,
@@ -342,6 +360,11 @@ def test_max_depth_returns_correct_invalid_message():
                                                  'the invalid reason on the terminal node'
 
 def test_node_predictions():
+    """
+    Test if a prediction exists.
+
+    Args:
+    """
     gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
     income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
 
@@ -374,6 +397,12 @@ class TestTreeGenerated(TestCase):
         assert self.tree.tree_store is not None
 
     def test_deletion(self):
+        """
+        : return value of the tree_store_delet.
+
+        Args:
+            self: (todo): write your description
+        """
         assert self.tree.tree_store is not None
 
 
@@ -417,6 +446,12 @@ class TestBugFixes(TestCase):
         assert tree.tree_store[5].members == {1: 5.0, 2: 6.0}
 
     def test_unicode_printing(self):
+        """
+        Pretty print unicode unicode.
+
+        Args:
+            self: (todo): write your description
+        """
         cols = dict(zip([u'\u2013', 'a', 'b', u'another unicode \u2013 \u2013'], ['nominal'] * 4))
         df = pd.DataFrame(data=self.string_ndarr, columns=cols)
         df['ordinal'] = self.arr[::-1]
@@ -613,9 +648,21 @@ class TestStringCategoricalDependentVariableForModelPrediction(TestCase):
         )
 
     def test_string_dependent_categorical_variable_for_model_prediction(self):
+        """
+        Test whether the categorical variables in the model_prediction.
+
+        Args:
+            self: (todo): write your description
+        """
         assert (self.tree.model_predictions() ==  np.array(['lover'] * 30 + ['non-lover'] * 30)).all()
 
     def test_risk_still_works(self):
+        """
+        Calculate the risk factor is the difference in the age of the age.
+
+        Args:
+            self: (todo): write your description
+        """
         int_lover = np.array([1] * 25 + [0] * 35)
         other_tree = CHAID.Tree.from_numpy(
             np.vstack([self.region, self.age, self.gender]).transpose(),

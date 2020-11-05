@@ -4,6 +4,13 @@ from itertools import combinations
 from .mapping_dict import MappingDict
 
 def is_sorted(ndarr, nan_val=None):
+    """
+    Returns true if ndarrays in ndarray.
+
+    Args:
+        ndarr: (array): write your description
+        nan_val: (int): write your description
+    """
     store = []
     for arr in ndarr:
         if arr == [] or len(arr) == 1: continue
@@ -30,6 +37,18 @@ class Column(object):
     """
     def __init__(self, arr=None, metadata=None, missing_id='<missing>',
                  substitute=True, weights=None, name=None):
+        """
+        Initialize the array.
+
+        Args:
+            self: (todo): write your description
+            arr: (todo): write your description
+            metadata: (dict): write your description
+            missing_id: (str): write your description
+            substitute: (todo): write your description
+            weights: (array): write your description
+            name: (str): write your description
+        """
         self.metadata = dict(metadata or {})
         self.arr = np.array(arr)
         self._missing_id = missing_id
@@ -37,15 +56,42 @@ class Column(object):
         self.name = name
 
     def __iter__(self):
+        """
+        Returns an iterator over the iterator.
+
+        Args:
+            self: (todo): write your description
+        """
         return iter(self.arr)
 
     def __getitem__(self, key):
+        """
+        Return the value from the cache.
+
+        Args:
+            self: (todo): write your description
+            key: (str): write your description
+        """
         raise NotImplementedError
 
     def __setitem__(self, key, value):
+        """
+        Sets the key.
+
+        Args:
+            self: (todo): write your description
+            key: (str): write your description
+            value: (str): write your description
+        """
         raise NotImplementedError
 
     def possible_groupings(self):
+        """
+        : return : class : ~.
+
+        Args:
+            self: (todo): write your description
+        """
         raise NotImplementedError
 
     @property
@@ -86,6 +132,18 @@ class NominalColumn(Column):
     """
     def __init__(self, arr=None, metadata=None, missing_id='<missing>',
                  substitute=True, weights=None, name=None):
+        """
+        Initialize all the classes.
+
+        Args:
+            self: (todo): write your description
+            arr: (todo): write your description
+            metadata: (dict): write your description
+            missing_id: (str): write your description
+            substitute: (todo): write your description
+            weights: (array): write your description
+            name: (str): write your description
+        """
         super(self.__class__, self).__init__(arr, metadata=metadata, missing_id=missing_id, weights=weights, name=name)
         if substitute and metadata is None:
             self.substitute_values(arr)
@@ -136,25 +194,66 @@ class NominalColumn(Column):
             self.metadata[-1] = self._missing_id
 
     def __getitem__(self, key):
+        """
+        Return the first nominal element.
+
+        Args:
+            self: (todo): write your description
+            key: (str): write your description
+        """
         new_weights = None if self.weights is None else self.weights[key]
         return NominalColumn(self.arr[key], metadata=self.metadata, substitute=False, weights=new_weights, name=self.name)
 
     def __setitem__(self, key, value):
+        """
+        Set the value of a key.
+
+        Args:
+            self: (todo): write your description
+            key: (str): write your description
+            value: (str): write your description
+        """
         self.arr[key] = value
         return self
 
     def groups(self):
+        """
+        Return a list of all groups.
+
+        Args:
+            self: (todo): write your description
+        """
         return list(self._groupings.values())
 
     def possible_groupings(self):
+        """
+        Returns a list of possible possible possible possible possible possible possible possible groups.
+
+        Args:
+            self: (todo): write your description
+        """
         return combinations(self._groupings.keys(), 2)
 
     def all_combinations(self):
+        """
+        Returns a list of all the groups.
+
+        Args:
+            self: (todo): write your description
+        """
         bell_set = self.bell_set(sorted(list(self._groupings.keys())))
         next(bell_set)
         return bell_set
 
     def group(self, x, y):
+        """
+        Draw a group
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+            y: (todo): write your description
+        """
         self._groupings[x] += self._groupings[y]
         del self._groupings[y]
         self.arr[self.arr == y] = x
@@ -173,6 +272,19 @@ class OrdinalColumn(Column):
     """
     def __init__(self, arr=None, metadata=None, missing_id='<missing>',
                  groupings=None, substitute=True, weights=None, name=None):
+        """
+        Initialize metadata.
+
+        Args:
+            self: (todo): write your description
+            arr: (todo): write your description
+            metadata: (dict): write your description
+            missing_id: (str): write your description
+            groupings: (list): write your description
+            substitute: (todo): write your description
+            weights: (array): write your description
+            name: (str): write your description
+        """
         super(self.__class__, self).__init__(arr, metadata, missing_id=missing_id, weights=weights, name=name)
         self._nan = np.array([np.nan]).astype(int)[0]
 
@@ -194,6 +306,13 @@ class OrdinalColumn(Column):
         self._possible_groups = None
 
     def substitute_values(self, vect):
+        """
+        Substitute values in the array.
+
+        Args:
+            self: (todo): write your description
+            vect: (todo): write your description
+        """
         if not np.issubdtype(vect.dtype, np.integer):
             uniq = set(vect)
             uniq_floats = np.array(list(uniq), dtype=float)
@@ -215,16 +334,37 @@ class OrdinalColumn(Column):
                              groupings=self._groupings, weights=self.weights)
 
     def __getitem__(self, key):
+        """
+        Return a single row.
+
+        Args:
+            self: (todo): write your description
+            key: (str): write your description
+        """
         new_weights = None if self.weights is None else self.weights[key]
         return OrdinalColumn(self.arr[key], metadata=self.metadata, name=self.name,
                              missing_id=self._missing_id, substitute=True,
                              groupings=self._groupings, weights=new_weights)
 
     def __setitem__(self, key, value):
+        """
+        Set the value of a key.
+
+        Args:
+            self: (todo): write your description
+            key: (str): write your description
+            value: (str): write your description
+        """
         self.arr[key] = value
         return self
 
     def groups(self):
+        """
+        Return a list of all the groups.
+
+        Args:
+            self: (todo): write your description
+        """
         vals = self._groupings.values()
         return [
             [x for x in range(minmax[0], minmax[1])] + ([self._nan] if minmax[2] else [])
@@ -232,6 +372,12 @@ class OrdinalColumn(Column):
         ]
 
     def possible_groupings(self):
+        """
+        Returns a list of possible possible possible possible possible possible possible possible ranges.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._possible_groups is None:
             ranges = sorted(self._groupings.items())
             candidates = zip(ranges[0:], ranges[1:])
@@ -246,12 +392,26 @@ class OrdinalColumn(Column):
         return self._possible_groups.__iter__()
 
     def all_combinations(self):
+        """
+        Returns a list of all the groups in the group.
+
+        Args:
+            self: (todo): write your description
+        """
         bell_set = self.bell_set(sorted(list(self._groupings.keys())), True)
         next(bell_set)
         return bell_set
 
 
     def group(self, x, y):
+        """
+        Plot the group
+
+        Args:
+            self: (todo): write your description
+            x: (todo): write your description
+            y: (todo): write your description
+        """
         self._possible_groups = None
         if y != self._nan:
             x = int(x)
@@ -282,6 +442,16 @@ class ContinuousColumn(Column):
     """
     def __init__(self, arr=None, metadata=None, missing_id='<missing>',
                  weights=None):
+        """
+        Initialize the array.
+
+        Args:
+            self: (todo): write your description
+            arr: (todo): write your description
+            metadata: (dict): write your description
+            missing_id: (str): write your description
+            weights: (array): write your description
+        """
         if not np.issubdtype(arr.dtype, np.number):
             raise ValueError('Must only pass numerical values to create continuous column')
 
@@ -294,10 +464,25 @@ class ContinuousColumn(Column):
         return ContinuousColumn(self.arr, metadata=self.metadata, missing_id=self._missing_id, weights=self.weights)
 
     def __getitem__(self, key):
+        """
+        Get the weights for a key.
+
+        Args:
+            self: (todo): write your description
+            key: (str): write your description
+        """
         new_weights = None if self.weights is None else self.weights[key]
         return ContinuousColumn(self.arr[key], metadata=self.metadata, weights=new_weights)
 
     def __setitem__(self, key, value):
+        """
+        Set the value of a key.
+
+        Args:
+            self: (todo): write your description
+            key: (str): write your description
+            value: (str): write your description
+        """
         self.arr[key] = value
         return self
 

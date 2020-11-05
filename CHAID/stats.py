@@ -41,6 +41,17 @@ class Stats(object):
     Stats class that determines the correct statistical method to apply
     """
     def __init__(self, alpha_merge, min_child_node_size, split_threshold, dep_population, is_exhaustive=False):
+        """
+        Initialize a population.
+
+        Args:
+            self: (todo): write your description
+            alpha_merge: (float): write your description
+            min_child_node_size: (int): write your description
+            split_threshold: (float): write your description
+            dep_population: (todo): write your description
+            is_exhaustive: (bool): write your description
+        """
         self.split_threshold = 1 - split_threshold
         self.alpha_merge = alpha_merge
         self.min_child_node_size = min_child_node_size

@@ -105,6 +105,12 @@ class Tree(object):
 
     @property
     def tree_store(self):
+        """
+        Builds the tree of the tree.
+
+        Args:
+            self: (todo): write your description
+        """
         if not self._tree_store:
             self.build_tree()
         return self._tree_store
@@ -211,6 +217,12 @@ class Tree(object):
         return iter(self.tree_store)
 
     def __repr__(self):
+        """
+        Return a representation of this object as a string.
+
+        Args:
+            self: (todo): write your description
+        """
         return str(self.tree_store)
 
     def get_node(self, node_id):
@@ -236,6 +248,14 @@ class Tree(object):
         return pred
 
     def classification_rules(self, node=None, stack=None):
+        """
+        Return a list of the rules.
+
+        Args:
+            self: (todo): write your description
+            node: (todo): write your description
+            stack: (list): write your description
+        """
         if node is None:
             return [
                 rule for t_node in self for rule in self.classification_rules(t_node) if t_node.is_terminal
@@ -293,4 +313,12 @@ class Tree(object):
         return float((self.model_predictions() == sub_observed).sum()) / self.data_size
 
     def render(self, path=None, view=False):
+        """
+        Render the graph asciated graph.
+
+        Args:
+            self: (todo): write your description
+            path: (str): write your description
+            view: (todo): write your description
+        """
         Graph(self).render(path, view)

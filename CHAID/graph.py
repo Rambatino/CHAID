@@ -16,10 +16,28 @@ except ImportError:
     from tempfile import mkdtemp
     class TemporaryDirectory(object):
         def __init__(self):
+            """
+            Initialize the object
+
+            Args:
+                self: (todo): write your description
+            """
             self.name = mkdtemp()
         def __enter__(self):
+            """
+            Get the name
+
+            Args:
+                self: (todo): write your description
+            """
             return self.name
         def __exit__(self, *args):
+            """
+            Exit the given exit code.
+
+            Args:
+                self: (todo): write your description
+            """
             shutil.rmtree(self.name, ignore_errors=True)
 
 FIG_BASE = {
@@ -57,9 +75,24 @@ class Graph(object):
     """
 
     def __init__(self, tree):
+        """
+        Initialize the tree
+
+        Args:
+            self: (todo): write your description
+            tree: (dict): write your description
+        """
         self.tree = tree
 
     def render(self, path, view):
+        """
+        Render the graph as html.
+
+        Args:
+            self: (todo): write your description
+            path: (str): write your description
+            view: (todo): write your description
+        """
         if path is None:
             path = os.path.join("trees", "{:%Y-%m-%d %H:%M:%S}.gv".format(datetime.now()))
         with TemporaryDirectory() as self.tempdir:
@@ -77,6 +110,13 @@ class Graph(object):
             g.render(path, view=view)
 
     def bar_chart(self, node):
+        """
+        Create a chart chart
+
+        Args:
+            self: (todo): write your description
+            node: (todo): write your description
+        """
         fig = dict(
             data=[
                 dict(
@@ -97,6 +137,13 @@ class Graph(object):
         return filename
 
     def _table(self, node):
+        """
+        Return table.
+
+        Args:
+            self: (todo): write your description
+            node: (todo): write your description
+        """
         p = None if node.p is None else format(node.p, ".5f")
         score = None if node.score is None else format(node.score, ".2f")
         values = [p, score, node.split.column]
