@@ -26,7 +26,10 @@ Creating a CHAID Tree
 ---------------
 
 ``` python
-from CHAID import Tree
+from CHAID import Tree, NominalColumn
+import pandas as pd
+import numpy as np
+
 
 ## create the data
 ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
@@ -58,8 +61,8 @@ tree = Tree.from_pandas_df(df, dict(zip(independent_variable_columns, ['nominal'
 tree = Tree.from_numpy(ndarr, arr, split_titles=['a', 'b', 'c'], min_child_node_size=5)
 ## create the same tree using the tree constructor
 cols = [
-  NominalColumn(ndarr[:,0], name='a')
-  NominalColumn(ndarr[:,1], name='b')
+  NominalColumn(ndarr[:,0], name='a'),
+  NominalColumn(ndarr[:,1], name='b'),
   NominalColumn(ndarr[:,2], name='c')
 ]
 tree = Tree(cols, NominalColumn(arr, name='d'), {'min_child_node_size': 5})
