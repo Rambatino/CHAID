@@ -55,15 +55,12 @@ setup(
         'numpy',
         'pandas',
         'treelib',
-        'pytest',
         'scipy',
-        'savReaderWriter',
-        'graphviz',
-        'plotly',
-        'colorlover',
         'enum34; python_version == "2.7"'
     ],
     extras_require={
+        'spss': ['savReaderWriter'],
+        'graph': ['graphviz', 'plotly', 'colorlover'],
         'test': ['codecov', 'tox', 'tox-pyenv', 'detox', 'pytest', 'pytest-cov', 'psutil'],
     }
 )

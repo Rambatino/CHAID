@@ -63,3 +63,7 @@ target/
 trees/
 .DS_Store
 tests/graph
+
+# Pipfile
+Pipfile
+Pipfile.lock

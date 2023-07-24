@@ -1,10 +1,20 @@
 import os
 from datetime import datetime
 
-import plotly.graph_objs as go
-import plotly.io as pio
-import colorlover as cl
-from graphviz import Digraph
+try:
+    import plotly.graph_objs as go
+    import plotly.io as pio
+except ImportError:
+    go = None
+    pio = None
+try:
+    import colorlover as cl
+except ImportError:
+    cl = None
+try:
+    from graphviz import Digraph
+except ImportError:
+    Digraph = None
 
 try:
     # Python 3.2 and newer

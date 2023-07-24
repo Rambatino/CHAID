@@ -128,7 +128,7 @@ class NominalColumn(Column):
         for new_id, value in enumerate(unique):
             np.place(arr, arr==value, new_id)
             self.metadata[new_id] = value
-        arr = arr.astype(np.float)
+        arr = arr.astype(np.float64)
         np.place(arr, np.isnan(arr), -1)
         self.arr = arr
 
