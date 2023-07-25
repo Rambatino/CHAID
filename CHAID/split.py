@@ -67,6 +67,14 @@ class Split(object):
         return str(self.split_map)
 
     @property
+    def split_groups(self):
+        if not self.valid():
+            return []
+        if all(x is None for x in self.split_map):
+            return self.splits
+        return self.split_map
+
+    @property
     def dof(self):
         return self._dof
 
