@@ -1,20 +1,52 @@
 import os
+import warnings
 from datetime import datetime
 
+# Wrap all the optional imports
 try:
     import plotly.graph_objs as go
     import plotly.io as pio
+    import colorlover as cl
+    from graphviz import Digraph
+    
 except ImportError:
+    warnings.warn('Imports of optional packages needed to generate graphs failed. Please install the optinal package under "graph".')
     go = None
     pio = None
-try:
-    import colorlover as cl
-except ImportError:
     cl = None
-try:
-    from graphviz import Digraph
-except ImportError:
     Digraph = None
+
+    FIG_BASE = {}
+    FIG_BASE_DATA = {}
+    TABLE_HEADER = []
+    TABLE_CONFIG = {}
+    TABLE_CELLS_CONFIG = {}
+
+else:
+    FIG_BASE = {
+        "layout": {
+            "margin_t": 50,
+            "annotations": [{"font_size": 18, "x": 0.5, "y": 0.5}, {"y": [0, 0.2]}],
+        },
+    }
+    FIG_BASE_DATA = {
+        "domain": {"x": [0, 1], "y": [0.4, 1.0]},
+        "hole": 0.4,
+        "type": "pie",
+        "marker_colors": cl.scales["5"]["qual"]["Set1"],
+    }
+    TABLE_HEADER = ["<i>p</i>", "score", "splitting on"]
+    TABLE_CONFIG = {
+        "domain": {"x": [0.3, 0.7], "y": [0, 0.37]},
+        "header": {"fill_color": "#FFF"},
+    }
+    TABLE_CELLS_CONFIG = {
+        "line_color": "#FFF",
+        "align": "left",
+        "font_color": "#282828",
+        "height": 27,
+        "fill_color": ["#EBC1EE", "#EDEAFB"],
+    }    
 
 try:
     # Python 3.2 and newer
@@ -32,30 +64,6 @@ except ImportError:
         def __exit__(self, *args):
             shutil.rmtree(self.name, ignore_errors=True)
 
-FIG_BASE = {
-    "layout": {
-        "margin_t": 50,
-        "annotations": [{"font_size": 18, "x": 0.5, "y": 0.5}, {"y": [0, 0.2]}],
-    },
-}
-FIG_BASE_DATA = {
-    "domain": {"x": [0, 1], "y": [0.4, 1.0]},
-    "hole": 0.4,
-    "type": "pie",
-    "marker_colors": cl.scales["5"]["qual"]["Set1"],
-}
-TABLE_HEADER = ["<i>p</i>", "score", "splitting on"]
-TABLE_CONFIG = {
-    "domain": {"x": [0.3, 0.7], "y": [0, 0.37]},
-    "header": {"fill_color": "#FFF"},
-}
-TABLE_CELLS_CONFIG = {
-    "line_color": "#FFF",
-    "align": "left",
-    "font_color": "#282828",
-    "height": 27,
-    "fill_color": ["#EBC1EE", "#EDEAFB"],
-}
 
 class Graph(object):
     """
@@ -103,7 +111,7 @@ class Graph(object):
             fig["data"].append(self._table(node))
 
         filename = os.path.join(self.tempdir, "node-{}.png".format(node.node_id))
-        pio.write_image(fig, file=filename, format="png")
+        pio.write_image(fig, file=filename, format="png", engine="orca")
         return filename
 
     def _table(self, node):
