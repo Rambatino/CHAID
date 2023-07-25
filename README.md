@@ -15,6 +15,21 @@ CHAID is distributed via [pypi](https://pypi.python.org/pypi/CHAID) and can be i
 pip3 install CHAID
 ```
 
+If you need support for graphs, optional packages must be installed together like:
+``` bash
+pip install CHAID[graph]
+```
+
+If you need support to read in a `.sav` file (SPSS), you will also need to install optional packages like:
+``` bash
+pip install CHAID[spss]
+```
+
+To install multiple optional packages, you can use a comma-separated list like:
+``` bash
+pip install CHAID[graph,spss]
+```
+
 Alternatively, you can clone the repository and install via
 ``` bash
 pip install -e path/to/your/checkout
