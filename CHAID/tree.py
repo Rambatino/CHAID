@@ -101,7 +101,7 @@ class Tree(object):
     def build_tree(self):
         """ Build chaid tree """
         self._tree_store = []
-        self.node(np.arange(0, self.data_size, dtype=np.int), self.vectorised_array, self.observed)
+        self.node(np.arange(0, self.data_size, dtype=np.int64), self.vectorised_array, self.observed)
 
     @property
     def tree_store(self):

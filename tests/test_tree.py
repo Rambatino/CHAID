@@ -81,7 +81,8 @@ def test_best_split_unique_values():
     assert list_ordered_equal(ndarr, orig_ndarr), 'Calling chaid should have no side affects for original numpy arrays'
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
     assert split.column_id == 0, 'Identifies correct column to split on'
-    assert list_unordered_equal(split.split_map, [[1], [2]]), 'Correctly identifies catagories'
+    assert list_unordered_equal(split.split_map, [[1], [2]]), 'Correctly identifies categories'
+    assert list_unordered_equal(split.split_groups, [[1], [2]]), 'Correctly generates split_groups property'
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
     assert split.p < 0.015
 
@@ -106,6 +107,8 @@ def test_spliting_identical_values():
         'Identifies correct column to split on'
     assert not split.valid(), \
         'Should not be able to split data with no skew'
+    assert split.groupings == '[]', 'Invalid split should return a string representing empty list as groupings property'
+    assert split.split_groups == [], 'Invalid split should return an empty list as split_groups property'
 
 
 def test_best_split_with_combination():
@@ -126,6 +129,7 @@ def test_best_split_with_combination():
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
     assert split.column_id == 0, 'Identifies correct column to split on'
     assert list_unordered_equal(split.split_map, [[1], [2], [3]]), 'Correctly identifies categories'
+    assert list_unordered_equal(split.split_groups, [[1], [2], [3]]), 'Correctly generates split_groups property'
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
     assert split.p < 0.015
 
@@ -147,6 +151,7 @@ def test_best_split_with_combination_combining_if_too_small():
     assert list_ordered_equal(arr, orig_arr), 'Calling chaid should have no side affects for original numpy arrays'
     assert split.column_id == 0, 'Identifies correct column to split on'
     assert list_unordered_equal(split.split_map, [[1], [2, 3]]), 'Correctly identifies categories'
+    assert list_unordered_equal(split.split_groups, [[1], [2, 3]]), 'Correctly generates split_groups property'
     assert list_unordered_equal(split.surrogates, []), 'No surrogates should be generated'
     assert split.p < 0.055
 
