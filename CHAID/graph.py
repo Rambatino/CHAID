@@ -10,7 +10,7 @@ try:
     from graphviz import Digraph
     
 except ImportError:
-    warnings.warn('Imports of optional packages needed to generate graphs failed. Please install the optinal package under "graph".')
+    warnings.warn(UserWarning('Imports of optional packages needed to generate graphs failed. Please install with the "graph" option.'))
     go = None
     pio = None
     cl = None
