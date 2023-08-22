@@ -327,6 +327,32 @@ def test_min_child_node_size_is_30():
     assert str(tree.tree_store[0].split.invalid_reason) == invalid_split_reason
     assert len(tree.tree_store) == 1
 
+def test_pure_node_categorical():
+    """
+    Test that attempting in splitting a pure node results in invalid split
+    """
+    gender = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_child_node_size=1, min_parent_node_size=1)
+    assert str(tree.tree_store[0].split.invalid_reason) == CHAID.InvalidSplitReason.PURE_NODE.value
+    assert len(tree.tree_store) == 1
+
+def test_pure_node_continuous():
+    """
+    Test that attempting in splitting a pure node results in invalid split
+    """
+    gender = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_child_node_size=1, min_parent_node_size=1, dep_variable_type='continuous')
+    assert str(tree.tree_store[0].split.invalid_reason) == CHAID.InvalidSplitReason.PURE_NODE.value
+    assert len(tree.tree_store) == 1
+
 def test_to_tree_returns_a_tree():
     """
     Test that the to_tree() method returns expected result
