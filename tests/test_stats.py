@@ -72,8 +72,10 @@ class TestContinuousStats(TestCase):
         self.wt = np.array(([1.0] * 60) + ([1.2] * 60))
         ndarr = np.array(([2, 3] * 20) + ([2, 5] * 20) + ([3, 4] * 19) + [2, 3] + [1, 2, 5] * 80 + [1, 2, 3] * 40).reshape(120, 4)
         self.ndarr = [CHAID.NominalColumn(ndarr[:, i]) for i in range(ndarr.shape[1])]
-        self.stats_random_data = CHAID.Stats(0.5, 10, .95, self.random_arr)
-        self.stats_normal_data = CHAID.Stats(0.5, 10, .95, self.normal_arr)
+        self.stats_random_data = CHAID.Stats(0.5, 10, None, .95, self.random_arr)
+        self.stats_normal_data = CHAID.Stats(0.5, 10, None, .95, self.normal_arr)
+        self.stats_random_data_max_splits = CHAID.Stats(0.5, 10, 2, .95, self.random_arr)
+        self.stats_normal_data_max_splits = CHAID.Stats(0.5, 10, 2, .95, self.normal_arr)
 
     def test_p_and_chi_values_for_random_data(self):
         """
@@ -121,4 +123,28 @@ class TestContinuousStats(TestCase):
         )
         assert round(split.score, 4) == 2.238
         assert round(split.p, 4) == 0.1347
+        assert split.dof == 118.
+
+    def test_p_and_chi_values_for_random_data_max_splits(self):
+        """
+        Check chi and p value against hand calculated values
+        """
+        split = self.stats_random_data_max_splits.best_con_split(
+            self.ndarr,
+            CHAID.ContinuousColumn(self.random_arr)
+        )
+        assert round(split.score, 4) == 1.0588
+        assert round(split.p, 4) == 0.3056
+        assert split.dof == 118.
+
+    def test_p_and_chi_values_for_normal_data_max_splits(self):
+        """
+        Check chi and p value against hand calculated values
+        """
+        split = self.stats_normal_data_max_splits.best_con_split(
+            self.ndarr,
+            CHAID.ContinuousColumn(self.normal_arr)
+        )
+        assert round(split.score, 4) == 2.8841
+        assert round(split.p, 4) == 0.0895
         assert split.dof == 118.
