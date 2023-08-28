@@ -18,8 +18,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - v1-3.11-dependencies-{{ checksum "setup.py" }}
-          - v1-3.11-dependencies-
+          - v1.1-3.11-dependencies-{{ checksum "setup.py" }}
+          - v1.1-3.11-dependencies-
       - run:
           name: Install dependencies
           command: |
@@ -33,7 +33,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-3.11-dependencies-{{ checksum "setup.py" }}
+          key: v1.1-3.11-dependencies-{{ checksum "setup.py" }}
       - run:
           name: Run tests
           command: |
@@ -48,8 +48,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - v1-3.10-dependencies-{{ checksum "setup.py" }}
-          - v1-3.10-dependencies-
+          - v1.1-3.10-dependencies-{{ checksum "setup.py" }}
+          - v1.1-3.10-dependencies-
       - run:
           name: Install dependencies
           command: |
@@ -63,7 +63,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-3.10-dependencies-{{ checksum "setup.py" }}
+          key: v1.1-3.10-dependencies-{{ checksum "setup.py" }}
       - run:
           name: Run tests
           command: |
@@ -77,8 +77,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - v1-3.9-dependencies-{{ checksum "setup.py" }}
-          - v1-3.9-dependencies-
+          - v1.1-3.9-dependencies-{{ checksum "setup.py" }}
+          - v1.1-3.9-dependencies-
       - run:
           name: Install dependencies
           command: |
@@ -92,7 +92,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-3.9-dependencies-{{ checksum "setup.py" }}
+          key: v1.1-3.9-dependencies-{{ checksum "setup.py" }}
       - run:
           name: Run tests
           command: |
@@ -106,8 +106,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - v1-3.8-dependencies-{{ checksum "setup.py" }}
-          - v1-3.8-dependencies-
+          - v1.1-3.8-dependencies-{{ checksum "setup.py" }}
+          - v1.1-3.8-dependencies-
       - run:
           name: Install dependencies
           command: |
@@ -121,7 +121,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-3.8-dependencies-{{ checksum "setup.py" }}
+          key: v1.1-3.8-dependencies-{{ checksum "setup.py" }}
       - run:
           name: Run tests
           command: |
@@ -135,8 +135,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - v1-3.7-dependencies-{{ checksum "setup.py" }}
-          - v1-3.7-dependencies-
+          - v1.1-3.7-dependencies-{{ checksum "setup.py" }}
+          - v1.1-3.7-dependencies-
       - run:
           name: Install dependencies
           command: |
@@ -150,7 +150,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-3.7-dependencies-{{ checksum "setup.py" }}
+          key: v1.1-3.7-dependencies-{{ checksum "setup.py" }}
       - run:
           name: Run tests
           command: |
@@ -164,8 +164,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - v1-3.6-dependencies-{{ checksum "setup.py" }}
-          - v1-3.6-dependencies-
+          - v1.1-3.6-dependencies-{{ checksum "setup.py" }}
+          - v1.1-3.6-dependencies-
       - run:
           name: Install dependencies
           command: |
@@ -180,7 +180,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-3.6-dependencies-{{ checksum "setup.py" }}
+          key: v1.1-3.6-dependencies-{{ checksum "setup.py" }}
       - run:
           name: Run tests
           command: |
