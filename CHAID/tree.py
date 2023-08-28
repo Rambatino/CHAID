@@ -1,4 +1,5 @@
 import numpy as np
+from math import ceil
 from treelib import Tree as TreeLibTree
 from .node import Node
 from .split import Split
@@ -29,16 +30,26 @@ class Tree(object):
                 is_exhaustive=False
             }
         """
+        # Use the absolute size if at least 1; otherwise, treat as a fraction.
+        data_size = dependent_column.arr.shape[0]
+        min_parent_node_size = config.get('min_parent_node_size', 30)
+        min_child_node_size = config.get('min_child_node_size', 30)
+        if 0 < min_parent_node_size < 1:
+            min_parent_node_size = int(ceil(min_parent_node_size * data_size))
+        if 0 < min_child_node_size < 1:
+            min_child_node_size = int(ceil(min_child_node_size * data_size))
+
+        # Save away the parameters and configurations.
         self.max_depth = config.get('max_depth', 2)
-        self.min_parent_node_size = config.get('min_parent_node_size', 30)
+        self.min_parent_node_size = min_parent_node_size
         self.vectorised_array = independent_columns
-        self.data_size = dependent_column.arr.shape[0]
+        self.data_size = data_size
         self.node_count = 0
         self._tree_store = None
         self.observed = dependent_column
         self._stats = Stats(
             config.get('alpha_merge', 0.05),
-            config.get('min_child_node_size', 30),
+            min_child_node_size,
             config.get('max_splits', None),
             config.get('split_threshold', 0),
             dependent_column.arr,
@@ -69,6 +80,11 @@ class Tree(object):
         min_parent_node_size : float
             the threshold value of the number of respondents that the node must
             contain (default 30)
+        min_child_node_size : float
+            the threshold value of the number of respondents that each child node must
+            contain (default 30)
+        max_splits : int
+            maximum number of splits allowed at each depth; no limit if None (default None)
         split_titles : array-like
             array of names for the independent variables in the data
         variable_types : array-like or dict
@@ -143,6 +159,8 @@ class Tree(object):
         min_child_node_size : float
             the threshold value of the number of respondents that each child node must
             contain (default 30)
+        max_splits : int
+            maximum number of splits allowed at each depth; no limit if None (default None)
         weight : array-like
             the respondent weights. If passed, weighted chi-square calculation is run
         dep_variable_type : str

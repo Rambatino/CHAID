@@ -327,6 +327,32 @@ def test_min_child_node_size_is_30():
     assert str(tree.tree_store[0].split.invalid_reason) == invalid_split_reason
     assert len(tree.tree_store) == 1
 
+def test_min_child_node_fraction():
+    """
+    Test that if the min_child_node_size is set to fraction,
+    it is applied correctly based on data size
+    """
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_child_node_size=0.9)
+    assert tree._stats.min_child_node_size == 18
+
+def test_min_parent_node_fraction():
+    """
+    Test that if the min_parent_node_size is set to fraction,
+    it is applied correctly based on data size
+    """
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_parent_node_size=0.5)
+    assert tree.min_parent_node_size == 10
+
 def test_pure_node_categorical():
     """
     Test that attempting in splitting a pure node results in invalid split
