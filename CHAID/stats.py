@@ -40,10 +40,11 @@ class Stats(object):
     """
     Stats class that determines the correct statistical method to apply
     """
-    def __init__(self, alpha_merge, min_child_node_size, split_threshold, dep_population, is_exhaustive=False):
+    def __init__(self, alpha_merge, min_child_node_size, max_splits, split_threshold, dep_population, is_exhaustive=False):
         self.split_threshold = 1 - split_threshold
         self.alpha_merge = alpha_merge
         self.min_child_node_size = min_child_node_size
+        self.max_splits = max_splits
         self.dep_population = dep_population
         self.is_exhaustive = is_exhaustive
 
@@ -136,11 +137,13 @@ class Stats(object):
 
                 sufficient_split = not highest_p_join or highest_p_join < self.alpha_merge
                 if not sufficient_split:
-                  split.invalid_reason = InvalidSplitReason.ALPHA_MERGE
+                    split.invalid_reason = InvalidSplitReason.ALPHA_MERGE
+                elif self.max_splits and len(ind_var.groups()) > self.max_splits:
+                    split.invalid_reason = InvalidSplitReason.MAX_SPLITS
                 elif (n_ij.sum(axis=1) < min_child_node_size).any():
-                  split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
+                    split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
                 elif self.is_exhaustive and len(freq.values()) > 2:
-                  split.invalid_reason = InvalidSplitReason.NODE_NOT_EXHAUSTIVE
+                    split.invalid_reason = InvalidSplitReason.NODE_NOT_EXHAUSTIVE
                 else:
                     n_ij = np.array([
                         [f[dep_val] for dep_val in all_dep] for f in freq.values()
@@ -197,6 +200,8 @@ class Stats(object):
                 matched_elements = np.compress(ind_var.arr == col, response_set)
                 keyed_set[col] = matched_elements
 
+            if len(list(ind_var.possible_groupings())) == 0:
+                split.invalid_reason = InvalidSplitReason.PURE_NODE
             while next(ind_var.possible_groupings(), None) is not None:
                 choice, highest_p_join, split_score = None, None, None
                 for comb in ind_var.possible_groupings():
@@ -208,22 +213,22 @@ class Stats(object):
                     if choice is None or p_split > highest_p_join or (p_split == highest_p_join and score > split_score):
                         choice, highest_p_join, split_score = comb, p_split, score
 
-                sufficient_split = highest_p_join < self.alpha_merge and all(
-                    len(node_v) >= self.min_child_node_size for node_v in keyed_set.values()
-                )
-
                 invalid_reason = None
                 sufficient_split = highest_p_join < self.alpha_merge
-                if not sufficient_split: invalid_reason = InvalidSplitReason.ALPHA_MERGE
+                if not sufficient_split:
+                    invalid_reason = InvalidSplitReason.ALPHA_MERGE
+
+                sufficient_split = sufficient_split and (self.max_splits is None or len(ind_var.groups()) <= self.max_splits)
+                if not sufficient_split:
+                    invalid_reason = InvalidSplitReason.MAX_SPLITS
 
                 sufficient_split = sufficient_split and all(
                     len(node_v) >= self.min_child_node_size for node_v in keyed_set.values()
                 )
-                
                 if not sufficient_split: 
                     split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
                 elif self.is_exhaustive and len(list(ind_var.possible_groupings())) != 1: 
-                    invalid_reason = InvalidSplitReason.NODE_NOT_EXHAUSTIVE
+                    split.invalid_reason = InvalidSplitReason.NODE_NOT_EXHAUSTIVE
                 elif sufficient_split and len(keyed_set.values()) > 1:
                     dof = len(np.concatenate(list(keyed_set.values()))) - 2
                     score, p_split = sig_test(*keyed_set.values())

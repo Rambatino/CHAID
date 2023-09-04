@@ -9,6 +9,7 @@ class InvalidSplitReason(Enum):
     MIN_CHILD_NODE_SIZE =  'splitting would create nodes with less than the minimum child ' \
                            'node size'
     MAX_DEPTH =            'the max depth has been reached'
+    MAX_SPLITS =           'number of splits greater than maximum specified'
     MIN_PARENT_NODE_SIZE = 'the minimum parent node size threshold has been reached'
     PURE_NODE =            'the node only contains single category respondents'
     NODE_NOT_EXHAUSTIVE =  'the node is not exhaustive'

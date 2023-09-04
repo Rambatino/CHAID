@@ -266,6 +266,30 @@ def test_correct_dof():
     assert split.dof == (len(set(gender)) - 1) * (len(set(income)) - 1)
 
 
+def test_max_splits():
+    """
+    Check that max_splits parameter is properly being used.
+    """
+    gender = np.array([0,0,0,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2])
+    income = np.array([0,0,1,0,2,0,1,2,1,0,1,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree_no_max_splits = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_child_node_size=0)
+    split_no_max_splits = tree_no_max_splits.generate_best_split(
+        tree_no_max_splits.vectorised_array,
+        tree_no_max_splits.observed
+    )
+    assert len(split_no_max_splits.split_groups) == 3
+
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_child_node_size=0, max_splits=2)
+    split = tree.generate_best_split(
+        tree.vectorised_array,
+        tree.observed
+    )
+    assert len(split.split_groups) == 2
+
+
 def test_zero_subbed_weighted_ndarry():
     """
     Test how the split works when 0 independent categorical variable chooses a dependent categorical variable for the weighted case.
@@ -301,6 +325,58 @@ def test_min_child_node_size_is_30():
     tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9)
     invalid_split_reason = 'splitting would create nodes with less than the minimum child node size'
     assert str(tree.tree_store[0].split.invalid_reason) == invalid_split_reason
+    assert len(tree.tree_store) == 1
+
+def test_min_child_node_fraction():
+    """
+    Test that if the min_child_node_size is set to fraction,
+    it is applied correctly based on data size
+    """
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_child_node_size=0.9)
+    assert tree._stats.min_child_node_size == 18
+
+def test_min_parent_node_fraction():
+    """
+    Test that if the min_parent_node_size is set to fraction,
+    it is applied correctly based on data size
+    """
+    gender = np.array([0,0,1,1,0,0,1,1,0,0,1,2,2,2,2,2,2,2,2,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_parent_node_size=0.5)
+    assert tree.min_parent_node_size == 10
+
+def test_pure_node_categorical():
+    """
+    Test that attempting in splitting a pure node results in invalid split
+    """
+    gender = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_child_node_size=1, min_parent_node_size=1)
+    assert str(tree.tree_store[0].split.invalid_reason) == CHAID.InvalidSplitReason.PURE_NODE.value
+    assert len(tree.tree_store) == 1
+
+def test_pure_node_continuous():
+    """
+    Test that attempting in splitting a pure node results in invalid split
+    """
+    gender = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
+    income = np.array([0,0,1,1,2,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0])
+
+    ndarr = np.transpose(np.vstack([gender]))
+
+    tree = CHAID.Tree.from_numpy(ndarr, income, alpha_merge=0.9, min_child_node_size=1, min_parent_node_size=1, dep_variable_type='continuous')
+    assert str(tree.tree_store[0].split.invalid_reason) == CHAID.InvalidSplitReason.PURE_NODE.value
     assert len(tree.tree_store) == 1
 
 def test_to_tree_returns_a_tree():
@@ -573,6 +649,14 @@ class TestContinuousDependentVariable(TestCase):
         tree = CHAID.Tree.from_numpy(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, dep_variable_type='continuous')
         assert round(tree.tree_store[0].p, 4) == 0.4119
         assert len(tree.tree_store) == 9
+
+    def test_continuous_dependent_variable_with_max_splits(self):
+        """
+        Check that a tree can be built with a continuous dependent variable, with max_splits set.
+        """
+        tree = CHAID.Tree.from_numpy(self.ndarr, self.random_arr, alpha_merge=0.999, max_depth=5, min_child_node_size=11, max_splits=2, dep_variable_type='continuous')
+        assert round(tree.tree_store[0].p, 4) == 0.3056
+        assert len(tree.tree_store) == 11
 
     def test_continuous_dependent_variable_exhaustive_with_weighting(self):
         """
