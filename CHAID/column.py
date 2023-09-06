@@ -174,7 +174,7 @@ class OrdinalColumn(Column):
     def __init__(self, arr=None, metadata=None, missing_id='<missing>',
                  groupings=None, substitute=True, weights=None, name=None):
         super(self.__class__, self).__init__(arr, metadata, missing_id=missing_id, weights=weights, name=name)
-        self._nan = np.array([np.nan]).astype(int)[0]
+        self._nan = np.iinfo(np.int64).min
 
         if substitute and metadata is None:
             self.arr, self.orig_type = self.substitute_values(self.arr)
