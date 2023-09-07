@@ -22,7 +22,7 @@ def test_all_ordinal_combinations():
 def test_all_ordinal_combinations_with_nan():
     arr = np.array([1.0, 2.0, 3.0, np.nan])
     ordinal = CHAID.OrdinalColumn(arr)
-    nan_val = np.array([np.nan]).astype(int)[0]
+    nan_val = np.iinfo(np.int64).min
     assert [
         i for i in ordinal.all_combinations()
     ] == [[[nan_val], [1, 2, 3]],
