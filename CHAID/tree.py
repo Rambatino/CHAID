@@ -200,7 +200,7 @@ class Tree(object):
             return self._tree_store
 
         for index, choices in enumerate(split.splits):
-            correct_rows = np.in1d(ind[split.column_id].arr, choices)
+            correct_rows = np.isin(ind[split.column_id].arr, choices)
             dep_slice = dep[correct_rows]
             ind_slice = [vect[correct_rows] for vect in ind]
             row_slice = rows[correct_rows]
