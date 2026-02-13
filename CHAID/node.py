@@ -8,12 +8,12 @@ def convert_to_python_type(value):
     Convert numpy scalar types to Python native types.
     This ensures compatibility with numpy >= 2.0.0 where numpy scalars
     are preserved in operations like np.unique().
-    
+
     Parameters
     ----------
     value : any
         The value to convert (may be a numpy scalar or Python native type)
-    
+
     Returns
     -------
     The value converted to a Python native type if it was a numpy scalar,
@@ -115,7 +115,7 @@ class Node(object):
                     ])
 
                 self._members.update(
-                    (convert_to_python_type(metadata[k]), convert_to_python_type(v)) 
+                    (convert_to_python_type(metadata[k]), convert_to_python_type(v))
                     for k, v in counts
                 )
 
