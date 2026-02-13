@@ -32,7 +32,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e '.[test,graph]'
           pip install --upgrade pytest pytest-cov pluggy
-          pip install "kaleido<1"
 
       - name: Run tests
         run: pytest --cov=CHAID/
