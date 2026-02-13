@@ -586,24 +586,24 @@ class TestStoppingRules(TestCase):
         ndarr = np.array(([1, 2, 3] * 5) + ([2, 2, 3] * 5)).reshape(10, 3)
         arr = np.array(([1] * 5) + ([2] * 5))
         tree = CHAID.Tree.from_numpy(ndarr, arr, split_titles=['a', 'b', 'c'], min_child_node_size=5)
-        
+
         # Check root node representation doesn't contain numpy scalar types
         root_node = tree.tree_store[0]
         node_repr = repr(root_node)
-        
+
         # Should not contain numpy scalar type wrappers like "np.int64(" or "np.float64("
         assert 'np.int64(' not in node_repr, f"Node repr contains np.int64: {node_repr}"
         assert 'np.float64(' not in node_repr, f"Node repr contains np.float64: {node_repr}"
-        
+
         # Check that members dictionary has Python native types, not numpy scalars
         for key in root_node.members.keys():
             assert not hasattr(key, 'item'), f"Member key {key} is a numpy scalar type: {type(key)}"
-        
+
         for value in root_node.members.values():
             # Allow both int and float, but not numpy scalar types
             if not isinstance(value, (int, float)):
                 assert not hasattr(value, 'item'), f"Member value {value} is a numpy scalar type: {type(value)}"
-        
+
         # Check split groups don't contain numpy scalars
         if root_node.split.valid():
             for group in root_node.split.splits:
