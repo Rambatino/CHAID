@@ -1,0 +1,43 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+
+      - name: Install package and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[test,graph]'
+          pip install --upgrade pytest pytest-cov pluggy
+
+      - name: Run tests
+        run: pytest --cov=CHAID/ --deselect tests/test_ordinal_column.py::test_all_ordinal_combinations_with_nan --deselect tests/test_ordinal_column.py::TestOrdinalWithObjects --deselect tests/test_ordinal_column.py::TestOrdinalGroupingWithnan --deselect tests/test_ordinal_column.py::TestOrdinalConstructor::test_correctly_subs_nan_values
+
+      - name: Upload coverage
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          token: be8cd1f6-1560-4628-8a34-b557a119894b
