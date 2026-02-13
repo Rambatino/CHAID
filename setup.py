@@ -65,7 +65,7 @@ setup(
     ],
     extras_require={
         'spss': ['savReaderWriter'],
-        'graph': ['graphviz', 'plotly', 'colorlover', 'kaleido==0.2.1'],
+        'graph': ['graphviz', 'plotly', 'colorlover', 'kaleido<1'],
         'test': ['codecov', 'tox', 'tox-pyenv', 'detox', 'pytest', 'pytest-cov', 'psutil'],
     }
 )

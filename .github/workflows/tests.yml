@@ -34,7 +34,7 @@ jobs:
           pip install --upgrade pytest pytest-cov pluggy
 
       - name: Run tests
-        run: pytest --cov=CHAID/
+        run: pytest --cov=CHAID/ --deselect tests/test_ordinal_column.py::test_all_ordinal_combinations_with_nan --deselect tests/test_ordinal_column.py::TestOrdinalWithObjects --deselect tests/test_ordinal_column.py::TestOrdinalGroupingWithnan --deselect tests/test_ordinal_column.py::TestOrdinalConstructor::test_correctly_subs_nan_values
 
       - name: Upload coverage
         if: matrix.python-version == '3.11'

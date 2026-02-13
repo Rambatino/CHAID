@@ -26,7 +26,7 @@ else:
     FIG_BASE = {
         "layout": {
             "margin_t": 50,
-            "annotations": [{"font_size": 18, "x": 0.5, "y": 0.5}, {"y": [0, 0.2]}],
+            "annotations": [{"font_size": 18, "x": 0.5, "y": 0.5}],
         },
     }
     FIG_BASE_DATA = {
