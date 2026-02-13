@@ -111,7 +111,7 @@ class Graph(object):
             fig["data"].append(self._table(node))
 
         filename = os.path.join(self.tempdir, "node-{}.png".format(node.node_id))
-        pio.write_image(fig, file=filename, format="png", engine="orca")
+        pio.write_image(fig, file=filename, format="png")
         return filename
 
     def _table(self, node):
