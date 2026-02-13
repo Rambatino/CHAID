@@ -3,6 +3,28 @@ from math import isnan
 from itertools import combinations
 from .mapping_dict import MappingDict
 
+
+def convert_to_python_type(value):
+    """
+    Convert numpy scalar types to Python native types.
+    This ensures compatibility with numpy >= 2.0.0 where numpy scalars
+    are preserved in operations like np.unique().
+
+    Parameters
+    ----------
+    value : any
+        The value to convert (may be a numpy scalar or Python native type)
+
+    Returns
+    -------
+    The value converted to a Python native type if it was a numpy scalar,
+    otherwise the original value
+    """
+    if hasattr(value, 'item'):
+        # numpy scalars have an item() method that returns the Python scalar
+        return value.item()
+    return value
+
 def is_sorted(ndarr, nan_val=None):
     store = []
     for arr in ndarr:
@@ -127,7 +149,8 @@ class NominalColumn(Column):
         arr = np.copy(vect)
         for new_id, value in enumerate(unique):
             np.place(arr, arr==value, new_id)
-            self.metadata[new_id] = value
+            # Convert value to Python native type for numpy 2.0 compatibility
+            self.metadata[new_id] = convert_to_python_type(value)
         arr = arr.astype(np.float64)
         np.place(arr, np.isnan(arr), -1)
         self.arr = arr
@@ -144,7 +167,8 @@ class NominalColumn(Column):
         return self
 
     def groups(self):
-        return list(self._groupings.values())
+        # Convert all values in groups to Python native types for numpy 2.0 compatibility
+        return [[convert_to_python_type(item) for item in group] for group in self._groupings.values()]
 
     def possible_groupings(self):
         return combinations(self._groupings.keys(), 2)
@@ -227,7 +251,7 @@ class OrdinalColumn(Column):
     def groups(self):
         vals = self._groupings.values()
         return [
-            [x for x in range(minmax[0], minmax[1])] + ([self._nan] if minmax[2] else [])
+            [convert_to_python_type(x) for x in range(minmax[0], minmax[1])] + ([convert_to_python_type(self._nan)] if minmax[2] else [])
             for minmax in vals
         ]
 

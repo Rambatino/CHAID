@@ -3,6 +3,28 @@ from .column import ContinuousColumn
 import numpy as np
 
 
+def convert_to_python_type(value):
+    """
+    Convert numpy scalar types to Python native types.
+    This ensures compatibility with numpy >= 2.0.0 where numpy scalars
+    are preserved in operations like np.unique().
+    
+    Parameters
+    ----------
+    value : any
+        The value to convert (may be a numpy scalar or Python native type)
+    
+    Returns
+    -------
+    The value converted to a Python native type if it was a numpy scalar,
+    otherwise the original value
+    """
+    if hasattr(value, 'item'):
+        # numpy scalars have an item() method that returns the Python scalar
+        return value.item()
+    return value
+
+
 class Node(object):
     """
     A node in the CHAID tree
@@ -76,14 +98,14 @@ class Node(object):
             dep_v = self.dep_v
             if isinstance(dep_v, ContinuousColumn):
                 self._members = {
-                    'mean': self.dep_v.arr.mean(),
-                    's.t.d': self.dep_v.arr.std()
+                    'mean': convert_to_python_type(self.dep_v.arr.mean()),
+                    's.t.d': convert_to_python_type(self.dep_v.arr.std())
                 }
             else:
                 metadata = dep_v.metadata
                 self._members = {}
                 for member in metadata.values():
-                    self._members[member] = 0
+                    self._members[convert_to_python_type(member)] = 0
 
                 if dep_v.weights is None:
                     counts = np.transpose(np.unique(dep_v.arr, return_counts=True))
@@ -92,6 +114,9 @@ class Node(object):
                         [i, dep_v.weights[dep_v.arr == i].sum()] for i in set(dep_v.arr)
                     ])
 
-                self._members.update((metadata[k], v) for k, v in counts)
+                self._members.update(
+                    (convert_to_python_type(metadata[k]), convert_to_python_type(v)) 
+                    for k, v in counts
+                )
 
         return self._members
