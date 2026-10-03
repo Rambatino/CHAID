@@ -42,9 +42,9 @@ def main():
                        'the majority of respondents in that node selected')
     group.add_argument('--rules', action='store_true')
     group.add_argument('--export', action='store_true', help='Whether to export the chart to pdf/dot')
-    group.add_argument('--export-path', type=str, help='Path to store chart output')
+    parser.add_argument('--export-path', type=str, help='Path to store chart output')
 
-    group.add_argument('--exhaustive', action='store_true', help='To implement exhustive CHAID')
+    parser.add_argument('--exhaustive', action='store_true', help='To implement exhustive CHAID')
 
     nspace = parser.parse_args()
 

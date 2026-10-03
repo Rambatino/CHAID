@@ -259,7 +259,7 @@ class Tree(object):
     def classification_rules(self, node=None, stack=None):
         if node is None:
             return [
-                rule for t_node in self for rule in self.classification_rules(t_node) if t_node.is_terminal
+                rule for t_node in self if t_node.is_terminal for rule in self.classification_rules(t_node)
             ]
 
         stack = stack or []
@@ -288,7 +288,7 @@ class Tree(object):
         terminal node where that row fell
         """
         if isinstance(self.observed, ContinuousColumn):
-            return ValueError("Cannot make model predictions on a continuous scale")
+            raise ValueError("Cannot make model predictions on a continuous scale")
         pred = np.zeros(self.data_size).astype('object')
         for node in self:
             if node.is_terminal:

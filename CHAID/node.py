@@ -61,7 +61,7 @@ class Node(object):
         self._members = None
 
     def __hash__(self):
-        return hash(self.__dict__)
+        return hash(self.node_id)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

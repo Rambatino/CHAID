@@ -310,3 +310,10 @@ class TestOrdinalConstructor(TestCase):
 
     def test_correctly_subs_floated_metadata(self):
         assert self.col_with_nan.metadata == {self.col_with_nan._nan: '<missing>', 1: 'first', 2: 'second', 3: 'third'}
+
+
+def test_nan_does_not_collide_with_zero():
+    """ NaN must map to the missing sentinel on every platform, never to a real value """
+    col = CHAID.OrdinalColumn(np.array([0.0, 1.0, nan, 2.0, nan]))
+    assert list(col.arr) == [0, 1, col._nan, 2, col._nan]
+    assert col.metadata == {0: 0.0, 1: 1.0, 2: 2.0, col._nan: '<missing>'}

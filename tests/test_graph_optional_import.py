@@ -44,3 +44,14 @@ def test_graph_warns_without_optional_imports(no_graph_packages):
     """
     with pytest.warns(UserWarning, match='Imports of optional packages needed to generate graphs failed. Please install with the "graph" option.'):
         from setup_tests import CHAID
+
+
+def test_render_raises_without_optional_imports(no_graph_packages):
+    """
+    Test that rendering explains which packages are missing rather than failing obscurely
+    """
+    with pytest.warns(UserWarning):
+        from setup_tests import CHAID
+    tree = CHAID.Tree.from_numpy(np.array([[1], [2]] * 5), np.array([1, 2] * 5), min_child_node_size=0)
+    with pytest.raises(ImportError, match='graph'):
+        tree.render()

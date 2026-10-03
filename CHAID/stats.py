@@ -1,8 +1,7 @@
-import collections as cl
 from .column import ContinuousColumn
 from .split import Split
 import numpy as np
-from scipy import stats
+from scipy import stats, special
 from .invalid_split_reason import InvalidSplitReason
 from numpy import nan as NaN
 
@@ -31,7 +30,10 @@ def chisquare(n_ij, weighted):
         m_ij = (np.vstack(n_ij.sum(axis=1)) * n_ij.sum(axis=0)) / n_ij.sum().astype(float)
 
     dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-    chi, p_val = stats.chisquare(n_ij, f_exp=m_ij, ddof=n_ij.size - 1 - dof, axis=None)
+    # the statistic scipy.stats.chisquare computes, without its per-call
+    # validation overhead, which dominated the time spent building a tree
+    chi = ((n_ij - m_ij) ** 2 / m_ij).sum()
+    p_val = special.chdtrc(dof, chi) if dof > 0 else NaN
 
     return (chi, p_val, dof)
 
@@ -47,6 +49,14 @@ class Stats(object):
         self.max_splits = max_splits
         self.dep_population = dep_population
         self.is_exhaustive = is_exhaustive
+        self._is_normal = None
+
+    @property
+    def is_normal(self):
+        """ whether the dependent population is normally distributed, tested once per tree """
+        if self._is_normal is None:
+            self._is_normal = stats.normaltest(self.dep_population)[1] > 0.05
+        return self._is_normal
 
     def best_split(self, ind, dep):
         """ determine which splitting function to apply """
@@ -60,64 +70,50 @@ class Stats(object):
         split = Split(None, None, None, None, 0)
         min_child_node_size = self.min_child_node_size
 
-        all_dep = np.unique(dep.arr)
+        weighted = dep.weights is not None
+        all_dep, dep_codes = np.unique(dep.arr, return_inverse=True)
         if len(all_dep) == 1:
             split.invalid_reason = InvalidSplitReason.PURE_NODE
             return split
-        elif len(dep.arr) < min_child_node_size and dep.weights is None:
-            # if not weights and too small, skip
+        elif len(dep.arr) < min_child_node_size:
             split.invalid_reason = InvalidSplitReason.MIN_CHILD_NODE_SIZE
             return split
-        elif dep.weights is not None and len(dep.weights) < min_child_node_size:
-            # if weighted count is too small, skip
-            split.invalid_reason = InvalidSplitReason.PURE_NODE
-            return split
+
+        if weighted:
+            row_count = dep.weights.sum()
+        else:
+            row_count = len(dep.arr)
 
         for i, ind_var in enumerate(ind):
             split.invalid_reason = None # must reset because using invalid reason to break
             ind_var = ind_var.deep_copy()
-            unique = np.unique(ind_var.arr)
+            unique, ind_codes = np.unique(ind_var.arr, return_inverse=True)
 
-            freq = {}
-            if dep.weights is None:
-                for col in unique:
-                    counts = np.unique(np.compress(ind_var.arr == col, dep.arr), return_counts=True)
-                    freq[col] = cl.defaultdict(int)
-                    freq[col].update(np.transpose(counts))
-            else:
-                for col in unique:
-                    counts = np.unique(np.compress(ind_var.arr == col, dep.arr), return_counts=True)
-                    freq[col] = cl.defaultdict(int)
-                    for dep_v in all_dep:
-                        freq[col][dep_v] = dep.weights[(ind_var.arr == col) * (dep.arr == dep_v)].sum()
+            # contingency table of independent category x dependent category in one pass
+            table_shape = (len(unique), len(all_dep))
+            table = np.bincount(
+                ind_codes * len(all_dep) + dep_codes, weights=dep.weights, minlength=table_shape[0] * table_shape[1]
+            ).astype(float).reshape(table_shape)
+            freq = dict(zip(unique, table))
 
-
-            if dep.weights is not None:
-                row_count = dep.weights.sum()
-            else:
-                row_count = len(dep.arr)
-
-            if len(list(ind_var.possible_groupings())) == 0:
+            if next(ind_var.possible_groupings(), None) is None:
                 split.invalid_reason = InvalidSplitReason.PURE_NODE
             while next(ind_var.possible_groupings(), None) is not None:
                 choice, highest_p_join, split_chi = None, None, None
 
                 for comb in ind_var.possible_groupings():
-                    col1_freq = freq[comb[0]]
-                    col2_freq = freq[comb[1]]
-
-                    keys = set(col1_freq.keys()).union(col2_freq.keys())
-                    n_ij = np.array([
-                        [col1_freq.get(k, 0) for k in keys],
-                        [col2_freq.get(k, 0) for k in keys]
-                    ])
+                    n_ij = np.array([freq[comb[0]], freq[comb[1]]])
+                    if not weighted:
+                        # dependent categories absent from both groups carry no information
+                        n_ij = n_ij[:, n_ij.any(axis=0)]
 
                     # check to see if min_child_node_size permits this direction
                     # 31 can't merge with 10 if it only leaves 27 for the other node(s)
                     # but if these are the only two, can't skip, because the level can be defined
-                    # as these two nodes
+                    # as these two nodes. Counted rather than compared to zero, as a weighted
+                    # remainder is rarely exactly zero
                     other_splits = row_count - n_ij.sum()
-                    if other_splits < min_child_node_size and other_splits != 0:
+                    if len(freq) > 2 and other_splits < min_child_node_size:
                         p_split, dof, chi = 1, NaN, NaN
                         continue
 
@@ -130,7 +126,7 @@ class Stats(object):
                         choice = comb
                         break
                     else:
-                        chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
+                        chi, p_split, dof = chisquare(n_ij, weighted)
 
                     if choice is None or p_split > highest_p_join or (p_split == highest_p_join and chi > split_chi):
                         choice, highest_p_join, split_chi = comb, p_split, chi
@@ -145,12 +141,8 @@ class Stats(object):
                 elif self.is_exhaustive and len(freq.values()) > 2:
                     split.invalid_reason = InvalidSplitReason.NODE_NOT_EXHAUSTIVE
                 else:
-                    n_ij = np.array([
-                        [f[dep_val] for dep_val in all_dep] for f in freq.values()
-                    ])
-
-                    dof = (n_ij.shape[0] - 1) * (n_ij.shape[1] - 1)
-                    chi, p_split, dof = chisquare(n_ij, dep.weights is not None)
+                    n_ij = np.array(list(freq.values()))
+                    chi, p_split, dof = chisquare(n_ij, weighted)
 
                     temp_split = Split(i, ind_var.groups(), chi, p_split, dof, split_name=ind_var.name)
                     better_split = not split.valid() or p_split < split.p or (p_split == split.p and chi > split.score)
@@ -175,18 +167,17 @@ class Stats(object):
                     break
                 else:
                     ind_var.group(choice[0], choice[1])
-                    for val, count in freq[choice[1]].items():
-                        freq[choice[0]][val] += count
+                    freq[choice[0]] = freq[choice[0]] + freq[choice[1]]
                     del freq[choice[1]]
         if split.valid():
-            split.sub_split_values(ind[split.column_id].metadata)
+            for labelled in [split] + split.surrogates:
+                labelled.sub_split_values(ind[labelled.column_id].metadata)
         return split
 
     def best_con_split(self, ind, dep):
         """ determine best continuous variable split """
         split = Split(None, None, None, None, 0)
-        is_normal = stats.normaltest(self.dep_population)[1] > 0.05
-        sig_test = stats.bartlett if is_normal else stats.levene
+        sig_test = stats.bartlett if self.is_normal else stats.levene
         response_set = dep.arr
         if dep.weights is not None:
             response_set = dep.arr * dep.weights
@@ -200,14 +191,13 @@ class Stats(object):
                 matched_elements = np.compress(ind_var.arr == col, response_set)
                 keyed_set[col] = matched_elements
 
-            if len(list(ind_var.possible_groupings())) == 0:
+            if next(ind_var.possible_groupings(), None) is None:
                 split.invalid_reason = InvalidSplitReason.PURE_NODE
             while next(ind_var.possible_groupings(), None) is not None:
                 choice, highest_p_join, split_score = None, None, None
                 for comb in ind_var.possible_groupings():
                     col1_keyed_set = keyed_set[comb[0]]
                     col2_keyed_set = keyed_set[comb[1]]
-                    dof = len(np.concatenate((col1_keyed_set, col2_keyed_set))) - 2
                     score, p_split = sig_test(col1_keyed_set, col2_keyed_set)
 
                     if choice is None or p_split > highest_p_join or (p_split == highest_p_join and score > split_score):
@@ -260,5 +250,6 @@ class Stats(object):
                 del keyed_set[choice[1]]
 
         if split.valid():
-            split.sub_split_values(ind[split.column_id].metadata)
+            for labelled in [split] + split.surrogates:
+                labelled.sub_split_values(ind[labelled.column_id].metadata)
         return split

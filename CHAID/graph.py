@@ -78,6 +78,8 @@ class Graph(object):
         self.tree = tree
 
     def render(self, path, view):
+        if Digraph is None:
+            raise ImportError('Rendering needs the optional graph packages. Please install with the "graph" option.')
         if path is None:
             path = os.path.join("trees", "{:%Y-%m-%d %H:%M:%S}.gv".format(datetime.now()))
         with TemporaryDirectory() as self.tempdir:
@@ -86,8 +88,11 @@ class Graph(object):
                 graph_attr={"splines": "ortho"},
                 node_attr={"shape": "plaintext", "labelloc": "b"},
             )
-            for node in self.tree:
-                image = self.bar_chart(node)
+            nodes = list(self.tree)
+            images = [os.path.join(self.tempdir, "node-{}.png".format(node.node_id)) for node in nodes]
+            # one call, so kaleido starts a single browser rather than one per node
+            pio.write_images([self.bar_chart(node) for node in nodes], images, format="png")
+            for node, image in zip(nodes, images):
                 g.node(str(node.node_id), image=image)
                 if node.parent is not None:
                     edge_label = "     ({})     \n ".format(', '.join(map(str, node.choices)))
@@ -110,9 +115,7 @@ class Graph(object):
         if not node.is_terminal:
             fig["data"].append(self._table(node))
 
-        filename = os.path.join(self.tempdir, "node-{}.png".format(node.node_id))
-        pio.write_image(fig, file=filename, format="png")
-        return filename
+        return fig
 
     def _table(self, node):
         p = None if node.p is None else format(node.p, ".5f")

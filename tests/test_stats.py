@@ -148,3 +148,13 @@ class TestContinuousStats(TestCase):
         assert round(split.score, 4) == 2.8841
         assert round(split.p, 4) == 0.0895
         assert split.dof == 118.
+
+
+def test_chisquare_matches_scipy():
+    """ The statistic is computed directly, so pin it to the scipy reference """
+    from scipy import stats as scipy_stats
+    n_ij = np.array([[10., 20., 30.], [25., 15., 5.], [7., 9., 30.]])
+    chi, p, dof = CHAID.stats.chisquare(n_ij, False)
+    expected_chi, expected_p, expected_dof, _ = scipy_stats.chi2_contingency(n_ij, correction=False)
+    assert dof == expected_dof
+    np.testing.assert_allclose([chi, p], [expected_chi, expected_p], rtol=1e-12)

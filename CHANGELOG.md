@@ -199,7 +199,6 @@
 **Implemented enhancements:**
 
 - Switched chi to score in node [\#58](https://github.com/Rambatino/CHAID/pull/58) ([Rambatino](https://github.com/Rambatino))
-- Increase Circle CI caching [\#56](https://github.com/Rambatino/CHAID/pull/56) ([Rambatino](https://github.com/Rambatino))
 - Ignore setup.py and test files [\#55](https://github.com/Rambatino/CHAID/pull/55) ([Rambatino](https://github.com/Rambatino))
 - Added codecov file [\#54](https://github.com/Rambatino/CHAID/pull/54) ([Rambatino](https://github.com/Rambatino))
 
@@ -228,17 +227,12 @@
 - Use bin count instead of unique to get frequencies. [\#19](https://github.com/Rambatino/CHAID/issues/19)
 - Unify CHAIDNode.is\_terminal and CHAIDSplit.valid\(\) [\#17](https://github.com/Rambatino/CHAID/issues/17)
 
-**Merged pull requests:**
-
-- Testing circle CI [\#51](https://github.com/Rambatino/CHAID/pull/51) ([Rambatino](https://github.com/Rambatino))
-
 ## [v2.2.0](https://github.com/Rambatino/CHAID/tree/v2.2.0) (2016-10-25)
 
 [Full Changelog](https://github.com/Rambatino/CHAID/compare/v2.1.0...v2.2.0)
 
 **Implemented enhancements:**
 
-- Added python 3 to circle [\#46](https://github.com/Rambatino/CHAID/pull/46) ([Rambatino](https://github.com/Rambatino))
 - Added ordinal variable type to independent variables [\#45](https://github.com/Rambatino/CHAID/pull/45) ([xulaus](https://github.com/xulaus))
 
 ## [v2.1.0](https://github.com/Rambatino/CHAID/tree/v2.1.0) (2016-10-17)
