@@ -30,11 +30,18 @@ def get_version():
 
     return match.group('version')
 
+
+def get_long_description():
+    here = path.abspath(path.dirname(__file__))
+    with open(path.join(here, "README.md"), encoding="utf-8") as readme:
+        return readme.read()
+
 setup(
     name='CHAID',
     version=get_version(),
     description='A CHAID tree building algorithm',
-    long_description="This package provides a python implementation of the Chi-Squared Automatic Inference Detection (CHAID) decision tree",
+    long_description=get_long_description(),
+    long_description_content_type='text/markdown',
     url='https://github.com/Rambatino/CHAID',
     author='Mark Ramotowski, Richard Fitzgerald',
     author_email='mark.tint.ramotowski@gmail.com',

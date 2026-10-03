@@ -283,7 +283,7 @@ A node's members are the mean and standard deviation of the dependent variable i
 
 Survey data often carries a weight per respondent. Pass the name of the weight column to `from_pandas_df` (`weight='my_weights'`) or an array to `from_numpy` (`weights=array`).
 
-For a categorical dependent variable the chi-squared test is then computed on weighted counts, following the method SPSS uses; the derivation is in [docs/chaid_weighting.rst](docs/chaid_weighting.rst). Node members become weighted totals. For a continuous dependent variable each value is multiplied by its weight before testing.
+For a categorical dependent variable the chi-squared test is then computed on weighted counts, following the method SPSS uses; the derivation is in [docs/chaid_weighting.rst](https://github.com/Rambatino/CHAID/blob/master/docs/chaid_weighting.rst). Node members become weighted totals. For a continuous dependent variable each value is multiplied by its weight before testing.
 
 ## Missing values
 
@@ -404,4 +404,4 @@ Contributions are welcome. Please open an issue or submit a pull request on [Git
 
 ## License
 
-Apache License 2.0 — see [LICENSE.txt](LICENSE.txt) for details.
+Apache License 2.0 — see [LICENSE.txt](https://github.com/Rambatino/CHAID/blob/master/LICENSE.txt) for details.

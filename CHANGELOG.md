@@ -1,8 +1,27 @@
 # Changelog
 
-## [Unreleased](https://github.com/Rambatino/CHAID/tree/HEAD)
+## [v5.5.1](https://github.com/Rambatino/CHAID/tree/v5.5.1) (2026-10-03)
 
-[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.4.0...HEAD)
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.5.0...v5.5.1)
+
+- Show the README as the project description on PyPI
+
+## [v5.5.0](https://github.com/Rambatino/CHAID/tree/v5.5.0) (2026-10-03)
+
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.4.3...v5.5.0)
+
+**Implemented enhancements:**
+
+- Fix weighted merge bugs and speed up categorical splits [\#148](https://github.com/Rambatino/CHAID/pull/148) ([Rambatino](https://github.com/Rambatino))
+- fix: preserve categories and tree rebuilds [\#147](https://github.com/Rambatino/CHAID/pull/147) ([Rambatino](https://github.com/Rambatino))
+
+**Merged pull requests:**
+
+- ci: migrate to GitHub Actions [\#146](https://github.com/Rambatino/CHAID/pull/146) ([Rambatino](https://github.com/Rambatino))
+
+## [v5.4.3](https://github.com/Rambatino/CHAID/tree/v5.4.3) (2026-02-13)
+
+[Full Changelog](https://github.com/Rambatino/CHAID/compare/v5.4.0...v5.4.3)
 
 **Closed issues:**
 
@@ -29,6 +48,7 @@
 
 **Merged pull requests:**
 
+- Fix numpy 2.x compatibility issue [\#145](https://github.com/Rambatino/CHAID/pull/145) ([Rambatino](https://github.com/Rambatino))
 - Fix one numpy deprecated function \(in1d -\> isin\) [\#140](https://github.com/Rambatino/CHAID/pull/140) ([jihaekor](https://github.com/jihaekor))
 - Use an explicit sentinel value rather than relying on integer cast of np.nan [\#138](https://github.com/Rambatino/CHAID/pull/138) ([jihaekor](https://github.com/jihaekor))
 - Add a new max\_splits parameter; make a couple of fix updates [\#136](https://github.com/Rambatino/CHAID/pull/136) ([jihaekor](https://github.com/jihaekor))
