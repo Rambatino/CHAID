@@ -8,6 +8,7 @@ from setup_tests import list_ordered_equal, list_unordered_equal, CHAID, ROOT_FO
 import pandas as pd
 from treelib import Tree as TreeLibTree
 import os
+import pytest
 
 
 @pytest.mark.parametrize('weighted', [False, True])
@@ -781,3 +782,30 @@ class TestStringCategoricalDependentVariableForModelPrediction(TestCase):
             alpha_merge=0.05
         )
         assert self.tree.risk() == other_tree.risk()
+
+
+def test_weighted_last_two_groups_are_tested_against_alpha_merge():
+    """
+    The weighted remainder of the last two groups is not exactly zero, which
+    must not let the pair skip the alpha merge test
+    """
+    ndarr = np.array([[0]] * 30 + [[1]] * 30)
+    arr = np.array([0] * 25 + [1] * 5 + [0] * 5 + [1] * 25)
+    tree = CHAID.Tree.from_numpy(ndarr, arr, weights=np.array([0.1] * 60), min_child_node_size=1, min_parent_node_size=2)
+    assert len(tree.tree_store) == 1
+    assert tree.tree_store[0].split.invalid_reason == CHAID.InvalidSplitReason.ALPHA_MERGE
+
+
+def test_weighted_node_below_min_child_node_size_reports_that_reason():
+    ndarr = np.array([[0]] * 5 + [[1]] * 5)
+    arr = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 0])
+    tree = CHAID.Tree.from_numpy(ndarr, arr, weights=np.ones(10), min_child_node_size=20, min_parent_node_size=2)
+    assert tree.tree_store[0].split.invalid_reason == CHAID.InvalidSplitReason.MIN_CHILD_NODE_SIZE
+
+
+def test_model_predictions_raise_for_continuous_dependent_variable():
+    ndarr = np.array([[0]] * 5 + [[1]] * 5)
+    arr = np.array([1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5])
+    tree = CHAID.Tree.from_numpy(ndarr, arr, dep_variable_type='continuous')
+    with pytest.raises(ValueError):
+        tree.model_predictions()

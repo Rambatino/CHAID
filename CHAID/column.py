@@ -203,10 +203,7 @@ class OrdinalColumn(Column):
             self.arr, self.orig_type = self.substitute_values(self.arr)
         elif substitute and metadata and not np.issubdtype(self.arr.dtype, np.integer):
             # custom metadata has been passed in from external source, and must be converted to int
-            values = self.arr.astype(float)
-            missing = np.isnan(values)
-            self.arr = np.full(values.shape, self._nan, dtype=np.int64)
-            self.arr[~missing] = values[~missing].astype(np.int64)
+            self.arr = self._as_int(self.arr.astype(float))
             self.metadata = { int(k):v for k, v in metadata.items() }
             self.metadata[self._nan] = missing_id
 
@@ -219,23 +216,28 @@ class OrdinalColumn(Column):
                 self._groupings[x] = list(groupings[x])
         self._possible_groups = None
 
+    def _as_int(self, floats):
+        """
+        Casts to int64 with NaN mapped to the missing sentinel. The result of
+        casting NaN to an integer is platform dependent, so it is never relied on
+        """
+        missing = np.isnan(floats)
+        ints = np.where(missing, 0, floats).astype(np.int64)
+        ints[missing] = self._nan
+        return ints
+
     def substitute_values(self, vect):
         if not np.issubdtype(vect.dtype, np.integer):
-            uniq = set(vect)
-            uniq_floats = np.array(list(uniq), dtype=float)
-            missing = np.isnan(uniq_floats)
-            uniq_ints = np.full(uniq_floats.shape, self._nan, dtype=np.int64)
-            uniq_ints[~missing] = uniq_floats[~missing].astype(np.int64)
+            uniq = list(set(vect)) if vect.dtype == object else np.unique(vect)
+            uniq_floats = np.array(uniq, dtype=float)
+            uniq_ints = self._as_int(uniq_floats)
             nan = self._missing_id
             self.metadata = {
                 new: nan if isnan(as_float) else old
                 for old, as_float, new in zip(uniq, uniq_floats, uniq_ints)
             }
             self.arr = self.arr.astype(float)
-            missing = np.isnan(self.arr)
-            encoded = np.full(self.arr.shape, self._nan, dtype=np.int64)
-            encoded[~missing] = self.arr[~missing].astype(np.int64)
-            return encoded, self.arr.dtype.type
+            return self._as_int(self.arr), self.arr.dtype.type
         return self.arr.astype(int), self.arr.dtype.type
 
     def deep_copy(self):

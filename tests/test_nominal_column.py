@@ -220,3 +220,10 @@ class TestBugFixes(TestCase):
         vector = CHAID.NominalColumn(object_arr)
 
         assert [vector.metadata[x] for x in vector.arr] == ['<missing>' if x != x else x for x in input_list]
+
+
+def test_negative_values_stay_distinct_categories():
+    """ Substituted ids must not collide with values that are still to be substituted """
+    col = CHAID.NominalColumn(np.array([-5, 0, 1, 1, 0, -5]))
+    assert list(col.arr) == [0, 1, 2, 2, 1, 0]
+    assert col.metadata == {0: -5, 1: 0, 2: 1}

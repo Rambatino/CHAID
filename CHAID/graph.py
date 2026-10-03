@@ -78,6 +78,8 @@ class Graph(object):
         self.tree = tree
 
     def render(self, path, view):
+        if Digraph is None:
+            raise ImportError('Rendering needs the optional graph packages. Please install with the "graph" option.')
         if path is None:
             path = os.path.join("trees", "{:%Y-%m-%d %H:%M:%S}.gv".format(datetime.now()))
         with TemporaryDirectory() as self.tempdir:

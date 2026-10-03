@@ -23,3 +23,10 @@ def test_node_should_have_a_score():
     split = CHAID.Split("a", [], 2, 3, 4)
     node = CHAID.Node(dep_v=continuous_dp, split=split)
     assert node.score == 2
+
+def test_node_is_hashable():
+    """
+    Tests that nodes can be used in sets and as dict keys
+    """
+    node = CHAID.Node(node_id=1)
+    assert {node: 'value'}[node] == 'value'
