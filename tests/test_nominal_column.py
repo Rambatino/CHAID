@@ -3,8 +3,51 @@ Testing module for the class NominalColumn
 """
 from unittest import TestCase
 import numpy as np
+import pytest
 from numpy import nan
 from setup_tests import list_ordered_equal, CHAID
+
+
+@pytest.mark.parametrize('arr', [
+    np.array([-1, 0, 1, -1]),
+    np.array([-0.5, 0.0, 1.0, -0.5]),
+    np.arange(-128, 128, dtype=np.int8),
+    np.array(list('abcdefghijkl')),
+    np.array(list('abcdefghijkl'), dtype='S1'),
+    np.array(['0', '1', '2', '10']),
+    np.array([False, True, False]),
+    np.array([-1, 0, 1, 'a', '0', -1], dtype=object),
+])
+def test_category_encoding_preserves_original_values(arr):
+    original = arr.copy()
+    column = CHAID.NominalColumn(arr)
+
+    assert [column.metadata[code] for code in column.arr] == arr.tolist()
+    assert len(np.unique(column.arr)) == len(set(arr.tolist()))
+    assert column.arr.dtype == np.float64
+    np.testing.assert_array_equal(arr, original)
+
+
+@pytest.mark.parametrize('arr, expected', [
+    (np.array([np.nan, -1, 0, np.nan]), ['<missing>', -1, 0, '<missing>']),
+    (np.array([np.nan, np.nan]), ['<missing>', '<missing>']),
+    (np.array([np.nan, 0, -1, np.nan], dtype=object), ['<missing>', 0, -1, '<missing>']),
+    (np.array([np.float32('nan'), 'a', 0, np.nan], dtype=object), ['<missing>', 'a', 0, '<missing>']),
+    (np.array([], dtype=float), []),
+])
+def test_category_encoding_preserves_missing_values(arr, expected):
+    column = CHAID.NominalColumn(arr)
+
+    assert [column.metadata[code] for code in column.arr] == expected
+    assert (column.arr == -1).tolist() == [value == '<missing>' for value in expected]
+    assert all(value == value for value in column.metadata.values())
+
+
+def test_category_encoding_keeps_sorted_category_ids():
+    column = CHAID.NominalColumn(np.array(['z', 'a', 'm', 'a']))
+
+    assert column.metadata == {0: 'a', 1: 'm', 2: 'z'}
+    np.testing.assert_array_equal(column.arr, [2, 0, 1, 0])
 
 
 def test_chaid_vector_converts_strings():

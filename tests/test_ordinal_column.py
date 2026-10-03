@@ -3,8 +3,22 @@ Testing module for the class OrdinalColumn
 """
 from unittest import TestCase
 import numpy as np
+import pytest
 from numpy import nan
 from setup_tests import list_ordered_equal, list_unordered_equal, CHAID
+
+
+@pytest.mark.parametrize('dtype', [float, object])
+@pytest.mark.parametrize('metadata', [None, {0: 'zero', 1: 'one'}])
+def test_missing_values_do_not_depend_on_invalid_integer_casts(dtype, metadata):
+    arr = np.array([0, np.nan, 1, np.nan], dtype=dtype)
+    with np.errstate(invalid='raise'):
+        column = CHAID.OrdinalColumn(arr, metadata=metadata)
+
+    np.testing.assert_array_equal(column.arr, [0, column._nan, 1, column._nan])
+    assert column.metadata[column._nan] == '<missing>'
+    assert column.metadata[0] == (0 if metadata is None else 'zero')
+    assert len(column.groups()) == 3
 
 def test_all_ordinal_combinations():
     arr = np.array([1.0, 2.0, 3.0, 4.0])

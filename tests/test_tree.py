@@ -3,10 +3,45 @@ Testing module for the class Tree
 """
 from unittest import TestCase
 import numpy as np
+import pytest
 from setup_tests import list_ordered_equal, list_unordered_equal, CHAID, ROOT_FOLDER
 import pandas as pd
 from treelib import Tree as TreeLibTree
 import os
+
+
+@pytest.mark.parametrize('weighted', [False, True])
+def test_negative_categories_preserve_tree_predictions(weighted):
+    values = np.repeat([-1, 0, 1], 30)
+    outcomes = np.concatenate([
+        np.repeat([-1, 0, 1], counts)
+        for counts in ([20, 5, 5], [5, 20, 5], [5, 5, 20])
+    ])
+    weights = np.full(len(values), 2.0) if weighted else None
+    tree = CHAID.Tree.from_numpy(values.reshape(-1, 1), outcomes,
+                                 weights=weights, min_child_node_size=1)
+
+    assert tree.tree_store[0].split.valid()
+    assert len(tree.tree_store) == 4
+    np.testing.assert_array_equal(tree.model_predictions(), values)
+    assert tree.accuracy() == 2.0 / 3.0
+
+
+def test_rebuilding_tree_preserves_node_ids_and_rules():
+    values = np.repeat([0, 1], 10)
+    tree = CHAID.Tree.from_numpy(values.reshape(-1, 1), values,
+                                 min_child_node_size=1)
+    rules = tree.classification_rules()
+    predictions = tree.node_predictions()
+
+    for _ in range(2):
+        tree.build_tree()
+        assert tree.classification_rules() == rules
+        np.testing.assert_array_equal(tree.node_predictions(), predictions)
+        assert tree.node_count == len(tree.tree_store)
+        for node in tree:
+            assert tree.get_node(node.node_id) is node
+        assert len(tree.to_tree().nodes) == len(tree.tree_store)
 
 class TestClassificationRules(TestCase):
     def setUp(self):
