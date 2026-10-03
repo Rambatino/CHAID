@@ -8,7 +8,6 @@ from setup_tests import list_ordered_equal, list_unordered_equal, CHAID, ROOT_FO
 import pandas as pd
 from treelib import Tree as TreeLibTree
 import os
-import pytest
 
 
 @pytest.mark.parametrize('weighted', [False, True])

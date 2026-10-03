@@ -35,6 +35,10 @@ pip install CHAID[graph,spss]  # Both
 
 > **Note:** The `graph` extra also requires the [Graphviz system package](https://graphviz.org/download/) to be installed on your machine (e.g. `brew install graphviz` on macOS or `sudo apt-get install graphviz` on Debian/Ubuntu).
 
+Image export uses Kaleido 1 and requires a local Chrome installation. See
+[Plotly's image export setup](https://plotly.com/python/static-image-export/) for
+browser installation instructions.
+
 ## Quick Start
 
 ```python
