@@ -398,6 +398,33 @@ pytest
 
 The graph test needs the Graphviz system package and Chrome, as described under [Optional extras](#optional-extras).
 
+## Releasing to PyPI
+
+The `Publish to PyPI` workflow publishes a wheel and source distribution when a
+version tag such as `v5.5.1` is pushed. Ordinary code pushes do not publish a release.
+
+1. Update `__version__` in `CHAID/__init__.py` and merge the release changes into
+   `master`, including any release notes.
+2. From the updated `master`, create and push the matching tag:
+
+   ```bash
+   git switch master
+   git pull --ff-only
+   git tag -a v5.5.1 -m "Release 5.5.1"
+   git push origin v5.5.1
+   ```
+
+The tag must match the built package version and point to a commit on `master`.
+Publishing waits for the Python 3.9–3.13 tests and distribution checks to pass.
+Pull requests also build and validate packages without publishing them.
+
+The repository Actions secret `PYPI_API_TOKEN` must contain a PyPI token with
+upload access to CHAID. The publishing job uses the `pypi` GitHub environment;
+required reviewers on that environment would pause automatic releases.
+PyPI does not allow overwriting an existing release file: use a new version for
+subsequent changes. Failed runs and the built distribution artifacts are available
+in GitHub Actions.
+
 ## Contributing
 
 Contributions are welcome. Please open an issue or submit a pull request on [GitHub](https://github.com/Rambatino/CHAID).

@@ -1,0 +1,87 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pypi-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check release commit is on master
+        if: github.event_name == 'push'
+        run: git merge-base --is-ancestor HEAD origin/master
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Build and validate distributions
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+          python -m twine check dist/*
+          python -m pip install dist/*.whl
+
+      - name: Check installed package and release version
+        working-directory: ${{ runner.temp }}
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: |
+          python - <<'PY'
+          import os
+          from importlib.metadata import version
+          from packaging.version import Version
+          from CHAID import Tree, __version__
+
+          built_version = version('CHAID')
+          if Version(built_version) != Version(__version__):
+              raise SystemExit('Installed package metadata and source versions differ')
+          tag = os.environ['RELEASE_TAG']
+          if tag and tag != f'v{built_version}':
+              raise SystemExit(f'Tag {tag!r} does not match package version v{built_version}')
+          print(f'Validated CHAID {built_version}')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+
+  test:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/tests.yml
+
+  publish:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/CHAID/
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+
+      - name: Publish distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          attestations: false
