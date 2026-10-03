@@ -35,8 +35,6 @@ class Split(object):
         """ Substitutes the splits with other values into the split_map """
         for i, arr in enumerate(self.splits):
             self.split_map[i] = [sub.get(x, x) for x in arr]
-        for split in self.surrogates:
-            split.sub_split_values(sub)
 
     def name_columns(self, sub):
         """ Substitutes the split column index with a human readable string """

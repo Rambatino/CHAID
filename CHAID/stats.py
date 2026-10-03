@@ -170,7 +170,8 @@ class Stats(object):
                     freq[choice[0]] = freq[choice[0]] + freq[choice[1]]
                     del freq[choice[1]]
         if split.valid():
-            split.sub_split_values(ind[split.column_id].metadata)
+            for labelled in [split] + split.surrogates:
+                labelled.sub_split_values(ind[labelled.column_id].metadata)
         return split
 
     def best_con_split(self, ind, dep):
@@ -249,5 +250,6 @@ class Stats(object):
                 del keyed_set[choice[1]]
 
         if split.valid():
-            split.sub_split_values(ind[split.column_id].metadata)
+            for labelled in [split] + split.surrogates:
+                labelled.sub_split_values(ind[labelled.column_id].metadata)
         return split

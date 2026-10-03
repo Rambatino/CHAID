@@ -808,3 +808,14 @@ def test_model_predictions_raise_for_continuous_dependent_variable():
     tree = CHAID.Tree.from_numpy(ndarr, arr, dep_variable_type='continuous')
     with pytest.raises(ValueError):
         tree.model_predictions()
+
+
+def test_surrogate_groups_are_labelled_from_their_own_column():
+    """ A surrogate on another column must not be labelled with the winning column's values """
+    winner = np.array(['a'] * 30 + ['b'] * 30)
+    other = np.array(['x'] * 28 + ['y'] * 32)
+    arr = np.array([0] * 30 + [1] * 30)
+    tree = CHAID.Tree.from_numpy(np.column_stack([winner, other]), arr, split_threshold=0.5, max_depth=1, min_child_node_size=1)
+    split = tree.tree_store[0].split
+    assert split.split_groups == [['a'], ['b']]
+    assert [s.split_groups for s in split.surrogates] == [[['x'], ['y']]]
