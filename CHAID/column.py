@@ -128,8 +128,8 @@ class NominalColumn(Column):
         Internal method to substitute integers into the vector, and construct
         metadata to convert back to the original vector.
 
-        np.nan is always given -1, all other objects are given integers in
-        order of apperence.
+        NaN is given -1; other values use sorted IDs when comparable and
+        first-occurrence IDs otherwise.
 
         Parameters
         ----------
@@ -137,25 +137,24 @@ class NominalColumn(Column):
             the vector in which to substitute values in
         """
 
+        vect = np.asarray(vect)
+        missing = vect != vect
+        values = vect[~missing]
         try:
-            unique = np.unique(vect)
-        except:
-            unique = set(vect)
+            unique, inverse = np.unique(values, return_inverse=True)
+        except TypeError:
+            unique = list(dict.fromkeys(values))
+            codes = {value: index for index, value in enumerate(unique)}
+            inverse = np.fromiter((codes[value] for value in values), dtype=np.intp,
+                                  count=len(values))
 
-        unique = [
-            x for x in unique if not isinstance(x, float) or not isnan(x)
-        ]
+        self.metadata = {
+            index: convert_to_python_type(value) for index, value in enumerate(unique)
+        }
+        self.arr = np.full(vect.shape, -1, dtype=np.float64)
+        self.arr[~missing] = inverse
 
-        arr = np.copy(vect)
-        for new_id, value in enumerate(unique):
-            np.place(arr, arr==value, new_id)
-            # Convert value to Python native type for numpy 2.0 compatibility
-            self.metadata[new_id] = convert_to_python_type(value)
-        arr = arr.astype(np.float64)
-        np.place(arr, np.isnan(arr), -1)
-        self.arr = arr
-
-        if -1 in arr:
+        if missing.any():
             self.metadata[-1] = self._missing_id
 
     def __getitem__(self, key):
@@ -204,7 +203,10 @@ class OrdinalColumn(Column):
             self.arr, self.orig_type = self.substitute_values(self.arr)
         elif substitute and metadata and not np.issubdtype(self.arr.dtype, np.integer):
             # custom metadata has been passed in from external source, and must be converted to int
-            self.arr = self.arr.astype(int)
+            values = self.arr.astype(float)
+            missing = np.isnan(values)
+            self.arr = np.full(values.shape, self._nan, dtype=np.int64)
+            self.arr[~missing] = values[~missing].astype(np.int64)
             self.metadata = { int(k):v for k, v in metadata.items() }
             self.metadata[self._nan] = missing_id
 
@@ -221,13 +223,19 @@ class OrdinalColumn(Column):
         if not np.issubdtype(vect.dtype, np.integer):
             uniq = set(vect)
             uniq_floats = np.array(list(uniq), dtype=float)
-            uniq_ints = uniq_floats.astype(int)
+            missing = np.isnan(uniq_floats)
+            uniq_ints = np.full(uniq_floats.shape, self._nan, dtype=np.int64)
+            uniq_ints[~missing] = uniq_floats[~missing].astype(np.int64)
             nan = self._missing_id
             self.metadata = {
                 new: nan if isnan(as_float) else old
                 for old, as_float, new in zip(uniq, uniq_floats, uniq_ints)
             }
             self.arr = self.arr.astype(float)
+            missing = np.isnan(self.arr)
+            encoded = np.full(self.arr.shape, self._nan, dtype=np.int64)
+            encoded[~missing] = self.arr[~missing].astype(np.int64)
+            return encoded, self.arr.dtype.type
         return self.arr.astype(int), self.arr.dtype.type
 
     def deep_copy(self):
